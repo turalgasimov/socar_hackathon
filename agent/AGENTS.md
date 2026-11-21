@@ -47,14 +47,16 @@ data/            raw CSVs; high_freq_data.csv (257 MB) via Git LFS
 data/processed/  derived parquet — GITIGNORED, regenerate with the pipeline
 docs/            brief, data dictionary, data report, physics report
 ml/src/          config · clean · features · vfm · daily_predict · viz ·
-                 pta_model (diffusivity equation, Laplace + Stehfest)
+                 pta_model (diffusivity equation, Laplace + Stehfest) ·
+                 pta_rate (oil rate at a shut-in from the well tests via the IPR; unscored)
                  (label_transfer.py is built but NOT shipped — see rejected)
-ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py · make_pta.py
+ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py · make_pta.py ·
+                 build_pta_notebook.py
 ml/eda/          run_eda · validate_features · benchmark_vfm ·
-                 timeforward_vfm · routing_checks · pta_explore
+                 timeforward_vfm · routing_checks · pta_explore · pta_probes
 ml/models/       vfm.pkl (required format) + vfm.joblib
 ml/outputs/      figures/ · submitted/ · reports · vfm_submission.csv
-notebooks/       VFM_Phase1.ipynb (all cells executed)
+notebooks/       VFM_Phase1.ipynb · PTA_Phase2.ipynb (all cells executed)
 ui/              Streamlit app (Phase 3, not started)
 ```
 
@@ -93,6 +95,8 @@ PY="C:/Users/Faiq/AppData/Local/Programs/Python/Python313/python.exe"
 #    make_pta.py refuses to write unless the output is identical to the scored file.
 "$PY" ml/eda/pta_explore.py
 "$PY" ml/make_pta.py
+"$PY" ml/build_pta_notebook.py   # notebooks/PTA_Phase2.ipynb (~90 s; nbformat, nbclient, ipykernel)
+"$PY" ml/eda/pta_probes.py       # unscored PTA probes -> ml/outputs/candidates/pta_*.csv
 ```
 
 The raw→parquet cache makes reloads near-instant. Delete

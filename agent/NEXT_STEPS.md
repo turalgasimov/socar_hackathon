@@ -132,9 +132,9 @@ and refuses to drift from the scored one; `python ml/eda/pta_explore.py`
 writes the plot folder. Leaderboard, numbers and the Horner comparison are in
 `PROJECT_STATE.md` and `ml/outputs/figures/pta/README.md`.
 
-Still open: **PTA results in a notebook.** Deliverable 3 wants a notebook
-showing the best results, and only `VFM_Phase1.ipynb` exists. The plan below
-is kept as the record of how the work was done.
+The PTA notebook is done: `notebooks/PTA_Phase2.ipynb`, built by
+`python ml/build_pta_notebook.py`. The plan below is kept as the record of how
+the work was done.
 
 Only `GL-01, GL-02, GL-04, GL-06, GL-08, GL-10` have a shut-in. `GL-03, GL-05,
 GL-07, GL-09` have none, so the UI must say "no build-up available" rather than

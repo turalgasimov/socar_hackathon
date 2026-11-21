@@ -414,25 +414,38 @@ def event_figure(ev, rA, pA, rB, rM, cM):
     a.loglog(cM["tg"][okm], cM["der"][okm], color=viz.AQUA, lw=1.6, ls="--", label="model Δp′")
     a.axvspan(rA["window_start_h"], rA["window_end_h"], color=viz.GRID, alpha=0.9, lw=0)
     a.axvspan(rB["window_start_h"], rB["window_end_h"], facecolor="none", edgecolor=viz.INK_2, hatch="///", lw=0.6)
-    a.axhline(rA["horner_slope_psi_per_cycle"] / 2.303, color=viz.INK_MUTED, ls="--", lw=0.9)
+    mM = rM["horner_slope_psi_per_cycle"]                       # the submitted slope
+    a.axhline(mM / 2.303, color=viz.INK_MUTED, ls="--", lw=0.9)
     xs = np.array([pA["tg"].min(), pA["tg"].min() * 30])
     a.loglog(xs, pA["dpg"][0] * xs / pA["tg"][0], color=viz.INK_MUTED, ls=":", lw=1)
     a.set_title("C. Log-log diagnostic"); a.set_xlabel("Δt, h"); a.set_ylabel("Δp, Δp′ (psi)")
     a.legend(loc="lower center")
     a.text(0.02, 0.96, f"grey = window A {rA['window_start_h']:g}–{rA['window_end_h']:g} h\n"
                        f"hatched = window B {rB['window_start_h']:g}–{rB['window_end_h']:g} h\n"
-                       f"- - IARF level m/2.303 · ··· unit slope (WBS)",
+                       f"- - IARF level m/2.303, submitted m · ··· unit slope (WBS)",
            transform=a.transAxes, va="top", fontsize=8, color=viz.INK_2)
     a = ax[1, 0]
     hx, win = pA["hx"], pA["win"]
     a.semilogx(10 ** hx, pA["p"], "o", ms=2, color=viz.SEQ[2])
     a.semilogx(10 ** hx[win], pA["p"][win], "o", ms=2.5, color=viz.BLUE)
     xx = np.linspace(0, hx.max(), 50)
-    a.semilogx(10 ** xx, pA["c0"] + pA["c1"] * xx, color=viz.ORANGE, lw=1.4)
+    # radial-flow (IARF) straight line implied by the submitted k, S, m: Horner's skin formula inverted,
+    # (P1hr - pwf)/m = S/1.151 + log10(k/(phi mu ct rw^2)) - 3.2275, so that line returns exactly the submitted S
+    P = PVT.loc[w]
+    tpM = rM["tp_h"]
+    p1M = rM["pwf_gauge_psia"] + mM * (rM["skin"] / 1.151 + np.log10(
+        rM["permeability_md"] / (P.porosity_frac * P.oil_viscosity_cp * P.total_compressibility_1_psi
+                                 * P.wellbore_radius_ft ** 2)) - 3.2275)
+    pstarM = p1M + mM * np.log10(tpM + 1.0)
+    a.semilogx(10 ** xx, pstarM - mM * xx, color=viz.AQUA, lw=1.6, ls="--", label=f"submitted: m = {mM:.2f}")
+    a.semilogx(10 ** xx, pA["c0"] + pA["c1"] * xx, color=viz.ORANGE, lw=1.2,
+               label=f"window-A fit: m = {rA['horner_slope_psi_per_cycle']:.2f}")
     a.invert_xaxis()
-    a.set_title("D. Horner plot (window A line)"); a.set_xlabel("(t_p + Δt) / Δt"); a.set_ylabel("p_ws, psia")
-    a.text(0.02, 0.96, f"m = {rA['horner_slope_psi_per_cycle']:.2f} psi/cycle\np* = {rA['p_star_gauge_psia']:.1f} psia\n"
-                       f"P1hr = {rA['p1hr_gauge_psia']:.1f} psia", transform=a.transAxes, va="top", fontsize=8, color=viz.INK_2)
+    a.legend(loc="lower right", fontsize=8)
+    a.set_title("D. Horner plot: submitted slope vs window-A line"); a.set_xlabel("(t_p + Δt) / Δt"); a.set_ylabel("p_ws, psia")
+    a.text(0.02, 0.96, f"submitted (model): m = {mM:.2f} psi/cycle, p* = {pstarM:.1f} psia\n"
+                       f"window-A line: m = {rA['horner_slope_psi_per_cycle']:.2f} psi/cycle, p* = {rA['p_star_gauge_psia']:.1f} psia",
+           transform=a.transAxes, va="top", fontsize=8, color=viz.INK_2)
     a = ax[1, 1]
     a.semilogx(pA["dt"], pA["p"], "o", ms=2, color=viz.SEQ[2])
     a.semilogx(pA["dt"][win], pA["p"][win], "o", ms=2.5, color=viz.BLUE)
