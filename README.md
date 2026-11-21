@@ -6,6 +6,7 @@ gas-lifted wells, delivered through a single interactive workflow.
 - Challenge brief: [`docs/README.md`](docs/README.md)
 - Current status and next steps: [`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md)
 - Conventions and gotchas for contributors: [`agent/AGENTS.md`](agent/AGENTS.md)
+- Current plan and task ownership: [`agent/NEXT_STEPS.md`](agent/NEXT_STEPS.md)
 - Findings: [`ml/outputs/eda_summary.md`](ml/outputs/eda_summary.md),
   [`ml/outputs/feature_report.md`](ml/outputs/feature_report.md)
 
@@ -55,7 +56,7 @@ Full defect list and the reasoning behind each repair:
 ## Layout
 
 ```
-agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md — read these first
+agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs (high_freq_data.csv via Git LFS)
 data/processed/  derived parquet, gitignored — regenerate with the commands above
 docs/            challenge brief, data dictionary, data & physics reports

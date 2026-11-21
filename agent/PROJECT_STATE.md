@@ -5,6 +5,13 @@ Last updated: 2026-11-21
 Scoring: VFM 50 (methodology 20 / accuracy 30) · Auto-PTA 30 (plots 10 /
 parameters 20) · UI 10 · Presentation 10.
 
+> **Keep this file current.** Anyone — person or agent — who writes or changes
+> code updates this file **in the same commit**: move the Status row, add a line
+> under Done with the number that proves it works, prune Next, and record any
+> risk or decision the team must not silently reverse. A stale state file sends
+> the next session to redo finished work. The plan and task ownership live in
+> [`NEXT_STEPS.md`](NEXT_STEPS.md).
+
 ## Status
 
 | Phase | Deliverable | State |
