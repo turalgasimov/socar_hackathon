@@ -38,6 +38,20 @@ def bias(a, p):
     return float(np.mean(p / a - 1) * 100)
 
 
+def wape(a, p):
+    """Volume-weighted absolute error. Worth 5 of each phase's 10 points.
+
+    Unlike MAPE it weights by rate, so the big wells dominate (GL-07 alone is
+    34% of field oil), and a systematic bias passes straight through instead
+    of partly cancelling.
+    """
+    return float(np.abs(a - p).sum() / a.sum() * 100)
+
+
+def r2(a, p):
+    return float(1 - ((a - p) ** 2).sum() / ((a - a.mean()) ** 2).sum())
+
+
 def time_forward(tr: pd.DataFrame) -> pd.DataFrame:
     """Predict each test from the other wells plus that well's earlier tests."""
     X = build_inputs(tr)
@@ -71,15 +85,18 @@ def main() -> None:
 
     # 1. verify before trusting
     tf = time_forward(tr)
-    scores = {p: (mape(tf[f"real_{p}"].values, tf[f"pred_{p}"].values),
-                  bias(tf[f"real_{p}"].values, tf[f"pred_{p}"].values))
+    scores = {p: {"r2": r2(tf[f"real_{p}"].values, tf[f"pred_{p}"].values),
+                  "mape": mape(tf[f"real_{p}"].values, tf[f"pred_{p}"].values),
+                  "wape": wape(tf[f"real_{p}"].values, tf[f"pred_{p}"].values),
+                  "bias": bias(tf[f"real_{p}"].values, tf[f"pred_{p}"].values)}
               for p in ["oil", "water", "gas"]}
     print(f"TIME-FORWARD ({len(tf)} of {len(tr)} tests, min_history={MIN_HISTORY})")
-    print(f"  {'phase':6s} {'MAPE':>8s} {'bias':>8s}")
-    for p, (m, b) in scores.items():
-        print(f"  {p:6s} {m:7.2f}% {b:+7.2f}%")
+    print("  scored as R2 /3 + MAPE /2 + WAPE /5 = 10 per phase, 30 total")
+    print(f"  {'phase':6s} {'R2':>8s} {'MAPE':>8s} {'WAPE':>8s} {'bias':>8s}")
+    for p, s in scores.items():
+        print(f"  {p:6s} {s['r2']:8.4f} {s['mape']:7.2f}% {s['wape']:7.2f}% {s['bias']:+7.2f}%")
 
-    oil_mape = scores["oil"][0]
+    oil_mape = scores["oil"]["mape"]
     if oil_mape > TF_MAX_OIL_MAPE:
         raise SystemExit(f"\nREFUSING TO PERSIST: time-forward oil MAPE {oil_mape:.2f}% "
                          f"exceeds the {TF_MAX_OIL_MAPE}% gate.")
@@ -109,8 +126,19 @@ def main() -> None:
     })
     xlsx = OUT / "vfm_daily_predictions.xlsx"
     out.to_excel(xlsx, index=False, sheet_name="daily_rates")
-    print(f"\npredictions -> {xlsx.relative_to(ROOT)}  ({len(out):,} well-days, "
+    print(f"\nannotated  -> {xlsx.relative_to(ROOT)}  ({len(out):,} well-days, "
           f"{int(out.low_coverage_flag.sum())} flagged low coverage)")
+
+    # Submission file: exactly the columns of docs/vfm_submission_template.csv,
+    # in that order, nothing extra. Scoring is likely automated, so the coverage
+    # columns that are useful for us are a parsing risk there -- they stay in the
+    # annotated workbook above.
+    tmpl = [c.strip() for c in
+            (ROOT / "docs" / "vfm_submission_template.csv").read_text().splitlines()[0].split(",")]
+    sub = out.rename(columns={"date": "timestamp"})[tmpl]
+    csv = OUT / "vfm_submission.csv"
+    sub.to_csv(csv, index=False)
+    print(f"submission -> {csv.relative_to(ROOT)}  (template columns: {', '.join(tmpl)})")
 
     # 4. sanity: predicted daily means against tested means, per well
     cmp = (out.assign(w=out.well_name).groupby("w")
@@ -133,9 +161,13 @@ def _report(scores, model, out, cmp, n_tf, n_tr) -> None:
         "Structure: choke law for liquid x water-cut split from the tubing gradient; "
         "gas from static Rs. See `ml/src/vfm.py`.", "",
         f"## Time-forward scores ({n_tf} of {n_tr} tests)", "",
-        "| phase | MAPE | bias |", "|---|--:|--:|",
+        "Scored as R² /3 + MAPE /2 + **WAPE /5** = 10 points per phase, 30 total.",
+        "WAPE carries half of each phase's score: it is volume-weighted, so the",
+        "large wells dominate and a systematic bias passes straight through.", "",
+        "| phase | R² | MAPE | WAPE | bias |", "|---|--:|--:|--:|--:|",
     ]
-    md += [f"| {p} | {m:.2f}% | {b:+.2f}% |" for p, (m, b) in scores.items()]
+    md += [f"| {p} | {s['r2']:.4f} | {s['mape']:.2f}% | **{s['wape']:.2f}%** | {s['bias']:+.2f}% |"
+           for p, s in scores.items()]
     md += [
         "", "Each test is predicted from the other nine wells plus that well's own",
         "earlier tests. No future information, no same-test leakage.", "",

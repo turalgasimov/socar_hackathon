@@ -5,6 +5,13 @@ Last updated: 2026-11-21
 Scoring: VFM 50 (methodology 20 / accuracy 30) · Auto-PTA 30 (plots 10 /
 parameters 20) · UI 10 · Presentation 10.
 
+**VFM accuracy breakdown (30):** oil, water and gas score 10 each, split
+**R² /3 + MAPE /2 + WAPE /5**. WAPE is half of every phase's score, so it is
+the metric to optimise — and it is volume-weighted, meaning the big wells
+dominate (GL-07 alone is 34% of field oil) and a systematic bias passes
+straight through instead of partly cancelling. Gas is worth exactly as much
+as oil despite being the hardest phase.
+
 > **Keep this file current.** Anyone — person or agent — who writes or changes
 > code updates this file **in the same commit**: move the Status row, add a line
 > under Done with the number that proves it works, prune Next, and record any
@@ -19,7 +26,7 @@ in `docs/README.md`. Read it before assuming a deliverable is done.
 
 | # | Required | State |
 |---|---|---|
-| 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | VFM done; PTA pending |
+| 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | VFM done (`ml/outputs/vfm_submission.csv`, template-exact); PTA pending |
 | 2 | Trained model file(s) **in `.pkl` format** | **done** — `ml/models/vfm.pkl` (+ `.joblib`) |
 | 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` |
 | 4 | A folder containing all necessary PTA plots | pending with PTA |
@@ -151,11 +158,18 @@ for liquid × water-cut split from the tubing gradient; gas from static Rs. The
 `choke_vlp` water-cut variant, which nested time-forward selection picks in 54
 of 55 folds.
 
-| phase | TF MAPE | bias |
-|---|--:|--:|
-| oil | **2.56%** | +0.25% |
-| water | **3.82%** | +0.15% |
-| gas | **5.65%** | +2.04% |
+| phase | R² /3 | MAPE /2 | **WAPE /5** | bias |
+|---|--:|--:|--:|--:|
+| oil | 0.9981 | 2.56% | **2.33%** | +0.25% |
+| water | 0.9959 | 3.82% | **3.48%** | +0.15% |
+| gas | 0.9940 | 5.65% | **4.61%** | +2.04% |
+
+R² is already 0.994–0.998, so those 9 points are close to maxed; the headroom
+is in WAPE and MAPE. A time-forward per-well bias calibration was tested
+against the real metrics: it helps gas WAPE slightly (4.61 → 4.48) but costs
+more MAPE (5.65 → 6.09) and hurts oil and water outright, whose biases are
+already under 0.3%. Not applied — and the trade cannot be settled properly
+without knowing how metric values map to points.
 
 Fitted exponents: `S^2.057`, `dPc^0.472`, `WHP^0.472`, `GLR^-0.612`. The first
 two are the subcritical choke law (`d²`, `√ΔP`) recovered from data.

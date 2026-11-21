@@ -5,11 +5,15 @@ Structure: choke law for liquid x water-cut split from the tubing gradient; gas 
 
 ## Time-forward scores (55 of 85 tests)
 
-| phase | MAPE | bias |
-|---|--:|--:|
-| oil | 2.56% | +0.25% |
-| water | 3.82% | +0.15% |
-| gas | 5.65% | +2.04% |
+Scored as R² /3 + MAPE /2 + **WAPE /5** = 10 points per phase, 30 total.
+WAPE carries half of each phase's score: it is volume-weighted, so the
+large wells dominate and a systematic bias passes straight through.
+
+| phase | R² | MAPE | WAPE | bias |
+|---|--:|--:|--:|--:|
+| oil | 0.9981 | 2.56% | **2.33%** | +0.25% |
+| water | 0.9959 | 3.82% | **3.48%** | +0.15% |
+| gas | 0.9940 | 5.65% | **4.61%** | +2.04% |
 
 Each test is predicted from the other nine wells plus that well's own
 earlier tests. No future information, no same-test leakage.
