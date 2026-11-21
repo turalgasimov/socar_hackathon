@@ -36,17 +36,35 @@ accuracy. Everything below assumes we do not get an answer and have to hedge
 ## 1. Settle the test-mode correction — **blocks everything**
 
 The shipped model scores 2.56% time-forward on oil, but every label is
-measured under test-separator routing. Predicting each test's own date from
-*daily* averages instead of the test window gives **−2.62%**, consistent
-across wells (−1.7% to −3.6%). That is the measured gap.
+measured under test-separator routing.
 
-It is systematic, not random, so it does not average out over 2,729 well-days
-— roughly the size of the model's own error, applied in one direction to every
-row. Two weaker estimates bracket it: −3.8% from the `dPc^0.47` term alone,
-and up to −7% from a counterfactual that re-runs normal days at test-level
-`dPc` (unreliable — it moves one variable while holding correlated ones
-fixed). The spread across 2.6–7% is itself the reason to ask rather than
-guess.
+**The size is settled: ~2.5%.** Four independent routes converge — IPR 2.50%,
+J-free thermal ratio 2.51%, thermal slope 2.05%, our daily-vs-test-window
+2.62%. The choke law says 5.89% and is wrong; overstating the routing response
+by ~2.4x is exactly the defect. See `PROJECT_STATE.md` for the per-well table.
+
+It is systematic, not random, so it does not average out over 2,729 well-days.
+With WAPE worth 5 of each phase's 10 points, and a systematic bias passing
+straight through WAPE rather than partly cancelling, **this is the largest
+remaining accuracy lever in the whole project.**
+
+### Validating the label transfer — protocol
+
+My first proposal was wrong and is superseded. I suggested "if the fitted
+choke exponents move materially, we injected our own assumption." Rovshan
+pointed out that the *entire point* of the transfer is to correct the choke
+model's routing sensitivity, so exponent movement is expected and desired —
+the check would have flagged success as failure. Use instead:
+
+1. **Time-forward MAPE on the 85 real tests must not degrade** when the
+   transferred rows are added, versus the same model without them.
+2. **On held-out tests, the refit model's implied test-vs-normal uplift must
+   land near 2.5%** — leave-one-out on the transfer itself, so not circular.
+3. Report exponents before and after as *information only*, not a gate.
+4. **Weight transferred rows by 1/σ²**, σ from the spread between the IPR and
+   thermal-ratio estimates plus a floor. GL-06 and GL-03 need the widest σ.
+
+Never validate on transferred labels; time-forward stays on the 85 real tests.
 
 Three options, in order of preference:
 

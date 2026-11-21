@@ -182,14 +182,23 @@ the saved artefact is what gets exercised.
 Shut-in days are a hard zero, not a model output: 5 well-days have the choke
 closed for the full 24 h (`ln S` is undefined there).
 
-**Measured routing gap.** Predicting each test's own date from *daily* averages
-instead of the test window gives **−2.62%**, consistent across wells (−1.7% to
-−3.6%). That is the directly measured figure and it supersedes the −3.8%
-I previously derived from the `dPc^0.47` term alone. A counterfactual that
-re-runs normal days at test-level `dPc` suggests up to −7%, but it perturbs one
-variable while holding correlated ones fixed, so treat it as an upper bound.
-The three estimates spanning 2.6–7% is itself the argument for asking the
-organisers rather than guessing a correction.
+**Routing gap: ~2.5%, agreed.** Four independent routes now converge, so this
+is settled and no longer an open range.
+
+| method | mean uplift | notes |
+|---|--:|---|
+| IPR, `J·ΔPwf` | 2.50% | 6 shut-in wells only |
+| Thermal ratio, J-free | 2.51% | all 10 wells — **primary** |
+| Thermal slope | 2.05% | unreliable on GL-03 |
+| Daily-vs-test-window (ours) | 2.62% | all 10 wells |
+| *choke law* | *5.89%* | *overstates by ~2.4x — do not use* |
+
+IPR and the J-free thermal ratio agree at correlation 0.85, mean absolute
+difference 0.45 pp. **Adopt 2.5%.** The earlier −3.8% and −7% figures were both
+choke-derived and are retired; the choke law is precisely what overstates the
+routing response. Per-well spread is real and needs larger uncertainty on
+GL-06 (IPR 2.76 vs thermal 4.29) and GL-03 (slope 1.16 vs ratio 2.75, its rate
+barely moves across tests).
 
 Artefacts (regenerate — `data/processed/` is gitignored):
 `high_freq_clean.parquet`, `well_tests_clean.parquet`,
@@ -245,13 +254,12 @@ decides the first item.
   highest test — zero overlap.** The model has never seen a value like the ones
   it must predict on.
 
-  It reaches the choke model through `dPc`: 129.6 psi on test windows vs 119.2
-  on normal days. Through `dPc^0.47` that alone biases predictions **−3.8%**.
-  Directly measured at **−2.62%** (see the VFM model section above), which is
-  comparable to the shipped model's own 2.56% oil error — and *systematic*, so
-  unlike random error it does not average out over 2,729 well-days. Rovshan
-  reached the same conclusion independently, estimating test rates 1–4% high,
-  in the data report since removed from `docs/`.
+  The agreed size is **~2.5%** (see the routing-gap table above — four
+  independent methods). That is comparable to the shipped model's own 2.56%
+  oil error, and *systematic*, so unlike random error it does not average out
+  over 2,729 well-days. With WAPE worth 5 of each phase's 10 points and a
+  systematic bias passing straight through it, this is the single largest
+  remaining accuracy lever.
 
   **This is a correction to apply, not a reason to discard the model.** Decide
   before submitting: de-bias the daily predictions, or restrict to the
