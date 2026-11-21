@@ -75,7 +75,11 @@ SOURCE = {
 #   oil   WAPE 2.33 -> 2.30   R2 0.9981 -> 0.9983
 #   water WAPE 3.48 -> 3.25   R2 0.9959 -> 0.9963
 #   gas   WAPE 4.61 -> 4.52   R2 0.9940 -> 0.9945
-WC_FEATURES = ["t", "dp_tubing", "gl", "whp", "dh_p", "dh_t", "ann"]
+#
+# REVERTED. The widened set above was submitted and scored **20.57**, down
+# from 20.9463 for the narrow one -- despite improving WAPE and R2 on all
+# three phases time-forward. Keep the narrow set.
+WC_FEATURES = ["t", "dp_tubing", "gl"]
 
 
 def build_inputs(df: pd.DataFrame, when: str = "start") -> pd.DataFrame:
@@ -114,21 +118,31 @@ class VFMModel:
             W[unknown] = 1.0 / len(self.wells)
         return W, unknown
 
-    def fit(self, X: pd.DataFrame, oil: np.ndarray, water: np.ndarray) -> "VFMModel":
+    def fit(self, X: pd.DataFrame, oil: np.ndarray, water: np.ndarray,
+            sample_weight: np.ndarray | None = None) -> "VFMModel":
+        """Fit both stages. `sample_weight` enables weighted least squares.
+
+        Weights matter when the training set mixes measured labels with
+        derived ones: transferred rows carry a per-row sigma, and at equal
+        weight 170 of them simply outvote 85 real measurements.
+        """
         qL = oil + water
         wc = water / qL
         self.wells = sorted(pd.unique(X.well_name))
         W, _ = self._dummies(X.well_name.values)
+        sw = (np.ones(len(X)) if sample_weight is None
+              else np.asarray(sample_weight, dtype=float))
+        rt = np.sqrt(sw)[:, None]          # WLS: scale rows by sqrt(weight)
 
         # water cut from the sensor set in WC_FEATURES, per-well intercept
         A = np.c_[W, X[self.wc_features].to_numpy(float)]
-        self.wc_coef = lstsq(A, wc, rcond=None)[0]
+        self.wc_coef = lstsq(A * rt, wc * rt[:, 0], rcond=None)[0]
 
         # choke law. On training rows qL is known, so GLR is computed directly.
         glr = (X.gl.values + qL * (1 - wc) * X.rs.values / 1000) / qL
         C = np.c_[W, np.log(X.S.values), np.log(X.dpc.values),
                   np.log(X.whp.values), np.log(glr)]
-        self.choke_coef = lstsq(C, np.log(qL), rcond=None)[0]
+        self.choke_coef = lstsq(C * rt, np.log(qL) * rt[:, 0], rcond=None)[0]
         self.trained_on = len(X)
         return self
 

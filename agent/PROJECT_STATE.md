@@ -41,6 +41,22 @@ landed between the two and isolated neither change.
 
 **S1 remains the champion at 20.9463.**
 
+| probe | change vs S1 | score |
+|---|---|--:|
+| widened water-cut split | routing-safe sensors added to WC | **20.5700** |
+
+**Time-forward is a poor guide to leaderboard performance, twice over.** The
+widened water-cut split improved WAPE *and* R² on all three phases
+time-forward and lost 0.38 on the leaderboard. S3's gas factor improved all
+three gas metrics and lost 0.04. Both are reverted.
+
+The common cause is the regime gap. All 85 labels are test-routed; the 2,729
+days we are scored on are not. Time-forward measures fit quality *inside* the
+test regime, and a change that fits that regime better can fit the prediction
+regime worse. **Treat time-forward as a guard against obvious regressions,
+not as evidence a change will score.** Only the leaderboard decides, so
+changes should go up one at a time.
+
 **The routing lever is exhausted. λ=1.0 is the optimum.** Three points fix
 the V: ascending slope +0.735/λ below it, −1.738/λ above. The arms intersect
 at **λ = 1.000**, which is exactly where S1 sits. The downhole physics
