@@ -124,8 +124,8 @@ Kept artefacts, everything else deleted:
 |---|--:|
 | `ml/outputs/vfm_submission.csv` | the champion, regenerated |
 | `ml/outputs/submitted/rank1_21.0200_lam0.80.csv` | **21.0200** |
-| `ml/outputs/submitted/rank2_lam0.85.csv` | beat 0.90 and 1.00 — exact score TBC |
-| `ml/outputs/submitted/probe_lam0.75.csv` | pending |
+| `ml/outputs/submitted/rank2_lam0.85.csv` | beat 0.90 and 1.00, lost to 0.80 |
+| `ml/outputs/submitted/rank3_lam0.75.csv` | pending |
 
 λ=0.90 (20.9960) and λ=1.00 (20.9463) are deleted: 0.85 beat both, so they
 are no longer in the top three.
