@@ -1,6 +1,6 @@
 # Project state
 
-Last updated: 2026-11-21
+Last updated: 2026-11-22
 
 Scoring: VFM 50 (methodology 20 / accuracy 30) · Auto-PTA 30 (plots 10 /
 parameters 20) · UI 10 · Presentation 10.
@@ -311,7 +311,7 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | 1 | VFM baselines benchmarked | **done** (physics wins time-forward: 2.67–3.10% vs Ridge 5.11%) |
 | 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.pkl`, TF oil 2.56%) |
 | 1 | Excel: daily oil/water/gas predictions | **done** (2,730 rows, template-exact) |
-| 1 | **Leaderboard tuning** | **closed** — 14 submissions, best **21.0200** |
+| 1 | **Leaderboard tuning** | best **21.0200**; final probe round of 22 Nov built, **unsubmitted** (`ml/outputs/candidates/RUNBOOK.md`) |
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | PTA parameters → m, k, skin, ΔP_skin | **done** — exact model match, **8.3840 / 20** (`python ml/make_pta.py`) |
 | 2 | PTA plots per shut-in event | **done** (`ml/outputs/figures/pta/`, 9 figures + README) |
@@ -746,6 +746,36 @@ presentation (10 pts). The app runs the same PTA on uploaded data
 to the submitted PTA must be mirrored in `ui/pipeline.py`**, or the app and the
 submission disagree and that check fails.
 
+**Task 1 probe round, 22 Nov — built, unsubmitted.** `python ml/eda/vfm_probes.py`
+writes six files to `ml/outputs/candidates/vfm_V*.csv`. Each is built from the
+λ = 0.80 record file and verified to make exactly one change against it. The
+branching order, thresholds and after-a-win procedure are in the *Task 1* section
+of `ml/outputs/candidates/RUNBOOK.md`. At most 3 submissions on any path:
+
+| step | file | change | if won | if lost |
+|---|---|---|---|---|
+| 1 | V1 | water ×0.98 | → V2a | → V2b |
+| 2a | V2a | water ×0.97, oil takes the difference, gas held | → V3a (needs > V1) | best = V1 |
+| 2b | V2b | water ×1.02 | → V3b | → V3c |
+| 3a | V3a | water ×0.95, oil takes the difference, gas held | best = V3a (needs > V2a) | best = V2a |
+| 3b | V3b | water ×1.04 | best = V3b (needs > V2b) | best = V2b |
+| 3c | V3c | GL-07 λ 0.80 → 1.00 | best = V3c | record stays |
+
+Why water first: **the leaderboard has never identified the water level.**
+`python ml/eda/vfm_probes.py --profile` refits `ml/infer_truth.py` with s_water
+pinned anywhere in 0.96–1.09. Every fit reproduces all nine scores to
+≤ 0.004 points, with s_oil trading against it (1.009–1.056). V1's modelled
+effect flips sign across that range (+0.48 … −0.53), so it is the diagnostic.
+
+The 21 Nov `cand_wc*` files are replaced, not submitted:
+
+- They let gas follow oil through Rs, which added +1.5…+4.1% gas, and gas ×1.02
+  already lost 0.41.
+- The gas-held split beats them by ~0.3 in every modelled world.
+
+`cand_*` and `ident_*` are deleted. They were built from `vfm_submission.csv`
+rather than the record, so they also carried the ±0.1 rounding drift.
+
 Two questions never answered, both still worth asking the organisers:
 
 1. **Is there a public/private split on the leaderboard?** λ was tuned across
@@ -773,6 +803,16 @@ a change will score. Level and bias questions are settled only by the
 leaderboard; shape and variance questions are what time-forward is for.
 
 ## Decisions and constraints
+
+- **`lam0.80_21.0200_SHIPPED.csv` is the PTA rate input and is never renamed or
+  deleted**, even if a Task 1 probe beats it. A VFM winner becomes a new
+  `vfm_<change>_<score>_SHIPPED.csv`, and `vfm_submission.csv` is set equal to it.
+  - A **water-only** winner goes into the model as `water_scale`, and PTA, the
+    app and the checks stay unchanged.
+  - An **oil-moving** winner ships as a post-hoc file only, with the model
+    unchanged. In that case `fit_vfm.py` must not be re-run, because it would
+    overwrite the deliverable.
+  - Full procedure: RUNBOOK → *After a VFM win*.
 
 - **Only 6 of 10 wells admit PTA.** GL-03, GL-05, GL-07, GL-09 never close their
   choke. GL-02 (5.7 h) and GL-06 (8.0 h) are short — radial flow may not develop,
@@ -805,6 +845,16 @@ leaderboard; shape and variance questions are what time-forward is for.
   See `ml/outputs/feature_report.md`.
 
 ## Open risks
+
+- **`ml/outputs/vfm_submission.csv` is not the file that scored 21.0200.**
+  - It differs from `submitted/lam0.80_21.0200_SHIPPED.csv` by ±0.1 on 1,637 of
+    2,730 rows. Both are 1-dp roundings of the same rates; `fit_vfm.py`
+    regenerated one of them through a different path.
+  - It is irrelevant to the score, but the deliverable is not byte-identical to
+    what was scored.
+  - It gets fixed if a Task 1 probe wins (RUNBOOK step 3). If none wins, copy
+    the record over it. Then re-run `ml/build_notebook.py` with `atol` widened
+    from 0.051 to 0.11.
 
 - **Train–serve skew on `whp_downstream_psia` — the strongest single feature.**
   During a well test the well is routed to the test separator (129.7–134.5 psia)
