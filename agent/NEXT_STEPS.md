@@ -171,6 +171,38 @@ the binding constraint. Saying so is worth more than pretending otherwise.
 
 ## Tried and rejected — do not redo these
 
+- **Label transfer** (`ml/src/label_transfer.py`, built and measured, not
+  shipped). It achieves its stated goal — transferred rows sit at
+  `whp_downstream` 168.8–204.7 against the 158.0–205.3 we predict on, versus
+  149.3–181.6 for the raw labels — and still fails gate 1. Adding them
+  time-forward: oil WAPE 2.30 → 4.55, water 3.25 → 4.16, gas 4.52 → 6.74.
+  Letting the water-cut split use `whp_downstream`, the whole point, recovers
+  4.55 → 4.49.
+
+  Probable cause is a conflict, not a bug: the choke law already responds to
+  the test-to-normal change through `dPc^0.47` by ~5.9%, while the
+  transferred rows assert 2.8%. One set of exponents cannot serve both
+  regimes, so the fit splits the difference and both get worse. Applied as a
+  post-hoc scale the same 2.8% leaves the exponents alone and is worth +0.735
+  points — which is the form we ship.
+
+  Two things to try before writing it off: **1/σ² weighting**, which
+  `VFMModel.fit` does not support (170 transferred rows currently outvote 85
+  real ones, and pre/post windows of one test are near-duplicates); and
+  refitting **only the dPc exponent** on transferred rows with the rest held
+  fixed, so the transfer corrects the one coefficient it is informative about.
+
+  Also found on the way: the thermal route's reference is the **static gauge
+  temperature**, not reservoir temperature. The gauge sits 150–420 ft above
+  datum in cooler rock, and on GL-01, GL-06, GL-07 and GL-10 the flowing
+  gauge reads within 1 °F of T_res, so a T_res ratio silently discards those
+  four wells. Measured from the six shut-ins, the geothermal gradient is
+  1.17–1.45 °F/100 ft, matching Rovshan's independent 1.1–1.44. Under the
+  correct reference the thermal and IPR routes agree much less well
+  (corr 0.86 → 0.41), and neither reproduces the 2.5% the leaderboard proved
+  — which is why the shipped magnitude comes from `ROUTING_FACTORS` rather
+  than from the physics.
+
 - **Critical choke flow as the reason the choke law overstates the routing
   effect.** Rejected. `python ml/eda/routing_checks.py` reproduces it: one
   pooled fit with only the dPc term split at a pressure ratio of 0.60 gives
