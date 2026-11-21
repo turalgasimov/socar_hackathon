@@ -11,9 +11,9 @@ large wells dominate and a systematic bias passes straight through.
 
 | phase | R² | MAPE | WAPE | bias |
 |---|--:|--:|--:|--:|
-| oil | 0.9981 | 2.56% | **2.33%** | +0.25% |
-| water | 0.9959 | 3.82% | **3.48%** | +0.15% |
-| gas | 0.9940 | 5.65% | **4.61%** | +2.04% |
+| oil | 0.9983 | 2.59% | **2.30%** | +0.33% |
+| water | 0.9963 | 3.74% | **3.25%** | +0.24% |
+| gas | 0.9945 | 5.67% | **4.52%** | +2.12% |
 
 Each test is predicted from the other nine wells plus that well's own
 earlier tests. No future information, no same-test leakage.
@@ -35,16 +35,16 @@ The first two land on the subcritical choke law without being told to, which is 
 
 | well | mean predicted oil | mean tested oil | diff |
 |---|--:|--:|--:|
-| GL-01 | 905 | 1,008 | -10.2% |
-| GL-02 | 1,191 | 1,281 | -7.0% |
-| GL-03 | 712 | 750 | -5.1% |
-| GL-04 | 706 | 764 | -7.7% |
-| GL-05 | 736 | 790 | -6.9% |
-| GL-06 | 696 | 720 | -3.3% |
-| GL-07 | 4,284 | 4,458 | -3.9% |
-| GL-08 | 1,419 | 1,476 | -3.8% |
-| GL-09 | 1,219 | 1,260 | -3.3% |
-| GL-10 | 1,858 | 1,956 | -5.0% |
+| GL-01 | 906 | 1,008 | -10.1% |
+| GL-02 | 1,189 | 1,281 | -7.2% |
+| GL-03 | 711 | 750 | -5.3% |
+| GL-04 | 708 | 764 | -7.4% |
+| GL-05 | 735 | 790 | -7.0% |
+| GL-06 | 692 | 720 | -3.8% |
+| GL-07 | 4,285 | 4,458 | -3.9% |
+| GL-08 | 1,420 | 1,476 | -3.8% |
+| GL-09 | 1,219 | 1,260 | -3.2% |
+| GL-10 | 1,852 | 1,956 | -5.4% |
 
 Predicted daily rates sitting a few per cent below tested rates is the
 expected direction: a test runs the well at lower back-pressure than normal

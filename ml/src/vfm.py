@@ -53,7 +53,29 @@ SOURCE = {
     "dp_tubing": "dp_tubing__mean",
     "gl": "gas_lift_rate_mscfd__mean",
     "choke_pct": "choke_pct__mean",
+    # used by the water-cut model only
+    "whp_down": "whp_downstream_psia__mean",
+    "dh_p": "dh_pressure_psia__mean",
+    "dh_t": "dh_temperature_degf__mean",
+    "ann": "annulus_pressure_psia__mean",
 }
+
+# Features for the water-cut split, after the per-well intercepts. The split
+# sets BOTH oil and water, so a better water cut improves both phases at once.
+#
+# `whp_down` and `dpc` are deliberately EXCLUDED. Downstream wellhead pressure
+# carries a -2.6 sigma train-serve skew (99% of the daily values we predict on
+# fall outside the tested range), and putting it in the split makes the split
+# extrapolate on every normal-production day: it moved base oil +5.24%, more
+# than the entire routing correction, which would have double-counted against
+# ROUTING_FACTORS and landed past the lambda=2.5 point that scored 18.34.
+# Every sensor below is within 0.20 sigma, and the level moves -0.06%.
+#
+# Time-forward, this widening improves WAPE and R2 on all three phases:
+#   oil   WAPE 2.33 -> 2.30   R2 0.9981 -> 0.9983
+#   water WAPE 3.48 -> 3.25   R2 0.9959 -> 0.9963
+#   gas   WAPE 4.61 -> 4.52   R2 0.9940 -> 0.9945
+WC_FEATURES = ["t", "dp_tubing", "gl", "whp", "dh_p", "dh_t", "ann"]
 
 
 def build_inputs(df: pd.DataFrame, when: str = "start") -> pd.DataFrame:
@@ -75,6 +97,7 @@ class VFMModel:
     choke_coef: np.ndarray | None = None   # [n_wells intercepts, lnS, lnDPc, lnWHP, lnGLR]
     wc_coef: np.ndarray | None = None      # [n_wells intercepts, t, dp_tubing, gl]
     routing_factor: float | dict[str, float] = 1.0   # scalar, or per-well; see predict()
+    wc_features: list = field(default_factory=lambda: list(WC_FEATURES))
     trained_on: int = 0
 
     # ---------------------------------------------------------------- fitting
@@ -97,8 +120,8 @@ class VFMModel:
         self.wells = sorted(pd.unique(X.well_name))
         W, _ = self._dummies(X.well_name.values)
 
-        # water cut: tubing gradient + gas-lift rate + time, per-well intercept
-        A = np.c_[W, X.t.values, X.dp_tubing.values, X.gl.values]
+        # water cut from the sensor set in WC_FEATURES, per-well intercept
+        A = np.c_[W, X[self.wc_features].to_numpy(float)]
         self.wc_coef = lstsq(A, wc, rcond=None)[0]
 
         # choke law. On training rows qL is known, so GLR is computed directly.
@@ -143,7 +166,7 @@ class VFMModel:
                 UserWarning, stacklevel=2)
         b, n = self.choke_coef, len(self.wells)
 
-        wc = np.c_[W, X.t.values, X.dp_tubing.values, X.gl.values] @ self.wc_coef
+        wc = np.c_[W, X[self.wc_features].to_numpy(float)] @ self.wc_coef
         wc = np.clip(wc, 0.0, 0.95)
 
         # A fully closed choke means the well is shut in and produces nothing.
