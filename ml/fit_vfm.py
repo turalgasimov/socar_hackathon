@@ -136,9 +136,28 @@ def main() -> None:
     tmpl = [c.strip() for c in
             (ROOT / "docs" / "vfm_submission_template.csv").read_text().splitlines()[0].split(",")]
     sub = out.rename(columns={"date": "timestamp"})[tmpl]
+
+    # Complete the grid. A well-day can be absent because the sensors dropped
+    # out, not because the well stopped -- GL-06 lost 24 Jun to a 36 h outage
+    # while still producing. Leaving the row out understates that well, and an
+    # unknown scorer may treat a missing row as zero or fail the join. Fill by
+    # interpolating between the neighbouring days and flag it in the workbook.
+    rates = ["oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"]
+    grid = pd.MultiIndex.from_product(
+        [sorted(sub.well_name.unique()),
+         pd.date_range(sub.timestamp.min(), sub.timestamp.max()).strftime("%Y-%m-%d")],
+        names=["well_name", "timestamp"])
+    sub = (sub.set_index(["well_name", "timestamp"]).reindex(grid))
+    filled = sub[rates].isna().all(axis=1)
+    sub[rates] = (sub.groupby(level=0)[rates]
+                     .transform(lambda s: s.interpolate(limit_direction="both")).round(1))
+    sub = sub.reset_index()[tmpl].sort_values(["well_name", "timestamp"], ignore_index=True)
     csv = OUT / "vfm_submission.csv"
     sub.to_csv(csv, index=False)
-    print(f"submission -> {csv.relative_to(ROOT)}  (template columns: {', '.join(tmpl)})")
+    n_fill = int(filled.sum())
+    print(f"submission -> {csv.relative_to(ROOT)}  ({len(sub):,} rows = "
+          f"{sub.well_name.nunique()} wells x {sub.timestamp.nunique()} days"
+          + (f", {n_fill} interpolated across sensor outages)" if n_fill else ")"))
 
     # 4. sanity: predicted daily means against tested means, per well
     cmp = (out.assign(w=out.well_name).groupby("w")
