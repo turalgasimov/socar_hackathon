@@ -43,14 +43,14 @@ for old, new in swaps.items():
     html = html.replace(old, new)
 
 
-def photo(m: re.Match) -> str:     # team/<name>.jpg if it exists; otherwise the slide shows initials
+def image(m: re.Match) -> str:     # team photos and figures, inlined so the file stands alone
     path = DECK / m.group(1)
-    return f'src="{data_uri(path, "image/jpeg")}"' if path.exists() else m.group(0)
+    mime = "image/png" if path.suffix == ".png" else "image/jpeg"
+    return f'src="{data_uri(path, mime)}"' if path.exists() else m.group(0)
 
 
-html = re.sub(r'src="(team/[\w-]+\.jpe?g)"', photo, html)
-left = [ref for ref in re.findall(r'(?:src|href)="([\w./-]+)"', html)   # real paths, not ${templates} in reveal.js
-        if not ref.startswith("team/")]
+html = re.sub(r'src="((?:team|figs)/[\w.-]+\.(?:jpe?g|png))"', image, html)
+left = re.findall(r'(?:src|href)="([\w./-]+)"', html)   # real paths, not ${templates} in reveal.js
 assert not left, f"still points at local files: {left}"
 OUT.write_text(html, encoding="utf-8")
 print(f"OK: {OUT.relative_to(DECK.parents[1])}, {OUT.stat().st_size / 1e3:.0f} KB, self-contained")

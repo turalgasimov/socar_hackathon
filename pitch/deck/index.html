@@ -101,10 +101,33 @@
     <ul class="points">
       <li>Well tests read 2.5% high against normal days. Measured four independent ways.</li>
       <li>A well the model has never seen is flagged, not guessed.</li>
-      <li>Well tests (PTA): permeability 43–295 md, skin −1.6 to +5.7. Three wells stimulated, three damaged.</li>
     </ul>
-    <p class="src">Time-forward on 55 of 85 tests, same scale as the previous slide; routing gap from IPR, thermal ratio, thermal slope and daily-vs-test-window checks; PTA from the submitted model match</p>
+    <p class="src">Time-forward on 55 of 85 tests, same scale as the previous slide; routing gap from IPR, thermal ratio, thermal slope and daily-vs-test-window checks</p>
     <aside class="notes">Read the three scores. Norway (Hotvedt et al.) found the same with only well tests. Unseen wells are flagged.</aside>
+  </section>
+
+  <section class="pta-slide">
+    <h2>Six build-ups, one model</h2>
+    <p class="pta-lead">Every shut-in in the data on the log-log diagnostic. Dots: measured pressure and its derivative. Lines: our model of each well, fitted to every point.</p>
+    <div class="pta-grid">
+      <figure class="plot"><img src="figs/pta_buildups.png" alt="Log-log diagnostics of the six build-ups: measured pressure change and Bourdet derivative as dots, the model match as lines, one panel per well"></figure>
+      <div>
+        <table class="params">
+          <thead><tr><th>Well</th><th class="num">k, md</th><th class="num">Skin</th><th>Boundary</th></tr></thead>
+          <tbody>
+          <tr><td>GL-01</td><td class="num">105</td><td class="num">+5.74</td><td>closed, 1,367 ft</td></tr>
+          <tr><td>GL-02</td><td class="num">61</td><td class="num">−0.26</td><td>infinite</td></tr>
+          <tr><td>GL-04</td><td class="num">57</td><td class="num">−0.90</td><td>infinite</td></tr>
+          <tr><td>GL-06</td><td class="num">295</td><td class="num">+2.31</td><td>infinite</td></tr>
+          <tr><td>GL-08</td><td class="num">43</td><td class="num">−1.59</td><td>infinite</td></tr>
+          <tr><td>GL-10</td><td class="num">176</td><td class="num">+2.20</td><td>closed, 1,048 ft</td></tr>
+          </tbody>
+        </table>
+        <p class="pta-note">Three damaged (skin &gt; 0), three stimulated. Fit error 0.03–0.08 psi. Fitted on GL-01's first day, the model predicts the next two at noise level.</p>
+      </div>
+    </div>
+    <p class="src">Submitted PTA: exact model match (storage + skin + radial flow + boundary), ml/outputs/pta_submission.csv; figure from ml/outputs/figures/pta/</p>
+    <aside class="notes">About 40 s. All six build-ups, one model each, fitted to every point: under a tenth of a psi. k 43–295 md; three stimulated, three damaged; GL-01 and GL-10 closed boundary. Hold-out: fitted on GL-01's first 24 h, it forecasts the next 48 h at noise level.</aside>
   </section>
 
   <section>

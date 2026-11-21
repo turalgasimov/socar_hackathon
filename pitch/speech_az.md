@@ -10,7 +10,7 @@ Yeddi dəqiqə, canlı demo daxil. Mətni əzbərləməyin. Fikri bilin və öz 
 | **[SPEAKER ?]** | kimin danışacağı hələ təyin olunmayıb |
 
 Texniki terminlər (VFM, PTA, Horner, skin, time-forward) komanda qaydası ilə ingiliscə qalır.
-Azərbaycanca variantın vaxtını məşqdə ölçün; ingiliscə variant təxminən 6:20 çəkir.
+Azərbaycanca variantın vaxtını məşqdə ölçün; ingiliscə variant söz sayına görə təxminən 6:50 çəkir.
 
 ## Çıxışdan əvvəl
 
@@ -21,7 +21,7 @@ Azərbaycanca variantın vaxtını məşqdə ölçün; ingiliscə variant təxmi
 
 ---
 
-## 0:00–0:45 · Giriş və problem · slayd 2–3 · [SPEAKER ?]
+## 0:00–0:50 · Giriş və problem · slayd 2–3 · [SPEAKER ?]
 
 > **[KLİK]** Boş 1-ci slayddan keçin: sual görünür və sayğac işə düşür.
 
@@ -46,7 +46,7 @@ Görmədiyiniz şey isə itkiyə çevrilir.
 SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir. Ölçülən hər debit ya bir günə qədər çəkən
 quyu testi, ya da bahalı avadanlıq tələb edir.
 
-## 0:45–1:05 · Həll · slayd 4
+## 0:50–1:05 · Həll · slayd 4
 
 > **[KLİK]**
 
@@ -55,7 +55,7 @@ bağlanmasını isə lay diaqnozuna çevirir.
 
 Bu, SOCAR-ın öz serverində işləyən bir brauzer tətbiqidir. Heç bir yeni avadanlıq lazım deyil.
 
-## 1:05–3:35 · Canlı demo · slayd 5 (tətbiq)
+## 1:05–3:30 · Canlı demo · slayd 5 (tətbiq)
 
 > **[KLİK]** Tətbiq slaydın içində açılır. Ehtiyat variant: ikinci noutbuk və ya QR kod.
 
@@ -74,12 +74,12 @@ mənfi doqquz yüz doxsan doqquz tam yüzdə iyirmi beş.
 Bir quyu qaz debitini "min kub fut" başlığı altında kub metrlə yazmışdı. Bu, iyirmi səkkiz dəfəlik
 xəta deməkdir.
 
-Bundan başqa, iki min yarım təkrarlanan sətir, işarəsi tərsinə dönmüş dəyərlər və bir gecə var ki,
+*(İstəyə bağlı, demo ləngisə buraxın:)* Bundan başqa, iki min yarım təkrarlanan sətir, işarəsi tərsinə dönmüş dəyərlər və bir gecə var ki,
 on quyunun hamısı eyni anda susub. Bu, on sensorun birdən xarab olması deyil, data sisteminin
 nasazlığıdır.
 
 Bir tələni tutduğumuz üçün isə xüsusilə fəxr edirik. Quyu testi zamanı axın test separatoruna
-yönəlir və quyuağzı təzyiq adi gündən iyirmi-otuz psi aşağı olur. Bu effekti dörd müstəqil üsulla
+yönəlir və quyuağzı təzyiq adi gündən otuz psi-yə qədər aşağı olur. Bu effekti dörd müstəqil üsulla
 ölçdük və hamısı eyni nəticəni verdi: iki yarım faiz.
 
 > **[DEMO]** Nəticələr görünür və plitələr açılır. "Hasilat debitləri" bölməsini açın.
@@ -111,7 +111,7 @@ Bir kliklə hər iki hissənin nəticələrini Excel faylına və hesabata çıx
 > Test datasında model üçün yeni bir quyu olarsa, belə deyin: "Bu quyu model üçün yenidir, ona görə
 > tətbiq təxmin etmək əvəzinə onu ayrıca qeyd edir."
 
-## 3:35–4:55 · Metodologiya və nəticələr · slayd 6–7 · [SPEAKER ?]
+## 3:30–5:20 · Metodologiya, nəticələr və quyu sınaqları · slayd 6–8 · [SPEAKER ?]
 
 > **[KLİK]**
 
@@ -134,38 +134,36 @@ bu rəqəmlər iki və yarımdır. Yəni model ştuserdən axın qanununu datada
 Yekun nəticələr belədir: neftdə xəta iki tam onda altı faiz, suda üç tam onda səkkiz faiz, qazda
 isə beş tam onda yeddi faizdir. Hər üç fazada R-kvadrat sıfır tam yüzdə doxsan doqquzdan yüksəkdir.
 
-Lay tərəfində keçiricilik qırx üç ilə iki yüz doxsan beş millidarsi arasındadır. Altı quyudan üçü
-stimulyasiya olunub, üçü isə zədələnib.
-
-Norveçli tədqiqatçılar da eyni nəticəyə gəliblər: əldə yalnız quyu testləri olanda fiziki model
-maşın öyrənməsini üstələyir.
-
 Məhdudiyyətlərimizi də açıq deyirik: model heç görmədiyi quyuda dəqiqliyini itirir. Ona görə
 tətbiq belə quyunu təxmin etmək əvəzinə ayrıca qeyd edir.
 
-## 4:55–5:40 · Rəqabət və dəyər · slayd 8–9 · [SPEAKER ?]
+> **[KLİK]**
+
+İndi quyu sınaqlarına baxaq. Bu, datadakı altı bərpa əyrisinin hamısıdır, log-log diaqnostik
+qrafikdə. Nöqtələr ölçülmüş təzyiq və onun törəməsidir, xətlər isə hər quyunun bütün nöqtələrə
+uyğunlaşdırılmış modelidir. Uyğunluq xətası psi-nin onda birindən azdır, bu da ölçmə küyünə yaxındır.
+
+Keçiricilik qırx üç ilə iki yüz doxsan beş millidarsi arasındadır. Üç quyu stimulyasiya olunub,
+üçü zədələnib, GL-01 və GL-10 isə qapalı sərhədə çatır. Modeli görmədiyi data üzərində də
+yoxladıq: GL-01-in ilk gününə uyğunlaşdırılan model sonrakı iki günü ölçmə küyü səviyyəsində
+proqnozlaşdırır.
+
+## 5:20–5:55 · Rəqabət və dəyər · slayd 9–10 · [SPEAKER ?]
 
 > **[KLİK]**
 
-Bunu başqa kim edir? Təxminən otuz məhsulu yoxladıq. Debit ölçmə proqramları debit verir, quyu
-testi proqramları isə təzyiqi şərh edir, amma hər biri ayrılıqda. Heç kim bu ikisini qazlift
-quyuları üçün, sizdə artıq olan sensorlar üzərində birləşdirmir.
-
-Biz heç nəyi əvəz etmirik. SOCAR artıq KAPPA proqramlarından istifadə edir, bizim gündəlik
-debitlərimiz isə məhz bu proqramların ehtiyac duyduğu giriş məlumatıdır.
+Təxminən otuz məhsulu yoxladıq. Debit və quyu testi proqramları var, amma ayrı-ayrılıqda. Heç kim
+onları qazlift quyuları üçün, sizdə artıq olan sensorlar üzərində birləşdirmir. SOCAR isə artıq
+KAPPA-dan istifadə edir və bizim gündəlik debitlərimiz məhz onun ehtiyac duyduğu məlumatdır.
 
 > **[KLİK]**
 
-Bu, nə qazandırır? Ayda bir dəfə yox, hər gün, hər quyu üçün debit. Quyunun hər bağlanması
-avtomatik olaraq skin rəqəminə çevrilir. Bu cür avtomatik yoxlama ilə PETRONAS zədələnmiş
-quyuların axtarışını iki həftədən bir günə endirib.
+Bu, nə qazandırır? Hər gün, hər quyu üçün debit. Quyunun hər bağlanması skin rəqəminə çevrilir:
+PETRONAS bu yolla zədələnmiş quyuların axtarışını iki həftədən bir günə endirib. Burada isə
+zədələnmiş üç quyu gündə min dörd yüz yetmiş barelə qədər əlavə neft verə bilər, bu yuxarı
+həddir. Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir.
 
-Təkcə bu yataqda zədələnmiş üç quyu gündə min dörd yüz yetmiş barelə qədər əlavə neft verə bilər.
-Bu, yuxarı həddir.
-
-Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir. Məlumat heç yerə çıxmır.
-
-## 5:40–6:00 · Komanda · slayd 10 · [SPEAKER ?]
+## 5:55–6:15 · Komanda · slayd 11 · [SPEAKER ?]
 
 > **[KLİK]**
 
@@ -175,7 +173,7 @@ finalçısıdır, hərbi səviyyəli simulyasiyalar və proqram təminatı hazı
 ICPC çempionudur, maşın öyrənməsi və kompüter görməsini tədris idarəetmə sistemlərinə (LMS)
 inteqrasiya edib.
 
-## 6:00–6:30 · Xərclərin azalması · slayd 11 · [SPEAKER ?]
+## 6:15–6:50 · Xərclərin azalması · slayd 12 · [SPEAKER ?]
 
 > **[KLİK]** Sayğac burada dayanır.
 
@@ -196,7 +194,7 @@ Beləliklə, GL-04 quyusu dünən nə qədər neft hasil edib?
 
 İndi bunu bilirsiniz. Təşəkkür edirik.
 
-## 6:30–7:00 · Ehtiyat vaxt
+## 6:50–7:00 · Ehtiyat vaxt
 
-Canlı demo üçün otuz saniyə ehtiyat vaxt var. Yükləmə ləngisə, data keyfiyyəti haqqında danışmağa
+Canlı demo üçün on saniyə ehtiyat vaxt var, üstəlik yuxarıdakı istəyə bağlı cümlə. Yükləmə ləngisə, data keyfiyyəti haqqında danışmağa
 davam edin. Tətbiq işləməsə, ehtiyat videoya keçin və eyni mətnlə davam edin.

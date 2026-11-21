@@ -5,7 +5,7 @@
 Pace: about 140 words per minute. Do not read it word for word; know it.
 
 
---- 0:00-0:45 | HOOK + PROBLEM | slides 2-3 | [SPEAKER ?] -------------------
+--- 0:00-0:50 | HOOK + PROBLEM | slides 2-3 | [SPEAKER ?] -------------------
 
 [CLICK] from the blank slide 1: the question appears and the counter starts.
 
@@ -30,7 +30,7 @@ More than half of SOCAR's oil comes from gas-lifted wells, and every rate
 you measure costs a well test of up to a day, or expensive hardware.
 
 
---- 0:45-1:05 | SOLUTION | slide 4 ------------------------------------------
+--- 0:50-1:05 | SOLUTION | slide 4 ------------------------------------------
 
 [CLICK]
 
@@ -40,7 +40,7 @@ and turns every shut-in into a reservoir diagnosis.
 One browser app, running on SOCAR's own server. No new hardware.
 
 
---- 1:05-3:35 | LIVE DEMO | slide 5 (app) -----------------------------------
+--- 1:05-3:30 | LIVE DEMO | slide 5 (app) -----------------------------------
 
 [CLICK]
 
@@ -65,12 +65,12 @@ readings are a code: minus nine-nine-nine point two five.
 One well reported its gas in cubic metres under a thousand-cubic-feet
 header. Off by twenty-eight times.
 
-Two and a half thousand duplicate rows, sign flips, and one night when all
-ten wells went silent at the same time. That's a data-system failure, not
-ten broken sensors.
+(Optional, cut if the demo runs slow:) Two and a half thousand duplicate
+rows, sign flips, and one night when all ten wells went silent at the same
+time. That's a data-system failure, not ten broken sensors.
 
 And one trap we're proud we caught: during a well test, the flow goes to the
-test separator, so wellhead pressure reads twenty to thirty psi lower than
+test separator, so wellhead pressure reads up to thirty psi lower than
 on a normal day. We measured that effect four independent ways. They agree:
 two and a half percent.
 
@@ -103,7 +103,7 @@ One click: Excel and a report, for both parts.
 "This well is new to the model, so the app flags it instead of guessing.")
 
 
---- 3:35-4:55 | METHODOLOGY + RESULTS | slides 6-7 | [SPEAKER ?] ------------
+--- 3:30-5:20 | METHODOLOGY + RESULTS + WELL TESTS | slides 6-8 | [SPEAKER ?] -
 
 [CLICK]
 
@@ -128,41 +128,41 @@ rediscovered the choke-flow law from the data.
 Final scores: oil two point six percent error, water three point eight, gas
 five point seven. R-squared above zero point nine nine on all three.
 
-On the reservoir side: permeability from 43 to 295 millidarcy. Of the six
-wells, three are stimulated and three are damaged.
-
-Researchers in Norway found the same thing: with only well tests, physics
-beats machine learning.
-
 And we're honest about the limits: on a well it has never seen, accuracy
 collapses, so the app flags it instead of guessing.
 
+[CLICK]
 
---- 4:55-5:40 | COMPETITION + VALUE | slides 8-9 | [SPEAKER ?] --------------
+Now the well tests. These are all six build-ups in the data, on the log-log
+diagnostic. The dots are the measured pressure and its derivative; the lines
+are our model of each well, fitted to every point. The fit error is under a
+tenth of a psi, close to the gauge noise.
+
+Permeability runs from 43 to 295 millidarcy. Three wells are stimulated,
+three are damaged, and GL-01 and GL-10 reach a closed boundary. We also
+tested the model on data it never saw: fitted on GL-01's first day, it
+predicts the next two days at noise level.
+
+
+--- 5:20-5:55 | COMPETITION + VALUE | slides 9-10 | [SPEAKER ?] -------------
 
 [CLICK]
 
-Who else does this? We checked about thirty products. Flow-metering
-software gives you rates; well-test software interprets pressure. Separately. Nobody connects the two for
-gas-lifted wells, on the sensors you already have.
-
-And we don't replace anything. SOCAR already runs KAPPA software; our daily
-rates are exactly the input those tools need.
+We checked about thirty products. Rate tools and well-test tools exist, but
+separately; nobody connects them for gas-lifted wells on the sensors you
+already have. And SOCAR already runs KAPPA: our daily rates are exactly the
+input it needs.
 
 [CLICK]
 
-What does that buy? A rate for every well every day, instead of once a
-month. And every shut-in becomes a skin number automatically: with this
-kind of data-driven screening, PETRONAS cut the search for damaged wells
-from two weeks to one day.
-
-On this field alone, the three damaged wells could make up to 1,470 barrels
-of oil a day more. That's an upper bound.
-
-It all runs on one PC inside SOCAR's network. The data never leaves.
+What does that buy? A rate for every well, every day. Every shut-in
+becomes a skin number: PETRONAS cut its search for damaged wells from two
+weeks to one day this way. Here, the three damaged wells could give up to
+1,470 more barrels a day, an upper bound. All of it on one PC inside SOCAR's
+network.
 
 
---- 5:40-6:00 | TEAM | slide 10 | [SPEAKER ?] --------------------------------
+--- 5:55-6:15 | TEAM | slide 11 | [SPEAKER ?] --------------------------------
 
 [CLICK]
 
@@ -173,7 +173,7 @@ software. Faig Tayibov, two-time ICPC champion, has integrated machine
 learning and computer vision into learning management systems.
 
 
---- 6:00-6:30 | THE COST CUT | slide 11 | [SPEAKER ?] -----------------------
+--- 6:15-6:50 | THE COST CUT | slide 12 | [SPEAKER ?] -----------------------
 
 [CLICK]  (the counter stops here)
 
@@ -194,8 +194,8 @@ So: how much oil did GL-04 produce yesterday?
 Now you know. Thank you.
 
 
---- 6:30-7:00 | BUFFER ------------------------------------------------------
+--- 6:50-7:00 | BUFFER ------------------------------------------------------
 
-Thirty seconds of slack for the live demo. If the upload is slow, keep
+Ten seconds of slack for the live demo, plus the optional line above. If the upload is slow, keep
 talking from the data-quality list. If the app fails, switch to the backup
 video and keep the same script.

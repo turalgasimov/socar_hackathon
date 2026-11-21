@@ -1,7 +1,7 @@
 # Pitch — SOCAR Hackathon 2026
 
-What we have, what we say, and what is still missing. Status as of 21 Nov
-2026, ~17:30 (GitHub `master` at `6e00f4a`).
+What we have, what we say, and what is still missing. Status as of 22 Nov
+2026 (GitHub `master` at `ed1bd26`).
 
 - The spoken script is [`speech.txt`](speech.txt).
 - The research behind every claim is in [`../research/`](../research/).
@@ -32,7 +32,7 @@ Markers:
 - Presentation 10
 
 VFM accuracy is 10 points per phase, split R² /3 + MAPE /2 + WAPE /5. WAPE
-weights by volume, so GL-07 (34% of field oil) dominates.
+weights by volume, so GL-07 (31% of field oil) dominates.
 
 ---
 
@@ -94,16 +94,16 @@ weights by volume, so GL-07 (34% of field oil) dominates.
   10 wells dropped out at once. That's a data-recording system failure, not
   10 broken sensors.
 - **The test-mode trap:** during a well test, flow goes to the test
-  separator, so downstream wellhead pressure reads 19–29 psi lower than on
-  normal days, on all 10 wells. On GL-04 the test range and the normal-day
-  range don't even overlap.
+  separator, so downstream wellhead pressure reads 17–29 psi lower than on
+  normal days, on all 10 wells. On GL-02 and GL-04 the test range and the
+  normal-day range don't even overlap.
   - Measured effect: **2.5%**, agreed by four independent methods (IPR
     2.50%, thermal ratio 2.51%, thermal slope 2.05%, daily vs test window
     2.62%).
   - Applied in the submission: daily rates are scaled up by 80% of each well's measured
     routing factor, the setting that scored best on the leaderboard.
 - **Partial shut-in days:** on the 10 days where a well was shut in part of
-  the day, using the daily average differs by 30% on average (up to 68%)
+  the day, using the daily average differs by 36% on average (up to 104%)
   from integrating only the flowing minutes. Fixed by integrating; field oil
   total moves −0.023%.
 
@@ -138,7 +138,8 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 - **Validated on data the fit never saw.**
   - Fitted on the first 24 h of GL-01, the model forecasts the next 48 h at noise level (0.04 psi).
   - The aquifer / constant-pressure boundary is rejected: it fits 7–9× worse.
-  - A second, independent solver (time-domain finite differences) agrees within 0.02 psi.
+  - Two independent solvers (Laplace/Stehfest and time-domain finite differences) agree within
+    ~0.02–0.03 psi, and the inversion error is ≤ 0.03 psi.
 - **Better than the textbook Horner line where it should be.**
   - On GL-08 (clean 72 h) the two agree within 0.3%.
   - On the short or storage-dominated tests (GL-02/04/06) the derivative is still 3–5% above the
@@ -232,14 +233,14 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 
 | Time | Section | Slides |
 |---|---|---|
-| 0:00–0:45 | Hook + problem | 1–2 |
-| 0:45–1:05 | Solution | 3 |
-| 1:05–3:35 | **Live demo** (the ~60 s processing wait is narrated with the data-quality story) | 4 (app embedded) |
-| 3:35–4:55 | Methodology and results | 5–6 |
-| 4:55–5:40 | Competition, value, deployment | 7–8 |
-| 5:40–6:00 | Team | 9 |
-| 6:00–6:30 | The cost cut: SOCAR today vs RizzML (counter stops) | 10 |
-| 6:20–7:00 | **Buffer** for live-demo hiccups | — |
+| 0:00–0:50 | Hook + problem (click off the blank slide 1 to start) | 2–3 |
+| 0:50–1:05 | Solution | 4 |
+| 1:05–3:30 | **Live demo** (the analysis wait is narrated with the data-quality story) | 5 (app embedded) |
+| 3:30–5:20 | Methodology, results, and the well tests (PTA) | 6–8 |
+| 5:20–5:55 | Competition, value, deployment | 9–10 |
+| 5:55–6:15 | Team | 11 |
+| 6:15–6:50 | The cost cut: SOCAR today vs RizzML (counter stops) | 12 |
+| 6:50–7:00 | **Buffer**; the demo's data-quality story has one optional line to drop | — |
 
 ## 6. Slides
 
@@ -253,11 +254,11 @@ S speaker view with timer, Esc overview. For uploading there is also the PDF,
 from http://localhost:8501 only when it is running. A live counter (bottom right) starts when you
 leave the blank first slide: daily well rates RizzML could compute on one PC (44/s, from our measured 61.6 s for
 2,730 well-days) next to the well tests SOCAR runs in the same time (5,715 wells tested monthly):
-about 18,600 vs 1 after 7 minutes. It stops on the cost slide (11): today vs RizzML on time per rate
+about 18,600 vs 1 after 7 minutes. It stops on the cost slide (12): today vs RizzML on time per rate
 (12–24 h vs 0.02 s), rates per well (monthly vs daily), error between tests (6.0% vs 2.6%) and hardware
 per well ($100–250k vs $0). Press R to reset it before you start. The pilot ask is no longer in the deck;
 team photos go in pitch/deck/team/ as rovshan.jpg, faig.jpg, tural.jpg (initials show until then).
-Press R to reset it before you start. Slide 1 is blank on purpose (stand there while introduced); slide 12 is a references backup.
+Press R to reset it before you start. Slide 1 is blank on purpose (stand there while introduced); slide 13 is a references backup.
 
 | # | Slide | Content | Status |
 |--:|---|---|---|
@@ -267,12 +268,13 @@ Press R to reset it before you start. Slide 1 is blank on purpose (stand there w
 | 4 | Solution | RizzML one-liner · no hardware, on SOCAR's server · the daily estimate drawn through the test dots · animated well cross-section (choke, gas-lift valves, gauge, reservoir) | built |
 | 5 | Demo | The app embedded live (sign in once on this slide before the talk) | built; TODO(us): QR code to open it on a phone |
 | 6 | Physics vs ML | Three bars: copy last test 6.0% · ML, 58 features 5.1% · physics 2.7%. Exponents 2.06 / 0.47 vs 2 / 0.5 | built |
-| 7 | Results + limits | VFM per phase (MAPE, WAPE, R²) · routing gap 2.5% by 4 methods · unseen wells flagged · PTA: k 43–295 md, skin −1.6 to +5.7; three wells stimulated (negative skin), three damaged | built |
-| 8 | Competition | Rates camp vs reservoir-diagnosis camp, RizzML bridging them; SOCAR already runs KAPPA (table in §8) | built |
-| 9 | Value + deployment | Daily rates · skin → lost barrels → stimulation list (up to ~1,470 stb/d of oil on the three damaged wells, ≈ $135k a day gross at $92; an upper bound) · PETRONAS 2 weeks → 1 day · one PC, data never leaves · the shut-in well, pressure building | built |
-| 10 | Team | Photos, education, one achievement and one line each; "Our team trying to understand the provided data" | built |
-| 11 | Cost cut | Centre: SOCAR today vs RizzML on time per rate, rates per well, error, hardware, the frozen compute counter, and money saved ($125–312k of meters per well; up to $1.8B if every SOCAR well were metered) | built |
-| 12 | References | 12 sources | built |
+| 7 | Results + limits | VFM per phase (MAPE, WAPE, R²) · routing gap 2.5% by 4 methods · unseen wells flagged | built |
+| 8 | Well tests (PTA) | The six build-ups on the log-log diagnostic with the model match (the team's figure) · k / skin / boundary table: k 43–295 md, skin −1.6 to +5.7, three stimulated, three damaged, GL-01 and GL-10 closed · fit 0.03–0.08 psi · hold-out on GL-01 | built |
+| 9 | Competition | Rates camp vs reservoir-diagnosis camp, RizzML bridging them; SOCAR already runs KAPPA (table in §8) | built |
+| 10 | Value + deployment | Daily rates · skin → lost barrels → stimulation list (up to ~1,470 stb/d of oil on the three damaged wells, ≈ $135k a day gross at $92; an upper bound) · PETRONAS 2 weeks → 1 day · one PC, data never leaves · the shut-in well, pressure building | built |
+| 11 | Team | Photos, education, one achievement and one line each; "Our team trying to understand the provided data" | built |
+| 12 | Cost cut | Centre: SOCAR today vs RizzML on time per rate, rates per well, error, hardware, the frozen compute counter, and money saved ($125–312k of meters per well; up to $1.8B if every SOCAR well were metered) | built |
+| 13 | References | 12 sources | built |
 | — | Backup | Q&A slides: validation scheme, routing gap, unseen wells, KAPPA | TODO(us) |
 
 ## 7. Demo plan
@@ -376,7 +378,7 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 | Why PTA on daily rates? | The brief asks for it. A 2.6% rate error moves skin by only ~0.013; permeability inherits the error one-to-one. |
 | Is single-phase valid? | Yes: pressure stays above bubble point on every well. |
 | GL-02 and GL-06 build-ups are short. | 5.7 h and 8 h. The model fits through the storage transition, so no straight-line window is needed. A Horner line on the last points reads k 3–4% low. |
-| How do you know the model is right, not just flexible? | Tests on data it never saw: it forecasts the late build-up from the early part at noise level, the competing boundary is rejected 7–9×, and a second solver agrees within 0.02 psi. |
+| How do you know the model is right, not just flexible? | Tests on data it never saw: it forecasts the late build-up from the early part at noise level, the competing boundary is rejected 7–9×, and two independent solvers agree within ~0.02–0.03 psi. |
 | KAPPA already does this. | KAPPA-Automate gets rates from a reservoir model. Ours come from choke physics calibrated on well tests, for gas lift, and can feed KAPPA. Complementary. |
 | Is this KAPPA? | Same physics family (analytical diffusivity solutions + regression). What we add: automatic shut-in detection, and the rates come from our own VFM on the same well. |
 | Deployment and security? | On-premises server, browser access; the data never leaves SOCAR. |
@@ -392,7 +394,7 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 - [ ] TODO(us): QR code for the demo (PTA and lost-oil lines are on slides 7 and 9)
 - [ ] TODO(us): backup video
 - [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
-- [ ] Rehearse twice with a stopwatch; cut the speech if it runs past 6:20
+- [ ] Rehearse twice with a stopwatch; the speech runs about 6:50 by word count, so drop the optional demo line if it runs over
 
 ## Slide rules
 

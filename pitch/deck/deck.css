@@ -74,6 +74,19 @@ p { font-size: 29px; line-height: 1.38; color: var(--ink-2); margin: 0 0 18px; m
 .law sup { font-size: .5em; font-weight: 750; color: var(--oil); }
 .law small { display: block; font-stretch: 100%; font-size: 24px; font-weight: 400; color: var(--ink-2); margin-top: 8px; }
 
+/* PTA: the team's six-build-up figure on a light card, parameters beside it */
+.pta-slide h2 { max-width: none; }
+.pta-lead { max-width: none; font-size: 24px; margin: -8px 0 0; }
+.pta-grid { display: grid; grid-template-columns: 960px 1fr; column-gap: 40px; align-items: start; margin-top: 22px; width: 1408px; }
+.pta-grid .plot { margin: 0; background: #fcfcfb; border-radius: 10px; padding: 8px; }
+.pta-grid .plot img { display: block; width: 100%; height: auto; }
+.params { width: 100%; border-collapse: collapse; font-size: 22px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.params th { text-align: left; font-size: 17px; font-weight: 600; color: var(--ink-3); padding: 0 0 10px; border-bottom: 1px solid var(--stratum); }
+.params td { padding: 10px 0; border-bottom: 1px solid var(--stratum); }
+.params td:first-child { color: var(--ink); font-weight: 650; }
+.params .num { text-align: right; padding-right: 22px; }
+.pta-note { font-size: 19px; line-height: 1.4; margin: 18px 0 0; }
+
 /* competition: two camps, one bridge */
 .camps { display: grid; grid-template-columns: 1fr 360px 1fr; align-items: center; margin-top: 40px; width: 1400px; }
 .camp h3 { font-stretch: 85%; font-size: 30px; font-weight: 650; margin: 0 0 14px; color: var(--ink); }
