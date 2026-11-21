@@ -1,11 +1,14 @@
 <!doctype html>
 <!--
-  SOCAR Hackathon 2026 pitch deck. Run from the repo root:
-    python3 -m http.server 8000 -d pitch/deck      then open http://localhost:8000
+  SOCAR Hackathon 2026 pitch deck. 2D only (SVG and CSS motion, no WebGL). This file is the source;
+  present and upload the one-file build, which needs no server: double-click pitch/RizzML_pitch.html.
+  Rebuild it after editing:  python3 pitch/deck/build.py
+  Slide 1 is blank on purpose: stand there while you are introduced; the live counter starts on the question.
+  Live demo (slide 5): only the app has to run (cd ui && .venv/bin/python -m streamlit run app.py).
+  Before the talk, open slide 5 once and sign in inside it; it stays signed in for the whole talk.
   Keys: arrows / space / clicker = next, F = fullscreen, S = speaker view (notes + timer), Esc = overview,
-  R = reset the barrel counter (it starts when you leave the first slide).
-  PDF for the upload: open http://localhost:8000/?print-pdf and print to PDF.
-  RizzML and <angle-bracket> placeholders wait on the product name, the team and the PTA results.
+  R = reset the live counter (it starts when you leave the first slide).
+  PDF: open the page with ?print-pdf and print to PDF (pitch/RizzML_pitch.pdf is one already made).
 -->
 <html lang="en">
 <head>
@@ -16,9 +19,6 @@
 <link rel="stylesheet" href="deck.css">
 </head>
 <body>
-<canvas id="scene" aria-hidden="true"></canvas>
-<div id="scrim" aria-hidden="true"></div>
-<div id="labels" aria-hidden="true"></div>
 <div id="counter" aria-hidden="true">
   <svg viewBox="0 0 24 24" class="chip"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg>
   <div><b id="rates">0</b><span id="tests"></span><small>daily well rates RizzML could compute on one PC since we started</small></div>
@@ -26,7 +26,12 @@
 
 <div class="reveal"><div class="slides">
 
-  <section data-cam="field" data-labels="gl04">
+  <section class="blank" aria-label="Blank start slide">
+    <aside class="notes">Blank on purpose. Stand here while you are introduced. Click to show the question; the live counter starts then.</aside>
+  </section>
+
+  <section>
+    <svg class="diagram field-map" viewBox="0 0 480 380" role="img" aria-label="Map of the field: ten gas-lifted wells, GL-04 marked"></svg>
     <h1>How much oil did GL-04 produce yesterday?</h1>
     <p>Ten wells, nine months: 3.9 million sensor readings, and only 85 measured rates.</p>
     <svg class="trace hook-chart" data-mode="tests" viewBox="0 0 1408 300" role="img"
@@ -35,7 +40,9 @@
     <aside class="notes">0:00–0:45. Ask the question, pause. "Nobody knows." Readings vs rates; one test a month, Canada requires three for wells this size.</aside>
   </section>
 
-  <section data-cam="well">
+  <section>
+    <svg class="diagram month" data-month="2025-04" viewBox="0 0 496 470" role="img"
+         aria-label="GL-04 in April 2025: one day with a measured rate, 29 days unknown"></svg>
     <div class="col">
       <h2>What you can't see, you lose</h2>
       <p>Between tests, engineers estimate, across separate tools and spreadsheets.</p>
@@ -50,7 +57,9 @@
     <aside class="notes">Between tests engineers estimate. More than half of SOCAR's oil is gas-lifted, and every measured rate costs time and hardware: a separator up to $1.5M, a meter $100–250k.</aside>
   </section>
 
-  <section data-cam="cutaway" data-labels="choke valves gauge reservoir">
+  <section>
+    <svg class="diagram well" data-state="flow" viewBox="0 0 560 760" role="img"
+         aria-label="A gas-lifted well: oil, water and gas flow up the tubing past the gas-lift valves and the downhole gauge, out through the choke"></svg>
     <div class="col">
       <h2 class="brand-hero">RizzML</h2>
       <p class="lead">Turns the sensors SOCAR already has into a daily rate for every well, and every shut-in into a reservoir diagnosis.</p>
@@ -61,14 +70,14 @@
     <aside class="notes">0:45–1:05. One sentence; the line draws itself through the test dots. Then click to the demo.</aside>
   </section>
 
-  <section class="demo" data-scene="hide">
-    <div class="demo-fallback"><p>Live demo. Start the app first: <b>cd ui &amp;&amp; streamlit run app.py</b></p></div>
+  <section class="demo">
+    <div class="demo-fallback"><p>Live demo. Start the app first:<br><b>cd ui &amp;&amp; .venv/bin/python -m streamlit run app.py</b></p></div>
     <div class="demo-bar">Live demo, on the test data you gave us</div>
     <iframe class="demo-frame" hidden title="Live demo of the app"></iframe>
     <aside class="notes">1:05–3:35. Upload, Run; narrate the data-quality story during the ~60 s run. VFM view, PTA view, Horner, export. To leave: click the bar at the top of the slide, then press the right arrow.</aside>
   </section>
 
-  <section data-scene="dim">
+  <section>
     <h2>Machine learning lost, physics won</h2>
     <p>Error on oil rate, each well test predicted only from earlier data (time-forward MAPE). Lower is better.</p>
     <div class="bars" role="img" aria-label="Copy last month's test 6.0%, machine learning 5.1%, our physics model 2.7%">
@@ -82,7 +91,7 @@
     <aside class="notes">3:35. ML with 85 labels is no better than copying last month's test. Physics about 2.5%, twice as accurate. The model rediscovered the choke law.</aside>
   </section>
 
-  <section data-scene="dim">
+  <section>
     <h2>Final scores</h2>
     <div class="bars" role="img" aria-label="Error per phase: oil 2.56%, water 3.82%, gas 5.65%">
       <div class="ours"><span class="name">Oil</span><span class="track"><i style="--v:2.56; --c: var(--oil)"></i></span><span class="val">2.56%</span><span class="aux">WAPE 2.33%, R² 0.998</span></div>
@@ -97,7 +106,7 @@
     <aside class="notes">Read the three scores. Norway (Hotvedt et al.) found the same with only well tests. Unseen wells are flagged.</aside>
   </section>
 
-  <section data-cam="field" data-scene="dim">
+  <section>
     <h2>Everyone sells half</h2>
     <div class="camps">
       <div class="camp"><h3>Rates</h3>
@@ -114,7 +123,9 @@
     <aside class="notes">4:55. About thirty products checked. Never pitch against KAPPA: complementary.</aside>
   </section>
 
-  <section data-cam="cutaway" data-state="shut" data-labels="reservoir gauge">
+  <section>
+    <svg class="diagram well" data-state="shut" viewBox="0 0 560 760" role="img"
+         aria-label="The same well shut in: choke closed, flow stopped, pressure building up from the reservoir"></svg>
     <div class="col">
       <h2>Every shut-in becomes a skin number</h2>
       <div class="readout">
@@ -127,17 +138,18 @@
     <aside class="notes">Every shut-in becomes a skin number automatically. PETRONAS cut skin screening from two weeks to one day. One PC, data never leaves.</aside>
   </section>
 
-  <section class="team-slide" data-cam="wide" data-scene="dim">
+  <section class="team-slide">
     <h2>Team</h2>
+    <p class="team-note">**Our team trying to understand the provided data</p>
     <div class="people">
-      <figure><img src="team/rovshan.jpg" alt="Rovshan Agabeyov" data-initials="RA"><figcaption><b>Rovshan Agabeyov</b><span class="edu">ASOIU, Petroleum Engineering</span><span class="feat">Physics Olympics Champion</span>Author of "PI-ML and  Physical Type Curves  for   Water-Injection Wells"</figcaption></figure>
-      <figure><img src="team/tural.jpg" alt="Tural Gasimov" data-initials="TG"><figcaption><b>Tural Gasimov</b><span class="edu">ASOIU, Robotics Engineering<br>ADA, BSc Computer Science</span><span class="feat">CanSat Global Finalist</span>Has engineered military-grade simulations and software</figcaption></figure>
-      <figure><img src="team/faig.jpg" alt="Faig Tayibov" data-initials="FT"><figcaption><b>Faig Tayibov</b><span class="edu">ADA, BSc Computer Science</span><span class="feat">2× ICPC Champion</span>Has integrated AI into LMS systems</figcaption></figure>
+      <figure><img class="photo" src="team/lung.jpeg" alt="Rovshan Agabeyov"><figcaption><b>Rovshan Agabeyov</b><span class="edu">ASOIU, Petroleum Engineering</span><span class="feat">Physics Olympics Champion</span>Author of "PI-ML and  Physical Type Curves  for   Water-Injection Wells"</figcaption></figure>
+      <figure><img class="photo" src="team/shifu.jpeg" alt="Tural Gasimov"><figcaption><b>Tural Gasimov</b><span class="edu">ADA, BSc Computer Science<br>ASOIU, MsSc Robotics Engineering</span><span class="feat">CanSat Global Finalist</span>Has engineered military-grade simulations and software</figcaption></figure>
+      <figure><img class="photo" src="team/po.jpeg" alt="Faig Tayibov"><figcaption><b>Faig Tayibov</b><span class="edu">ADA, BSc Computer Science</span><span class="feat">2× ICPC Champion</span>Has integrated AI into LMS systems</figcaption></figure>
     </div>
     <aside class="notes">5:40. "We are RizzML." One line each, in this order.</aside>
   </section>
 
-  <section class="finale" data-cam="wide" data-scene="dim">
+  <section class="finale">
     <div class="fin">
       <p class="fin-lead">What it costs to know a well's rate</p>
       <div class="cost">
@@ -155,7 +167,7 @@
     <aside class="notes">6:00. "In these seven minutes SOCAR ran about one well test. On one PC, RizzML could have computed [right number] daily well rates. Today: a 12-to-24-hour test, once a month, 6% error, up to $250k of hardware per well. RizzML: two hundredths of a second, every day, 2.6%, no new hardware. That saves up to $300k of hardware per well; metering every SOCAR well would cost up to $1.8 billion." Then: "So: how much oil did GL-04 produce yesterday?" Pause. "Now you know. Thank you."</aside>
   </section>
 
-  <section class="refs" data-scene="dim">
+  <section class="refs">
     <h2>References</h2>
     <ol>
       <li>SOCAR Annual Report 2024: 52.4% of oil from gas lift (3,921.7 kt); 5,715 operating wells.</li>
@@ -178,9 +190,11 @@
 <script src="vendor/reveal.js"></script>
 <script src="vendor/notes.js"></script>
 <script>
+  const PRINT = /print-pdf/.test(location.search);
+  if (PRINT) document.querySelector('.slides > section.blank').remove();   // no empty first page in the PDF
   Reveal.initialize({
     width: 1600, height: 900, margin: 0, center: false, hash: true,
-    controls: false, progress: true, transition: 'none', backgroundTransition: 'none',
+    controls: false, progress: true, transition: 'fade', transitionSpeed: 'fast', backgroundTransition: 'none',
     preloadIframes: false, plugins: [RevealNotes],
   });
   // Load the app only if it answers; otherwise the slide keeps its 'start the app' message.
@@ -194,7 +208,7 @@
   Reveal.on('ready', e => probe(e.currentSlide));
   Reveal.on('slidechanged', e => probe(e.currentSlide));
 
-  // Live counter: daily well rates RizzML could compute on one PC since the presenter left slide 1,
+  // Live counter: daily well rates RizzML could compute on one PC since the presenter left the blank slide,
   // from our measured 61.6 s for 2,730 well-days (raw CSV to rates); next to it, the well tests SOCAR
   // runs in the same time if its 5,715 operating wells (Annual Report 2024) are tested monthly.
   // Both stop on the cost slide, which shows the frozen numbers.
@@ -208,7 +222,7 @@
   function showFinale() {
     if (frozen === null) frozen = seconds();                 // stop the counter here
     $('fin-tests').textContent = (frozen * TESTS_PER_S).toFixed(1);
-    const target = frozen * RATES_PER_S, start = performance.now(), dur = calm ? 0 : 1600;
+    const target = frozen * RATES_PER_S, start = performance.now(), dur = calm || PRINT ? 0 : 1600;
     const tick = now => {                                     // our number counts up
       const k = dur ? Math.min(1, (now - start) / dur) : 1;
       $('fin-rates').textContent = fmt(target * (1 - (1 - k) ** 3));
@@ -221,7 +235,7 @@
     box.classList.toggle('away', slide.matches('.demo, .refs, .finale'));
     if (slide.matches('.finale')) showFinale();
   }
-  Reveal.on('ready', e => onSlide(e.currentSlide, e.indexh));
+  Reveal.on('ready', e => { onSlide(e.currentSlide, e.indexh); if (PRINT) { frozen = 7 * 60; showFinale(); } });   // PDF: counter as after 7 min
   Reveal.on('slidechanged', e => onSlide(e.currentSlide, e.indexh));
   Reveal.addKeyBinding({ keyCode: 82, key: 'R', description: 'Reset the counter' }, () => {
     t0 = null; frozen = null; box.classList.remove('on'); $('rates').textContent = '0'; $('tests').textContent = '';
@@ -232,14 +246,8 @@
     $('rates').textContent = fmt(t * RATES_PER_S) + ' rates';
     $('tests').textContent = 'vs ' + (t * TESTS_PER_S).toFixed(1) + ' well tests today';
   }, 200);
-  // team photos: show initials until the picture exists (team/<name>.jpg)
-  for (const img of document.querySelectorAll('.people img')) {
-    const fallback = () => img.replaceWith(Object.assign(document.createElement('span'), { className: 'initials', textContent: img.dataset.initials }));
-    if (img.complete && !img.naturalWidth) fallback(); else img.addEventListener('error', fallback);
-  }
 </script>
-<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
-<script type="module" src="scene.js"></script>
+<script src="diagrams.js"></script>
 <script type="module" src="charts.js"></script>
 </body>
 </html>

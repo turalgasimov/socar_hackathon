@@ -9,7 +9,9 @@ Texniki terminlər (VFM, PTA, Horner, skin, time-forward və s.) komanda
 qaydasına uyğun olaraq ingiliscə saxlanılıb.
 
 
---- 0:00-0:45 | GİRİŞ + PROBLEM | slayd 1-2 | [SPEAKER ?] --------------------
+--- 0:00-0:45 | GİRİŞ + PROBLEM | slayd 2-3 | [SPEAKER ?] --------------------
+
+[CLICK] boş 1-ci slayddan: sual görünür və sayğac başlayır.
 
 GL-04 quyusu dünən nə qədər neft hasil edib?
 
@@ -31,7 +33,7 @@ SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir, və ölçülən hər
 ya bir günədək çəkən quyu testi, ya da bahalı avadanlıq tələb edir.
 
 
---- 0:45-1:05 | HƏLL | slayd 3 ----------------------------------------------
+--- 0:45-1:05 | HƏLL | slayd 4 ----------------------------------------------
 
 [CLICK]
 
@@ -42,7 +44,7 @@ Bir brauzer tətbiqi, SOCAR-ın öz serverində işləyir. Yeni avadanlıq lazı
 deyil.
 
 
---- 1:05-3:35 | CANLI DEMO | slayd 4 (tətbiq) ------------------------------
+--- 1:05-3:35 | CANLI DEMO | slayd 5 (tətbiq) ------------------------------
 
 [CLICK]
 
@@ -50,6 +52,8 @@ Gəlin göstərim, bizə verdiyiniz test datası üzərində.
 
 [DEMO] Tətbiqi ikinci noutbukda açın və ya QR kodu göstərin. Çıxışdan əvvəl
 daxil olun (rizzman@socar.az / guessme), tətbiq birbaşa menyuda açılsın.
+Təqdimat: pitch/RizzML_pitch.html faylını iki dəfə klikləyib açın. Çıxışdan
+əvvəl demo slaydını bir dəfə açıb orada daxil olun; giriş bütün çıxış boyu qalır.
 
 Tətbiq mərkəzi serverdə işləyir, mən sadəcə brauzerdən qoşuluram.
 
@@ -103,7 +107,7 @@ Bir klik: hər iki hissə üçün Excel və hesabat.
 işarələyir.")
 
 
---- 3:35-4:55 | METODOLOGİYA + NƏTİCƏLƏR | slayd 5-6 | [SPEAKER ?] ----------
+--- 3:35-4:55 | METODOLOGİYA + NƏTİCƏLƏR | slayd 6-7 | [SPEAKER ?] ----------
 
 [CLICK]
 
@@ -139,7 +143,7 @@ dəqiqliyini itirir, ona görə tətbiq təxmin etmək əvəzinə həmin quyunu
 işarələyir.
 
 
---- 4:55-5:40 | RƏQABƏT + DƏYƏR | slayd 7-8 | [SPEAKER ?] -------------------
+--- 4:55-5:40 | RƏQABƏT + DƏYƏR | slayd 8-9 | [SPEAKER ?] -------------------
 
 [CLICK]
 
@@ -162,7 +166,7 @@ endirdi.
 Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir. Data heç yerə getmir.
 
 
---- 5:40-6:00 | KOMANDA | slayd 9 | [SPEAKER ?] -----------------------------
+--- 5:40-6:00 | KOMANDA | slayd 10 | [SPEAKER ?] -----------------------------
 
 [CLICK]
 
@@ -174,7 +178,7 @@ Tayıbov maşın öyrənməsi və kompüter görməsini təlim idarəetmə siste
 (LMS) inteqrasiya edib.
 
 
---- 6:00-6:30 | XƏRCLƏRİN AZALMASI | slayd 10 | [SPEAKER ?] ------------------
+--- 6:00-6:30 | XƏRCLƏRİN AZALMASI | slayd 11 | [SPEAKER ?] ------------------
 
 [CLICK]  (sayğac burada dayanır)
 

@@ -20,24 +20,7 @@
 html, body { height: 100%; margin: 0; background: var(--basin); overflow: hidden; }
 body.reveal-viewport { background: var(--basin); }
 
-/* layers: 3D field, scrim for the text column, 3D labels, slides, counter */
-#scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; z-index: 0; transition: opacity .9s ease; }
-body.dim #scene { opacity: .16; }
-body.hide-scene #scene { opacity: 0; }
-#scrim { position: fixed; inset: 0; z-index: 1; pointer-events: none; transition: opacity .9s ease;
-  background: linear-gradient(90deg, rgba(21,32,43,.94) 0%, rgba(21,32,43,.82) 34%, rgba(21,32,43,0) 58%); }
-body.dim #scrim, body.hide-scene #scrim { opacity: 0; }
-#labels { position: fixed; inset: 0; z-index: 2; pointer-events: none;
-  font: 500 16px/1.2 Archivo, system-ui, sans-serif; color: var(--ink-2); }
-#labels .lbl { position: absolute; padding-left: 14px; white-space: nowrap; transform: translateY(-50%);
-  opacity: 0; transition: opacity .6s ease; }
-#labels .lbl::before { content: ""; position: absolute; left: 0; top: 50%; width: 7px; height: 7px;
-  border-radius: 50%; background: var(--ink); transform: translate(-50%, -50%); }
-#labels .lbl.on { opacity: 1; }
-#labels .lbl.key { color: var(--ink); font-weight: 650; }
-#labels .lbl.key::before { background: var(--oil); }
-
-.reveal { z-index: 3; font-family: Archivo, system-ui, sans-serif; color: var(--ink); }
+.reveal { z-index: 1; font-family: Archivo, system-ui, sans-serif; color: var(--ink); }
 .reveal .slides { text-align: left; }
 .reveal .slides > section { height: 900px; padding: 84px 96px 72px; box-sizing: border-box; }
 .reveal .progress { color: var(--oil); height: 3px; }
@@ -109,8 +92,6 @@ p { font-size: 29px; line-height: 1.38; color: var(--ink-2); margin: 0 0 18px; m
 .demo-fallback { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
 .demo-fallback p { margin: 0 auto; }
 
-.team { list-style: none; padding: 0; margin: 26px 0 0; font-size: 26px; line-height: 1.7; color: var(--ink-2); }
-.team b { color: var(--ink); font-weight: 650; }
 
 /* comparison finale: the main point, centred */
 .fin { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 96px 120px; }
@@ -132,13 +113,13 @@ p { font-size: 29px; line-height: 1.38; color: var(--ink-2); margin: 0 0 18px; m
 
 /* team: photo, name, one line */
 .team-slide h2 { text-align: center; max-width: none; }
-.people { display: grid; grid-template-columns: repeat(3, 360px); column-gap: 60px; justify-content: center; margin-top: 40px; }
+.team-note { text-align: center; max-width: none; margin: -14px 0 0; font-size: 24px; font-style: italic; color: var(--ink-2); }
+.people { display: grid; grid-template-columns: repeat(3, 360px); column-gap: 60px; justify-content: center; margin-top: 30px; }
 .people figure { margin: 0; text-align: center; }
-.people img, .people .initials { display: block; width: 220px; height: 220px; border-radius: 50%; object-fit: cover;
-  margin: 0 auto; box-shadow: 0 0 0 3px var(--basin), 0 0 0 5px var(--oil); }
-.people .initials { display: grid; place-items: center; background: var(--stratum); color: var(--ink-2);
-  font-stretch: 72%; font-weight: 720; font-size: 72px; }
+.people .photo { display: block; height: 250px; width: auto; max-width: 340px; border-radius: 12px;
+  margin: 0 auto; border: 3px solid var(--oil); box-sizing: content-box; }   /* a border prints in the PDF; a shadow did not */
 .people figcaption { margin: 24px auto 0; font-size: 23px; line-height: 1.35; color: var(--ink-2); max-width: 330px; }
+.people .alias { display: block; font-size: 22px; font-weight: 650; color: var(--oil); margin-bottom: 10px; }
 .people .edu { display: block; font-size: 20px; line-height: 1.3; color: var(--ink-2); margin-bottom: 14px; }
 .people .feat { display: block; font-size: 23px; font-weight: 650; color: var(--ink); margin-bottom: 8px; }
 .people figcaption b { display: block; font-stretch: 72%; font-weight: 720; font-size: 36px; color: var(--ink); margin-bottom: 6px; }
@@ -156,9 +137,64 @@ p { font-size: 29px; line-height: 1.38; color: var(--ink-2); margin: 0 0 18px; m
 #counter b { font-stretch: 62%; font-weight: 800; font-size: 40px; line-height: 1; font-variant-numeric: tabular-nums; margin-right: 12px; }
 #counter #tests { font-stretch: 72%; font-weight: 650; font-size: 26px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 #counter small { display: block; font-size: 15px; color: var(--ink-3); margin-top: 2px; }
+
+/* 2D figures (diagrams.js, charts.js). Drawn complete; motion plays only on the slide being shown. */
+.diagram { position: absolute; display: block; overflow: visible; }
+.diagram text { font-family: Archivo, system-ui, sans-serif; }
+.diagram .lbl { font-size: 19px; fill: var(--ink-2); paint-order: stroke; stroke: var(--basin); stroke-width: 5px; stroke-linejoin: round; }
+.diagram .lbl.key { fill: var(--ink); font-weight: 650; }
+.diagram .cap, .diagram .tick { font-size: 16px; fill: var(--ink-3); }
+.field-map { right: 96px; top: 64px; width: 470px; }
+.field-map .outline { fill: rgba(236,231,220,.025); stroke: var(--stratum); stroke-width: 2; stroke-dasharray: 7 7; }
+.field-map .ping { fill: none; stroke: var(--oil); stroke-width: 2.5; opacity: .6; transform-box: fill-box; transform-origin: center; }
+.month { right: 110px; top: 120px; width: 496px; }
+.month .key { font-size: 21px; fill: var(--ink-2); }
+.month .axis { font-size: 16px; fill: var(--ink-3); }
+.month .end { font-size: 21px; fill: var(--ink); }
+.month .day rect { fill: none; stroke: var(--stratum); stroke-width: 2; }
+.month .day .n { font-size: 14px; fill: var(--ink-3); }
+.month .day .q { font-size: 20px; fill: var(--ink-3); }
+.month .day.hit rect { fill: var(--ink); stroke: var(--ink); }
+.month .day.hit .n, .month .day.hit .q { fill: var(--basin); font-weight: 700; }
+.well { right: 70px; top: 70px; height: 760px; width: auto; }
+.well .bed { fill: none; stroke: rgba(255,255,255,.05); stroke-width: 1.5; }
+.well .flow { fill: none; stroke-width: 4; stroke-linecap: round; stroke-dasharray: 4 14; }
+.well .flow.oil { stroke: var(--oil); } .well .flow.water { stroke: var(--water); } .well .flow.gas { stroke: var(--gas); }
+.well .flow.lift { stroke-width: 3; opacity: .8; }
+.well .flow.inflow { stroke-width: 3; }
+.well[data-state="shut"] .flow { opacity: .18; }
+.well .ring { fill: none; stroke: var(--oil); stroke-width: 2.5; opacity: .5; transform-box: fill-box; transform-origin: center; }
+.well .panel { fill: rgba(21,32,43,.92); stroke: var(--stratum); stroke-width: 2; }
+.well .buildup { fill: none; stroke: var(--oil); stroke-width: 3.5; stroke-linecap: round; stroke-dasharray: 260; }
+
+.reveal .present .field-map .w { animation: pop .5s cubic-bezier(.3,1.5,.6,1) both; animation-delay: calc(var(--i) * 70ms + .2s); }
+.reveal .present .field-map .w { transform-box: fill-box; transform-origin: center; }
+.reveal .present .field-map .ping { animation: ping 2.2s ease-out 1s infinite; }
+.reveal .present .month .day { animation: fadein .35s ease both; animation-delay: calc(var(--i) * 28ms + .2s); }
+.reveal .present .month .day.hit rect { animation: glow 1.2s ease 1.3s both; }
+.reveal .present .well[data-state="flow"] .flow { animation: flow .9s linear infinite; }
+.reveal .present .well[data-state="flow"] .flow.lift { animation-direction: reverse; animation-duration: 1.4s; }
+.reveal .present .well .ring { animation: ripple 2.4s ease-out infinite; animation-delay: calc(var(--k) * .8s); }
+.reveal .present .well .buildup { animation: draw 2.2s cubic-bezier(.6,0,.2,1) .5s both; }
+@keyframes pop { from { opacity: 0; transform: scale(.3); } }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes glow { from { fill: none; stroke: var(--stratum); } }
+@keyframes ping { from { transform: scale(1); opacity: .8; } to { transform: scale(3.2); opacity: 0; } }
+@keyframes flow { to { stroke-dashoffset: -18; } }
+@keyframes ripple { from { transform: scale(.4); opacity: .9; } to { transform: scale(3); opacity: 0; } }
+@keyframes draw { from { stroke-dashoffset: 260; } to { stroke-dashoffset: 0; } }
+
 @media (prefers-reduced-motion: reduce) {
-  #scene, #labels .lbl, #counter { transition: none; }
-  .reveal .present .bars i { animation: none; }
+  #counter { transition: none; }
+  .reveal .present .bars i, .reveal .present .diagram * { animation: none !important; }
   .reveal .present .trace .estimate { transition: none; }
 }
-@media print { #scene, #scrim, #labels, #counter { display: none; } }
+/* PDF (?print-pdf): reveal.js drops slide padding and height when printing; put the slide box back,
+   so text keeps its margins and bottom-anchored charts and sources land where they do on screen. */
+html.reveal-print .reveal .pdf-page > section { width: 1600px !important; height: 900px !important;
+  padding: 84px 96px 72px !important; top: 0 !important; left: 0 !important; }
+html.reveal-print .reveal .pdf-page > section.demo { padding: 0 !important; }
+@media print {
+  #counter { display: none; }
+  .trace .estimate { stroke-dashoffset: 0 !important; }   /* the drawn line, not the empty start of its animation */
+}

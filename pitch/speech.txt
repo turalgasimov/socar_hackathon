@@ -6,7 +6,9 @@ Pace: about 140 words per minute. Do not read it word for word; know it.
 Placeholders in <angle brackets> wait on the PTA results.
 
 
---- 0:00-0:45 | HOOK + PROBLEM | slides 1-2 | [SPEAKER ?] -------------------
+--- 0:00-0:45 | HOOK + PROBLEM | slides 2-3 | [SPEAKER ?] -------------------
+
+[CLICK] from the blank slide 1: the question appears and the counter starts.
 
 How much oil did well GL-04 produce yesterday?
 
@@ -28,7 +30,7 @@ More than half of SOCAR's oil comes from gas-lifted wells, and every rate
 you measure costs a well test of up to a day, or expensive hardware.
 
 
---- 0:45-1:05 | SOLUTION | slide 3 ------------------------------------------
+--- 0:45-1:05 | SOLUTION | slide 4 ------------------------------------------
 
 [CLICK]
 
@@ -38,7 +40,7 @@ and turns every shut-in into a reservoir diagnosis.
 One browser app, running on SOCAR's own server. No new hardware.
 
 
---- 1:05-3:35 | LIVE DEMO | slide 4 (app) -----------------------------------
+--- 1:05-3:35 | LIVE DEMO | slide 5 (app) -----------------------------------
 
 [CLICK]
 
@@ -46,6 +48,8 @@ Let me show you, on the test data you gave us.
 
 [DEMO] Open the app on the second laptop, or show the QR code. Sign in
 before the talk (rizzman@socar.az / guessme) so it opens on the tile menu.
+Deck: double-click pitch/RizzML_pitch.html. Before the talk, open the demo
+slide once and sign in inside it; it stays signed in for the whole talk.
 
 This runs on a central server. I'm only a browser.
 
@@ -98,7 +102,7 @@ One click: Excel and a report, for both parts.
 "This well is new to the model, so the app flags it instead of guessing.")
 
 
---- 3:35-4:55 | METHODOLOGY + RESULTS | slides 5-6 | [SPEAKER ?] ------------
+--- 3:35-4:55 | METHODOLOGY + RESULTS | slides 6-7 | [SPEAKER ?] ------------
 
 [CLICK]
 
@@ -130,7 +134,7 @@ And we're honest about the limits: on a well it has never seen, accuracy
 collapses, so the app flags it instead of guessing.
 
 
---- 4:55-5:40 | COMPETITION + VALUE | slides 7-8 | [SPEAKER ?] --------------
+--- 4:55-5:40 | COMPETITION + VALUE | slides 8-9 | [SPEAKER ?] --------------
 
 [CLICK]
 
@@ -151,7 +155,7 @@ from two weeks to one day.
 It all runs on one PC inside SOCAR's network. The data never leaves.
 
 
---- 5:40-6:00 | TEAM | slide 9 | [SPEAKER ?] --------------------------------
+--- 5:40-6:00 | TEAM | slide 10 | [SPEAKER ?] --------------------------------
 
 [CLICK]
 
@@ -162,7 +166,7 @@ software. Faig Tayibov, two-time ICPC champion, has integrated machine
 learning and computer vision into learning management systems.
 
 
---- 6:00-6:30 | THE COST CUT | slide 10 | [SPEAKER ?] -----------------------
+--- 6:00-6:30 | THE COST CUT | slide 11 | [SPEAKER ?] -----------------------
 
 [CLICK]  (the counter stops here)
 

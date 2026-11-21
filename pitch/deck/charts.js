@@ -7,7 +7,8 @@ const mk = (tag, attrs, parent, text) => {
   if (text !== undefined) e.textContent = text;
   parent.appendChild(e); return e;
 };
-const d = await (await fetch('data/gl04.json')).json();
+// The single-file build inlines the data as window.GL04; served from the folder, it is fetched.
+const d = window.GL04 ?? await (await fetch('data/gl04.json')).json();
 const ms = s => Date.parse(s + 'T00:00:00Z');
 const x0 = ms('2025-01-01'), x1 = ms('2025-09-30');
 const vals = [...d.days.map(r => r[1]).filter(q => q >= 50), ...d.tests.map(r => r[1])];
@@ -57,4 +58,27 @@ for (const svg of document.querySelectorAll('svg.trace')) {
   });
   const [lday, lq] = d.tests[d.tests.length - 1];
   mk('text', { x: X(lday) + 16, y: Y(lq) + (both ? -12 : 7), class: 'end' }, svg, both ? 'Tests' : '9 measured tests');
+}
+
+// One month of GL-04 as a calendar: the single measured day lit, every other day unknown.
+for (const svg of document.querySelectorAll('svg.month')) {
+  const [year, month] = svg.dataset.month.split('-').map(Number);
+  const tested = new Set(d.tests.map(r => r[0]));
+  const first = new Date(Date.UTC(year, month - 1, 1)), days = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const lead = (first.getUTCDay() + 6) % 7, CW = 64, CH = 54, G = 8, top = 76;
+  const name = first.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  mk('text', { x: 0, y: 24, class: 'key' }, svg, `GL-04, ${name}`);
+  ['M', 'T', 'W', 'T', 'F', 'S', 'S'].forEach((w, i) => mk('text', { x: i * (CW + G) + CW / 2, y: 58, 'text-anchor': 'middle', class: 'axis' }, svg, w));
+  let measured = 0;
+  for (let n = 1; n <= days; n++) {
+    const k = lead + n - 1, x = (k % 7) * (CW + G), y = top + Math.floor(k / 7) * (CH + G);
+    const iso = `${year}-${String(month).padStart(2, '0')}-${String(n).padStart(2, '0')}`, hit = tested.has(iso);
+    measured += hit;
+    const g = mk('g', { class: 'day' + (hit ? ' hit' : ''), style: `--i:${n}` }, svg);
+    mk('rect', { x, y, width: CW, height: CH, rx: 6 }, g);
+    mk('text', { x: x + 8, y: y + 20, class: 'n' }, g, n);
+    mk('text', { x: x + CW / 2, y: y + 42, 'text-anchor': 'middle', class: 'q' }, g, hit ? 'test' : '?');
+  }
+  const rows = Math.ceil((lead + days) / 7), yb = top + rows * (CH + G) + 30;
+  mk('text', { x: 0, y: yb, class: 'end' }, svg, `${measured} measured day, ${days - measured} unknown`);
 }

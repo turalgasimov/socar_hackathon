@@ -216,18 +216,21 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 
 ## 6. Slides
 
-The deck is built: `pitch/deck/` (HTML: reveal.js + three.js, works offline).
-Run `python3 -m http.server 8000 -d pitch/deck` from the repo root and open
-http://localhost:8000. Keys: F fullscreen, S speaker view with timer, Esc overview.
-PDF for the upload: open `/?print-pdf` and print. The demo slide loads the app
+The deck is built: `pitch/deck/` (HTML: reveal.js, 2D SVG and CSS motion, no WebGL).
+To present or upload, use `pitch/RizzML_pitch.html`: the whole deck in one file, opened by
+double-click, no server (rebuild with `python3 pitch/deck/build.py` after editing `pitch/deck/`).
+Only the live demo needs something running: the app on port 8501. Before the talk, open the demo
+slide once and sign in inside it; it stays signed in for the whole talk. Keys: F fullscreen,
+S speaker view with timer, Esc overview. For uploading there is also the PDF,
+`pitch/RizzML_pitch.pdf` (11 pages; remake by opening the file with `?print-pdf` and printing). The demo slide loads the app
 from http://localhost:8501 only when it is running. A live counter (bottom right) starts when you
-leave slide 1: daily well rates RizzML could compute on one PC (44/s, from our measured 61.6 s for
+leave the blank first slide: daily well rates RizzML could compute on one PC (44/s, from our measured 61.6 s for
 2,730 well-days) next to the well tests SOCAR runs in the same time (5,715 wells tested monthly):
-about 18,600 vs 1 after 7 minutes. It stops on the cost slide (10): today vs RizzML on time per rate
+about 18,600 vs 1 after 7 minutes. It stops on the cost slide (11): today vs RizzML on time per rate
 (12–24 h vs 0.02 s), rates per well (monthly vs daily), error between tests (6.0% vs 2.6%) and hardware
 per well ($100–250k vs $0). Press R to reset it before you start. The pilot ask is no longer in the deck;
 team photos go in pitch/deck/team/ as rovshan.jpg, faig.jpg, tural.jpg (initials show until then).
-Press R to reset it before you start. Slide 10 is a references backup.
+Press R to reset it before you start. Slide 1 is blank on purpose (stand there while introduced); slide 12 is a references backup.
 
 | # | Slide | Content | Status |
 |--:|---|---|---|
@@ -351,7 +354,7 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 - [ ] TODO(peers): Horner results and plots; whether the routing correction is applied
 - [ ] TODO(you): product name, language, speakers, team rows, pilot size, SOCAR user details
 - [ ] TODO(us): UI end to end on raw CSVs
-- [x] Deck v1 in `pitch/deck/` (hook chart, physics-vs-ML bars, 3D field)
+- [x] Deck in `pitch/deck/` (hook chart, physics-vs-ML bars, 2D field map, month calendar, well cross-section); single file and PDF in `pitch/`
 - [ ] TODO(us): QR code for the demo; fill RizzML, team and PTA numbers in the deck
 - [ ] TODO(us): backup video
 - [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
