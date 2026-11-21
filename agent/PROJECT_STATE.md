@@ -26,7 +26,20 @@ as oil despite being the hardest phase.
 | S0 | shipped model, uncorrected | ×1.000 | 20.2110 |
 | S1 | per-well routing factor, all phases | ×1.028 | **20.9463** |
 | λ=2.5 | routing over-scaled | ×1.071 | 18.3400 |
-| S3 | global GOR factor, gas only | gas ×0.982 | *next* |
+| S3 | S1 + global GOR factor, gas only | gas ×0.982 | 20.9100 |
+
+**S3 rejected.** −0.036 against S1, on Rovshan's own pre-set condition
+("reject if the leaderboard gets worse"). It improved all three *time-forward*
+gas metrics and still lost, and the reason is instructive: the +2.04% gas bias
+was measured against **test-routed** labels, which are themselves ~2.5% high
+relative to normal production. Much of that "gas bias" was the routing offset
+appearing in the gas column. S1 already scales gas up 2.78%, so ×0.982 on top
+corrected the same error twice, in opposite directions.
+
+This is exactly why S3 had to be layered on S1. Built on S0 it would have
+landed between the two and isolated neither change.
+
+**S1 remains the champion at 20.9463.**
 
 **The routing lever is exhausted. λ=1.0 is the optimum.** Three points fix
 the V: ascending slope +0.735/λ below it, −1.738/λ above. The arms intersect
