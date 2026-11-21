@@ -8,14 +8,15 @@ because the sensor columns in well_tests are exactly the HF means over each test
 Protocol
   LOO  : leave-one-test-out. For each of the 85 tests: fit on the other 84, predict the held-out one.
   LOWO : leave-one-well-out. Fit on 9 wells, predict all tests of the 10th (unseen well).
-  Metric: MAPE = mean(|pred / true - 1|) on liquid rate (oil + water), in %.
+  TF   : time-forward (section 3) -- the team's REPORTING protocol, same folds as
+         ml/eda/validate_features.py. Oil rate, 55 targets, with a well-cluster bootstrap.
+  Metric: MAPE = mean(|pred / true - 1|), in %.
 
-Run:  python ml/eda/benchmark_vfm.py            (data dir defaults to <repo>/data)
-      python ml/eda/benchmark_vfm.py --data PATH
+Run:  python ml/eda/benchmark_vfm.py            (LOO + LOWO + TF; data dir defaults to <repo>/data)
+      python ml/eda/benchmark_vfm.py --tf-only  (time-forward section only, ~1 min)
 
-NOTE: LOO here is leave-one-TEST-out with well intercepts (interpolation in time). AGENTS.md argues
-random/LOO splits leak the well level; compare against the time-forward scheme in
-ml/eda/validate_features.py before drawing conclusions.
+NOTE: LOO is interpolation in time and is optimistic for every model; report TF numbers.
+All labels are measured under test-separator routing -- see agent/PROJECT_STATE.md, Open risks.
 """
 import argparse
 import warnings
@@ -196,5 +197,189 @@ def main():
     print(f"\nLeave-one-WELL-out, HistGradientBoosting (raw + static): MAPE {mape(p):.1f}%")
 
 
+# ----------------------------------------------------------------------------------------------
+# 3. Time-forward — the team's reporting protocol (ml/eda/validate_features.py)
+# ----------------------------------------------------------------------------------------------
+# Same (test, train) pairs as validate_features.time_forward(): for each well, for each test
+# k >= 3, train on every other well (all tests) plus THIS well's earlier tests -> 55 targets.
+# Target: oil rate. Per-well models (thermal, IPR, baselines) only see this well's earlier tests.
+#   ridge58      Faig's RidgeCV on the "+ physics interactions" set (58 features)
+#   choke_*      pooled choke law (implicit GLR, no leakage) x water-cut estimate:
+#                  trend  per-well linear WC(t)
+#                  pooled common WC slope, per-well intercept
+#                  vlp    wc = a_w + s*t + c1*dp_tubing + c2*GL  (tubing gradient as WC sensor)
+#   thermal      per-well qo = a + b*T_gauge   (Joule-Thomson)
+#   ipr3         per-well qo = a + b*t + c*Pwf
+#   base_last    copy the well's previous test;  base_trend  per-well linear trend in time
+# Needs data/processed/train_table.parquet (cleaning + features pipeline, agent/AGENTS.md §4).
+TF_PAIRS = [("ridge58", "ens_choke_thermal"), ("base_last", "ens_choke_thermal"),
+            ("base_last", "ridge58"), ("choke_trend", "ens_choke_thermal"),
+            ("thermal", "choke_trend"), ("choke_trend", "choke_vlp")]
+
+
+class TFModels:
+    def __init__(self, tr, feature_cols):
+        L = np.log
+        self.tr = tr
+        self.y = tr.oil_rate_stbd.to_numpy()
+        self.well = tr.well_name.to_numpy()
+        self.t = tr.t.to_numpy()
+        self.wc = tr.wc.to_numpy()
+        self.q = tr.qL.to_numpy()
+        self.W = pd.get_dummies(tr.well_name).to_numpy(dtype=float)
+        self.X = tr[feature_cols].to_numpy()
+        glr = (tr.gl + tr.qL * (1 - tr.wc) * tr.rs / 1000) / tr.qL   # training rows: q known
+        self.Xc = np.c_[self.W, L(tr.S), L(tr.dpc), L(tr.whp), L(glr)]
+        self.lnq = L(self.q)
+
+    def own(self, m, i):
+        return m & (self.well == self.well[i])
+
+    def wc_hat(self, m, i, mode):
+        g = self.own(m, i)
+        if mode == "trend":
+            return float(np.polyval(np.polyfit(self.t[g], self.wc[g], 1), self.t[i]))
+        if mode == "vlp":
+            A = np.c_[self.W, self.t, self.tr.dp_tubing__mean, self.tr.gl]
+            return float(A[i] @ lstsq(A[m], self.wc[m], rcond=None)[0])
+        num = den = 0.0                                          # pooled slope
+        for w in np.unique(self.well[m]):
+            h = m & (self.well == w)
+            if h.sum() < 2:
+                continue
+            tc = self.t[h] - self.t[h].mean()
+            num += tc @ (self.wc[h] - self.wc[h].mean())
+            den += tc @ tc
+        s = num / den
+        return float((self.wc[g] - s * self.t[g]).mean() + s * self.t[i])
+
+    def choke(self, m, i, wc_mode):
+        L = np.log
+        b = lstsq(self.Xc[m], self.lnq[m], rcond=None)[0]
+        r = self.tr.iloc[i]
+        wc = self.wc_hat(m, i, wc_mode)
+        base = self.W[i] @ b[:-4] + b[-4] * L(r.S) + b[-3] * L(r.dpc) + b[-2] * L(r.whp)
+        f = lambda lq: base + b[-1] * L((r.gl + np.exp(lq) * (1 - wc) * r.rs / 1000) / np.exp(lq)) - lq
+        return np.exp(brentq(f, L(10.0), L(1e6))) * (1 - wc)
+
+    def perwell(self, m, i, cols):
+        g = self.own(m, i)
+        A = np.c_[np.ones(len(self.tr)), self.tr[cols].to_numpy()] if cols else np.ones((len(self.tr), 1))
+        return float(A[i] @ lstsq(A[g], self.y[g], rcond=None)[0])
+
+    def last(self, m, i):
+        g = np.where(self.own(m, i))[0]
+        prev = g[self.t[g] < self.t[i]]
+        j = prev[np.argmax(self.t[prev])] if len(prev) else g[np.argmin(np.abs(self.t[g] - self.t[i]))]
+        return float(self.y[j])
+
+    def candidates(self, m, i):
+        ct, cp, cv = (self.choke(m, i, k) for k in ("trend", "pooled", "vlp"))
+        th = self.perwell(m, i, ["T"])
+        return {"choke_trend": ct, "choke_pooled": cp, "choke_vlp": cv,
+                "ens_trend_thermal": (ct + th) / 2, "ens_vlp_thermal": (cv + th) / 2}
+
+
+def tf_folds(tr, rows=None, min_history=3):
+    """(test, train-mask, n_earlier) triples; restricted to `rows` (a train mask) if given."""
+    start, well = tr.start.to_numpy(), tr.well_name.to_numpy()
+    base = np.ones(len(tr), bool) if rows is None else rows
+    out = []
+    for w in pd.unique(well[base]):
+        idx = np.where(base & (well == w))[0]                    # sorted by (well, start)
+        for k in range(min_history, len(idx)):
+            i = idx[k]
+            out.append((i, base & ((well != w) | (start < start[i])), k))
+    return out
+
+
+def time_forward_section(n_boot=5000, seed=42):
+    import sys
+    root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(root / "ml" / "src"))
+    sys.path.insert(0, str(root / "ml" / "eda"))
+    import validate_features as VF
+    from config import PROC
+
+    f = PROC / "train_table.parquet"
+    if not f.exists():
+        print(f"\n[time-forward skipped] {f} not found - run the cleaning + features pipeline first.")
+        return
+    tr = pd.read_parquet(f).sort_values(["well_name", "start"], ignore_index=True)
+    tr["t"] = ((tr.start + (tr.end - tr.start) / 2) - pd.Timestamp("2025-01-01")).dt.total_seconds() / 86400
+    tr["qL"] = tr.oil_rate_stbd + tr.water_rate_stbd
+    tr["wc"] = tr.water_rate_stbd / tr.qL
+    tr["S"] = tr.choke_pct__mean / 100 * tr.choke_max_size_64ths
+    tr["dpc"], tr["whp"] = tr.dp_choke__mean, tr.whp_psia__mean
+    tr["gl"], tr["T"], tr["pwf"] = tr.gas_lift_rate_mscfd__mean, tr.dh_temperature_degf__mean, tr.dh_pressure_psia__mean
+    tr["rs"] = tr.solution_gor_at_pb_scf_stb
+    M = TFModels(tr, VF.feature_sets(tr)["+ physics interactions"])
+    y = M.y
+
+    folds = tf_folds(tr)
+    rows = np.array([i for i, _, _ in folds])
+    P = {k: np.full(len(tr), np.nan) for k in
+         ["ridge58", "base_last", "base_trend", "choke_trend", "choke_vlp", "thermal", "ipr3", "nested"]}
+    kk = np.full(len(tr), np.nan)
+    picks = []
+    for i, m, k in folds:
+        kk[i] = k
+        P["ridge58"][i] = VF.model().fit(M.X[m], y[m]).predict(M.X[[i]])[0]
+        P["base_last"][i] = M.last(m, i)
+        P["base_trend"][i] = M.perwell(m, i, ["t"])
+        P["thermal"][i] = M.perwell(m, i, ["T"])
+        P["ipr3"][i] = M.perwell(m, i, ["t", "pwf"])
+        cand = M.candidates(m, i)
+        P["choke_trend"][i], P["choke_vlp"][i] = cand["choke_trend"], cand["choke_vlp"]
+        # nested selection: choose the variant on an inner time-forward run of this fold's train set
+        err = {}
+        for j, mj, _ in tf_folds(tr, rows=m):
+            for name, p in M.candidates(mj, j).items():
+                err.setdefault(name, []).append(abs(p / y[j] - 1))
+        pick = min(err, key=lambda n_: np.mean(err[n_]))
+        picks.append(pick)
+        P["nested"][i] = cand[pick]
+    P["ens_choke_thermal"] = (P["choke_trend"] + P["thermal"]) / 2
+    E = {k: np.abs(v[rows] / y[rows] - 1) * 100 for k, v in P.items()}
+
+    labels = {"base_last": "Persistence (copy previous test)", "base_trend": "Per-well linear trend",
+              "ridge58": "Ridge, 58 features (validate_features)", "ipr3": "IPR per-well (t, Pwf)",
+              "choke_trend": "Choke x WC trend (pre-set)", "thermal": "Thermal per-well (Joule-Thomson)",
+              "ens_choke_thermal": "Ensemble 1/2 choke + 1/2 thermal (pre-set)",
+              "choke_vlp": "Choke x WC(t, dp_tubing, GL) (post-hoc pick)",
+              "nested": "Nested-selected choke variant (honest)"}
+    print(f"\nOil rate, TIME-FORWARD, n={len(rows)} targets (min_history=3)")
+    print(f"  {'model':46s} {'MAPE':>6s} {'p90':>6s} {'bias':>6s}")
+    for k, lab in labels.items():
+        e = E[k]
+        bias = np.mean(P[k][rows] / y[rows] - 1) * 100
+        print(f"  {lab:46s} {e.mean():5.2f}% {np.percentile(e, 90):5.2f}% {bias:+5.2f}%")
+    print(f"  nested picks: {pd.Series(picks).value_counts().to_dict()}")
+
+    kb = np.where(kk[rows] >= 6, 6, kk[rows]).astype(int)
+    print("\n  TF oil MAPE by number of earlier tests of the same well (6 = 6..8):")
+    print("  " + pd.DataFrame({"n": pd.Series(kb).value_counts().sort_index(),
+                               **{k: pd.Series(E[k]).groupby(kb).mean().round(2)
+                                  for k in ["ridge58", "choke_trend", "thermal"]}}).to_string().replace("\n", "\n  "))
+
+    # paired well-cluster bootstrap of MAPE gaps (targets of one well are correlated)
+    rng = np.random.default_rng(seed)
+    wells = M.well[rows]
+    uw = np.unique(wells)
+    by_w = {w: np.where(wells == w)[0] for w in uw}
+    print(f"\n  MAPE gap A - B, 95% well-cluster bootstrap CI (B = {n_boot}):")
+    for a, b in TF_PAIRS:
+        d = E[a] - E[b]
+        bc = np.array([d[np.concatenate([by_w[w] for w in rng.choice(uw, len(uw))])].mean()
+                       for _ in range(n_boot)])
+        lo, hi = np.percentile(bc, [2.5, 97.5])
+        print(f"  {a:12s} - {b:18s} {d.mean():+5.2f} pp  [{lo:+5.2f}, {hi:+5.2f}]")
+
+
 if __name__ == "__main__":
-    main()
+    import sys as _sys
+    if "--tf-only" not in _sys.argv:
+        main()
+    else:
+        _sys.argv.remove("--tf-only")
+    time_forward_section()

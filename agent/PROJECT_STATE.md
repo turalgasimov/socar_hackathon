@@ -19,7 +19,7 @@ parameters 20) · UI 10 · Presentation 10.
 | 0 | Data cleaning | **done** |
 | 0 | EDA | **done** |
 | 1 | Feature engineering | **done** |
-| 1 | VFM baselines benchmarked | **done** (physics wins, 1.82%) |
+| 1 | VFM baselines benchmarked | **done** (physics wins time-forward: 2.67–3.10% vs Ridge 5.11%) |
 | 1 | Chosen VFM model, fitted and persisted | not started |
 | 1 | Excel: daily oil/water/gas predictions | not started |
 | 2 | Build-up detection | **done** (6 events identified) |
@@ -80,6 +80,40 @@ model can — the same comparison on the Ridge feature stack degrades 3.99% →
 6.44%. **LOO is still the wrong number to report**, but the choke model is not
 leaning on leakage. Gas carries a +2.31% bias from the `gas = oil × Rs` split;
 worth revisiting if gas accuracy matters to scoring.
+
+**Physics variants vs ML, time-forward** (`python ml/eda/benchmark_vfm.py --tf-only`,
+~15 s, needs `train_table.parquet`). Same 55 folds as `validate_features.time_forward()`,
+oil rate, features taken from `train_table` so Ridge-58 is scored on identical rows.
+(The choke × WC-trend row reads 3.10% here vs 3.07% in `timeforward_vfm.py` only because
+the inputs come from cleaned-HF window means rather than the `well_tests.csv` columns.)
+
+| model | TF MAPE | p90 |
+|---|--:|--:|
+| Persistence (copy the well's previous test) | 6.00% | 12.6% |
+| Per-well linear trend | 6.04% | 13.3% |
+| Ridge, 58 features (`validate_features`) | 5.11% | 10.1% |
+| IPR per-well (`t`, `Pwf`) | 8.45% | 9.5% |
+| Choke × water-cut trend | 3.10% | 6.1% |
+| Thermal per-well, `qo = a + b·T_gauge` (Joule-Thomson) | 3.08% | 5.4% |
+| ½ choke + ½ thermal (weights fixed in advance) | 2.93% | 5.1% |
+| **Choke × WC(t, `dp_tubing`, GL), variant chosen by nested TF** | **2.67%** | 5.5% |
+
+Well-cluster bootstrap (5000 resamples, 95% CI of the MAPE gap):
+- Ridge − (choke+thermal) = **+2.17 pp [+1.07, +3.42]** → the physics lead is real.
+- Persistence − Ridge = +0.89 pp [−1.54, +3.34] → Ridge-58 is **not** distinguishable
+  from copying the previous test.
+- choke_trend − (choke+thermal) = +0.17 pp [−0.26, +0.56] → the ensemble gain is
+  **not** established.
+- choke_trend − choke_vlp = +0.54 pp [+0.16, +1.04] → using the tubing pressure drop
+  (`dp_tubing`) as a water-cut sensor is a real gain: of the choke model's oil error,
+  the water-cut estimate is the part that improves most.
+
+Error vs number of earlier tests of the same well (3 → 6–8): Ridge 4.00 → 6.18%,
+choke 3.97 → 2.73%, thermal 5.53 → 2.32% — the physics models improve as history
+accumulates, Ridge does not. **Per-well IPR with free `t` and `Pwf` terms is not
+usable time-forward** (8.45%): it extrapolates the reservoir-pressure decline from
+3–8 points. All rows are still test-routed labels — the train–serve skew under
+Open risks applies to every number in this table.
 
 Artefacts (regenerate — `data/processed/` is gitignored):
 `high_freq_clean.parquet`, `well_tests_clean.parquet`,
@@ -154,7 +188,7 @@ decides item 1.
   and ~1.2× the oil error (3.07%) — comparable to the model's accuracy, not
   dwarfed by it, and *systematic*, so unlike random error it does not average
   out over 2,729 well-days. Independently confirmed in
-  `docs/DATA_REPORT_TASK1_TASK2.md` §6, which estimates test rates 1–4% high.
+  `docs/DATA_REPORT_TASK1_TASK2.md` §1.5, which estimates test rates 1–4% high.
 
   **This is a correction to apply, not a reason to discard the model.** Decide
   before submitting: de-bias the daily predictions, or restrict to the

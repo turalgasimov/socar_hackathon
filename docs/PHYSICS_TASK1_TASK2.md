@@ -105,7 +105,7 @@ Qapalı drenaj sahəsi üçün PSS-də təzyiq düşmə sürəti:
 $$\frac{d\bar p}{dt}\ [\mathrm{psi/day}] = -\frac{q_t\,[\mathrm{rb/d}]}{c_t\,V_p},\qquad V_p = 7758\,A\,h\,\phi\ [\mathrm{rb}],\quad q_t = q_o B_o + q_w B_w$$
 
 > ⚠️ **Sintetik data ziddiyyəti (vacib!):** GL-01 üçün $V_p$ = 7758·110·80·0.194 = 13.2 MMrb, $q_t$ ≈ 1976 rb/d, $c_t$ = 1.275e-5. Bu verir **dp̄/dt ≈ 11.7 psi/gün**, yəni 9 ayda ~3200 psi. Datada müşahidə olunan isə ~0.3 psi/gündür (~80 psi / 9 ay). Üstəlik GL-01-in kumulyativ hasilatı (9.96 MMstb) bu pore volume-dan praktiki olaraq çıxa bilməz.
-> **Nəticə:** ya güclü təzyiq dəstəyi var (aquifer; artan WC da buna uyğundur), ya da generator $\bar p_r(t)$-ni material balance olmadan, birbaşa təyin edib. **Qapalı-tank MB-ni modelə məcburi qoymaq səhv olardı.** $\bar p_r(t)$ datadan (test + build-up) hamar funksiya kimi öyrənilməlidir.
+> **Nəticə:** generator $\bar p_r(t)$-ni material balance olmadan, birbaşa təyin edib. İlkin build-up model fiti aquifer deyil, qapalı sərhədə işarə edir. Sərhəd tipi PTA mərhələsində repo skripti ilə təsdiqlənəcək. **Qapalı-tank MB-ni modelə məcburi qoymaq səhv olardı.** $\bar p_r(t)$ datadan (test + build-up) hamar funksiya kimi öyrənilməlidir.
 
 ---
 
@@ -122,7 +122,8 @@ Gauge-dan datuma düzəliş (gauge ilə perforasiya arasında yalnız maye var):
 
 $$p_{wf,datum} = p_{gauge} + G_L\,(D_{datum} - D_{gauge})$$
 
-- Datum − gauge fərqi quyulardan asılı olaraq 160–300 ft-dir. Ofset 60–130 psi-dir və **təxminən sabitdir**. Ona görə $J$ və Δp hesablarında sadələşir, **amma p* və p̄ datumda verilməlidir.**
+- Datum − gauge fərqi quyulardan asılı olaraq **150–420 ft**-dir. Ofset ~55–170 psi-dir və **təxminən sabitdir**. Ona görə $J$ və Δp hesablarında sadələşir, **amma p* və p̄ datumda verilməlidir.**
+- ⚠️ Real qaz-lift quyusunda shut-in-dən sonra **faza seqreqasiyası** (gauge-in altında su toplanması) qradiyenti zamanla dəyişdirir. Bu, sabit ofsetdən fərqli olaraq k və S-i təhrif edə bilər. Sintetik datadakı build-up əyrilərində belə təhrif görünmür (əyrilər monoton qalxır).
 - PTA üçün: m, k, S yalnız Δp-dən asılıdır, ona görə sabit ofset onlara təsir etmir.
 
 ---
@@ -217,7 +218,7 @@ Shut-in zamanı gauge temperaturu geotermal dəyərə qayıdır: $T_{gauge}^{shu
 
 $$T_f(z) = T_{geo}(z) + g_G\,A\left(1 - e^{-z/A}\right),\qquad A = \frac{\dot m\,c_p\,f(t)}{2\pi\,r_{ti}\,U\,k_e} \;\propto\; q$$
 
-Debit nə qədər böyükdürsə, $A$ o qədər böyük olur və maye yuxarı qalxarkən daha az soyuyur. Gauge perforasiyaya yaxındır (160–300 ft), ona görə $T_f \approx T_{res}$.
+Debit nə qədər böyükdürsə, $A$ o qədər böyük olur və maye yuxarı qalxarkən daha az soyuyur. Gauge perforasiyaya yaxındır (150–420 ft), ona görə $T_f \approx T_{res}$.
 
 ### A6.3 Joule-Thomson qızması
 
@@ -374,7 +375,8 @@ Radial axında derivative sabitdir: $\;\Delta p' = \dfrac{m}{2.303} = 70.6\,\dfr
 
 Hamarlaşdırma: $L$ = 0.1–0.2 log-dövr.
 
-> **Bizim datada:** GL-08 ideal haldır (radial 1–72 saat). GL-01-də derivative 10 saatdan sonra sıfıra düşür, Pws 3511.5 psia-da plato edir. A2.2-dəki MB ziddiyyəti ilə birlikdə bu, **sabit təzyiqli sərhəd / aquifer dəstəyi** hipotezini gücləndirir. GL-10 qısadır və sonda derivative düşür.
+> **Bizim datada:** GL-08 ideal haldır (radial 1–72 saat). GL-01-də derivative 10 saatdan sonra sıfıra düşür, Pws 3511.5 psia-da plato edir. GL-10 qısadır və sonda derivative düşür.
+> ⚠️ **Düzəliş:** əvvəlki versiyada burada "aquifer / sabit təzyiqli sərhəd" hipotezi yazılmışdı. Bu hipotez **geri götürülür**: ilkin analitik model fiti (WBS + skin + radial + sərhəd) qapalı sərhədə işarə edir. Sərhəd tipi PTA mərhələsində repo skripti ilə təsdiqlənəcək.
 
 ## B8. Tədqiqat radiusu və orta təzyiq
 
@@ -406,11 +408,12 @@ $$\frac{\delta k}{k} = \varepsilon,\qquad \delta S = -1.151\log_{10}(1+\varepsil
 
 > **Nəticə:** VFM-də 2% xəta k-da 2% xəta verir, skin-də isə yalnız −0.01. **k-nın dəqiqliyi birbaşa VFM-in dəqiqliyidir.**
 
-## B11. VFM ↔ PTA qapalı dövrəsi
+## B11. VFM ↔ PTA əlaqəsi — nəyi yoxlayır, nəyi yoxlamır
 
-$$q_o^{VFM} \;\xrightarrow{\ \text{Horner}\ }\; (k,\,S,\,p^*) \;\xrightarrow{\ \text{Darcy}\ }\; J = \frac{0.00708\,kh}{\mu B(\ln\frac{r_e}{r_w} - 0.75 + S)} \;\xrightarrow{\ \text{IPR}\ }\; q_o = J(\bar p_r - p_{wf}) \;\xrightarrow{\ \text{müqayisə}\ }\; q_o^{VFM}$$
+$$J_{Darcy} = \frac{0.00708\,kh}{\mu B(\ln\frac{r_e}{r_w} - 0.75 + S)},\qquad k = \frac{162.6\,qB\mu}{mh}\ \Rightarrow\ J_{Darcy} \propto q,\qquad J_{BU} = \frac{q}{p_{end} - p_{wf}} \propto q$$
 
-Dövrə uyğun gəlirsə, VFM və PTA bir-birini təsdiqləyir. Uyğun gəlmirsə, ya radial pəncərə, ya da debit səhvdir.
+> ⚠️ **Düzəliş:** hər iki J q-ya mütənasibdir, ona görə $J_{Darcy}/J_{BU}$ nisbəti q-dan asılı deyil. Qapalı dairədə PSS-də isə $J_{Darcy} \equiv q/(\bar p - p_{wf})$.
+> **Nəticə:** bu dövrə **VFM-i təsdiqləmir**. O, yalnız PTA-nın daxili konsistentliyini yoxlayır: radial pəncərə, sərhəd, p̄-yə çatma. PTA-dan VFM-ə faydalı ötürülə bilən yeganə şey **p̄ (orta lay təzyiqi) ankerləridir**.
 
 ---
 
@@ -422,7 +425,9 @@ Qısa cavab: **yoxlanılmış fizika — bəli; yoxlanılmamış fizika — təh
 |---|---|---|---|
 | GOR = $R_s$ | test GOR / $R_s$ | 0.989 ± 0.073 | ✅ istifadə |
 | Undersaturated | min $p_{wf}$ vs max $p_b$ | 2273 > 1595 | ✅ xətti PI |
-| Neft üçün Darcy IPR | $J_{Darcy}$ vs $J_{BU}$ | 3.90/3.86, 5.80/5.79 | ✅ 6 quyuda J sabitlənir |
+| Build-up Darcy radial axınla konsistentdir | $J_{Darcy}$ vs $J_{BU}$ | 3.90/3.86, 5.80/5.79 | ✅ yalnız PTA QC (nisbət q-dan asılı deyil, B11) |
+| Sabit gauge→datum ofseti k, S-ə təsir edir | riyazi: ofset m-də və $(p_{1hr}-p_{wf})$-də sadələşir | — | ❌ yalnız p*, p̄ datuma keçirilir |
+| Fizika (choke, termal) ML-dən yaxşıdır — time-forward-da da | `benchmark_vfm.py --tf-only`, neft, 55 hədəf | 2.67–3.10% vs Ridge 5.11%, persistence 6.00% | ✅ |
 | Choke orifis forması | öyrənilmiş eksponentlər | 2.05 / 0.47 / 0.46 / −0.61 | ✅ grey-box |
 | Gilbert sabitləri (435/0.546/1.89) | nisbətin quyular arası səpələnməsi | 1.22–1.56× fərq | ❌ sərt kodlama yox, eksponentlər öyrənilir |
 | Joule-Thomson | $(T-T_{res})/DD$ | 2.6–3.5 mF/psi | ✅ E3 estimatoru |

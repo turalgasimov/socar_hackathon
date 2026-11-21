@@ -11,8 +11,9 @@
 3. **Test dəyərləri = HF-in test pəncərəsi üzrə ortası** (fərq < 0.4 psi) → test anındakı sensorlar dəqiq bilinir, label-feature uyğunluğu mükəmməldir.
 4. **GOR ≈ Rs** (completion faylındakı solution GOR; nisbət 0.989 ± 0.073). Bütün quyularda Pwf > Pb (min Pwf 2273 psia > max Pb 1595) → rezervuar doymamışdır (undersaturated) → **qaz = neft × Rs**.
 5. **Choke fizika modeli** (q ∝ S²·√ΔP_choke·√WHP·GLR⁻⁰·⁶): dürüst LOO MAPE maye üçün **1.82%**. Saf ML: RF 5.2%, GBM 3.8%, Ridge 2.9%.
+   **Hesabat metrikası time-forward-dır** (komandanın protokolu, `ml/eda/benchmark_vfm.py --tf-only`). Neft, 55 hədəf: choke × WC(t, dp_tubing, GL) **2.67%** (nested seçim), choke + termal 2.93%, choke × WC trend 3.10%, Ridge-58 5.11%, persistence 6.00%. Fizika ilə Ridge arasındakı fərq +2.17 pp-dir, 95% well-cluster bootstrap intervalı [+1.07, +3.42]. LOO rəqəmləri yalnız interpolyasiyadır.
 6. **Test rejimi effekti**: test zamanı downstream təzyiq ~24 psi, Pwf ~11 psi düşür → **test debitləri normal iş rejimindən 1–4% yüksəkdir**. Test debitlərini interpolyasiya edən model sistematik olaraq yuxarı proqnoz verir.
-7. **Generator neft üçün Darcy IPR istifadə edir**: Horner-dən alınan k, S ilə Darcy PI = build-up-dan ölçülən J_oil (GL-01: 3.90 vs 3.86, GL-06: 5.80 vs 5.79). Bu, **VFM ↔ PTA qapalı dövrəsi** qurmağa imkan verir.
+7. **Build-up-lar Darcy radial axın fizikası ilə konsistentdir**: J_Darcy(k, S) ≈ J_BU (GL-01: 3.90 vs 3.86, GL-06: 5.80 vs 5.79). *Düzəliş: bu, VFM-i **yoxlamır**, çünki hər iki J q-ya mütənasibdir (§3.6). Bu, yalnız PTA-nın daxili yoxlamasıdır.*
 8. **6 shut-in hadisəsi** var (5.6–72 saat), build-up əyriləri təmizdir; ilkin Horner nəticələri hazırdır (§3.3).
 
 ---
@@ -114,7 +115,7 @@ Bundan başqa: test ayları əskikdir (GL-02 mart, GL-05 iyun, GL-08 avqust, GL-
 | F2 | GOR = Rs | test GOR / Rs = 0.989 ± 0.073 | qaz modelə ehtiyac yoxdur: gas = oil × Rs |
 | F3 | Undersaturated | min Pwf 2273 > max Pb 1595 | xətti PI (Vogel lazım deyil) |
 | F4 | Choke tənliyi güclüdür | LOO 1.82% | Pr bilinmədən debit hesablanır |
-| F5 | Neft üçün Darcy IPR | J_Darcy(k, S) ≈ J_oil(build-up), §3.6 | PTA → VFM əlaqəsi |
+| F5 | Build-up-lar Darcy radial axınla konsistentdir | J_Darcy(k, S) ≈ J_BU, §3.6 (nisbət q-dan asılı deyil) | yalnız PTA QC |
 | F6 | Pr hamar azalır | build-up J ilə hesablanmış Pr: GL-01 3519 → 3435, GL-06 2841 → 2772 psia | Pr(t) üçün hamar model (MB / polinom) |
 | F7 | **Joule-Thomson qızması**: T_gauge − T_res = η·(Pr − Pwf), η = 2.6–3.5 mF/psi (6 quyuda); shut-in-də T geotermal dəyərə düşür (qradiyent 1.1–1.44 °F/100ft) | per-well q_o = a + b·T → LOO **2.09%** (korrelyasiya 0.95–0.99) | 3-cü müstəqil estimator (E3) |
 | F8 | Test rejimi bias-ı | §1.5 | sensor-əsaslı model avtomatik düzəldir |
@@ -189,7 +190,7 @@ HF raw ──► Cleaning (sentinel, spike, dup, sort, gap) ──► choke merg
 - Metrikalar: faza üzrə MAPE, R², bias; **trivial baseline** (test interpolyasiyası) ilə müqayisə — Research-ML-də olduğu kimi "baseline-ı keçmə" şərti.
 - **Ablation**: etiket təmizliyi olmadan / test rejimi düzəlişi olmadan / dəqiqəlik vs gündəlik.
 - **UQ**: cross-conformal 90% interval (Research-ML `uq.py` məntiqi) → UI-də proqnoz zolağı.
-- **Fiziki QC**: q ≥ 0, choke = 0 → q = 0, gas/oil = Rs, J_VFM ≈ J_Darcy(PTA).
+- **Fiziki QC**: q ≥ 0, choke = 0 → q = 0, gas/oil = Rs, estimatorların (choke / termal / IPR) bir-biri ilə uyğunluğu.
 
 ---
 
@@ -249,9 +250,11 @@ HF raw ──► Cleaning (sentinel, spike, dup, sort, gap) ──► choke merg
 - **Radial pəncərə seçimi** parametr dəqiqliyinin əsas mənbəyidir: GL-01 (sərhəd 1.4–7 saatda derivative-i əyir), GL-10 (qısa + sərhəd), GL-04 (WBS 10 saatdan çox). Avtomatik seçimə fiziki şərtlər əlavə edilməlidir: WBS bitməsi (unit-slope-dan ≥ 1.5 log-dövr, "1.5-cycle rule"), r_inv < r_e.
 - **Model-based regressiya (güclü əlavə)**: analitik model (WBS + skin + radial + closed circle) Stehfest inversiyası ilə + nonlinear least squares → k, S, C, r_e. Horner (tələb olunan) nəticə + model match = QC. Rəqiblərin çoxu yalnız əl ilə Horner edəcək.
 - **Superposition**: rate history (pilləli choke) Horner-dən daha düzgün olar; README Horner istəyir, ona görə əsas çıxış Horner, superposition yalnız QC.
-- **Gauge → datum**: p* üçün qradiyent düzəlişi (datum − gauge = 280–1810 ft).
+- **Gauge → datum**: qradiyent düzəlişi yalnız p* və p̄ üçün lazımdır (datum − gauge = **150–420 ft**). Sabit ofset həm Pwf-ə, həm Pws-ə eyni əlavə olunur, ona görə m və (P_1hr − Pwf) dəyişmir. Deməli k, S, ΔP_skin sabit ofsetdən asılı deyil.
 
-### 3.6 VFM ↔ PTA qapalı dövrəsi (təqdimat üçün "wow" məqamı)
+### 3.6 PTA konsistentlik yoxlaması (J_Darcy vs J_BU)
+
+> ⚠️ **Düzəliş:** əvvəlki versiyada bu bölmə "VFM ↔ PTA qapalı dövrəsi" adlanırdı və VFM-i təsdiqləyən məqam kimi təqdim olunurdu. Bu **yanlışdır**. k = 162.6·q·B·μ/(m·h) olduğu üçün J_Darcy ∝ q, eyni zamanda J_BU = q/(P_end − Pwf) ∝ q. Deməli onların nisbəti q-dan asılı deyil və VFM debitinin səhvini aşkar edə bilməz. Cədvəl yalnız PTA-nın daxili konsistentliyini yoxlayır: radial pəncərənin seçimi, sərhəd effekti, build-up-ın p̄-yə çatması.
 
 PTA-dan alınan k, S ilə Darcy PI: **J = 0.00708·k·h / (μ_o·B_o·(ln(r_e/r_w) − 0.75 + S))**, və build-up-dan birbaşa J_oil = q_o / (P_end − Pwf):
 
@@ -264,7 +267,7 @@ PTA-dan alınan k, S ilə Darcy PI: **J = 0.00708·k·h / (μ_o·B_o·(ln(r_e/r_
 | GL-08 | 2.49 | 2.72 | infinite-acting |
 | GL-10 | 8.22 | 8.42 | |
 
-→ Generator neft üçün Darcy IPR istifadə edir. Dövrə: **VFM q_o → PTA k, S → J_Darcy → IPR VFM estimatoru (E2) → yenidən q_o**. Konsistentlik VFM və PTA-nı bir-biri ilə yoxlayır.
+→ Build-up-lar Darcy radial axın fizikası ilə konsistentdir. Bu, VFM debitlərinin düzgünlüyünü **sübut etmir**.
 
 ---
 
@@ -295,17 +298,6 @@ PTA-dan alınan k, S ilə Darcy PI: **J = 0.00708·k·h / (μ_o·B_o·(ln(r_e/r_
 
 ---
 
-## 6. Növbəti addımlar (təklif olunan iş bölgüsü)
+## 6. Növbəti addımlar
 
-| Prioritet | İş | Çıxış |
-|---|---|---|
-| P0 | `ml/data_prep.py`: HF + test təmizləmə, choke merge, parquet | təmiz data |
-| P0 | `ml/vfm.py`: E1 choke + E2 IPR + WC + Rs, dəqiqəlik → gündəlik, LOTO/blocked/LOWO CV | `vfm_predictions.xlsx` (2730 sətir) |
-| P0 | `ml/pta.py`: avtomatik Horner + Bourdet + 5 plot, VFM q_o və N_p ilə | `pta_results.xlsx` + PNG/Plotly |
-| P1 | VFM ↔ PTA dövrəsi (J_Darcy), ansambl çəkiləri, conformal UQ | dəqiqlik + təqdimat |
-| P1 | tNavigator T1 (GL-08, GL-01) | verifikasiya slaydı |
-| P2 | Model-based PTA regressiya (Stehfest), T2 benchmark | PTA dəqiqliyi |
-| P2 | UI (Streamlit + Plotly): upload → clean → VFM → PTA → export | Phase 3 |
-
-**Mühit:** `pip install openpyxl streamlit plotly` (hazırda quraşdırılmayıb; pandas 2.2.3, sklearn 1.9, scipy 1.15, torch var).
-**Git:** `data/high_freq_data.csv` Git LFS ilə izlənir (Faig, 1dcd0ae); `data/processed/` gitignore-dadır.
+Komandanın planı və tapşırıq sahibləri: [`agent/NEXT_STEPS.md`](../agent/NEXT_STEPS.md). Cari vəziyyət: [`agent/PROJECT_STATE.md`](../agent/PROJECT_STATE.md). Bu hesabat yalnız tapıntıları saxlayır, plan saxlamır.
