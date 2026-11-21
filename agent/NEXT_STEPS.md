@@ -171,6 +171,29 @@ the binding constraint. Saying so is worth more than pretending otherwise.
 
 ## Tried and rejected — do not redo these
 
+- **Sub-daily integration on all days** (6 h, 3 h and 1 h bins, after the
+  NaN-denominator bug was fixed). The reasoning was sound — a daily rate is
+  the time-average of the instantaneous rate, so predicting once on the day's
+  mean sensors is `f(mean)` where integrating blocks gives `mean(f)`, and 6 h
+  bins sit inside the 12–24 h band the model was calibrated on, unlike the
+  10-minute bins tried earlier.
+
+  Measured, it changes almost nothing: field oil moves **−0.043%**, the median
+  well-day moves **0.013%**, p95 is 0.05%. At roughly 0.02 points per 1% of
+  level, that is ~0.001 points — three orders below what the board resolves.
+
+  The reason is physical: these wells run at steady state. Within-day
+  `dp_choke` variation has a median CV of 3.8%, so `f(mean)` and `mean(f)`
+  barely diverge. It is the same finding as the per-minute dynamics features
+  carrying no rate signal.
+
+  **6 h bins are also actively worse on the partial shut-in days** — a block
+  straddling the shut-in boundary gets classified wholly in or out, moving
+  GL-08 19 Aug by −32.7% and GL-01 15 Apr by −25.3%. 3 h and 1 h resolve the
+  edge better (6.6% and 4.4% worst case), but none of them beats the 10-minute
+  treatment those days already get. Keep the current split: 10-minute
+  integration where the choke closes, daily means everywhere else.
+
 - **Label transfer** (`ml/src/label_transfer.py`, built and measured, not
   shipped). It achieves its stated goal — transferred rows sit at
   `whp_downstream` 168.8–204.7 against the 158.0–205.3 we predict on, versus
