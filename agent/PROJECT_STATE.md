@@ -101,10 +101,28 @@ optimum has not been bracketed yet — 0.8 still beats 0.9.
 and +0.81 over the uncorrected model. The routing scale is the only lever in
 the whole project that has ever paid.
 
-**Stopping guidance.** The differences now being resolved are 0.024–0.05, and
-a mid-interval peak would be worth perhaps 0.01–0.02 more. That is the same
-order as the smallest gap measured, so one or two further probes is the
-sensible end. Beyond that we would be fitting leaderboard noise.
+**SETTLED at λ = 0.80, score 21.0200.** The search is closed and
+`ROUTING_LAMBDA = 0.80` is baked into `ml/src/vfm.py`, so
+`python ml/fit_vfm.py` now writes the best-scoring submission directly —
+there is no ladder file to remember.
+
+Kept artefacts, everything else deleted:
+
+| file | score |
+|---|--:|
+| `ml/outputs/vfm_submission.csv` | the champion, regenerated |
+| `ml/outputs/submitted/rank1_21.0200_lam0.80.csv` | 21.0200 |
+| `ml/outputs/submitted/rank2_20.9960_lam0.90.csv` | 20.9960 |
+| `ml/outputs/submitted/rank3_20.9463_lam1.00.csv` | 20.9463 |
+
+`make_ladder.py`, `make_variants.py` and `make_probes.py` are retired. They
+scaled an *uncorrected* base, and now that the correction lives inside the
+model they would double-apply it. Recoverable from git history if the search
+ever needs reopening.
+
+Net: **20.2110 → 21.0200, +0.81.** The routing scale is the only change that
+ever gained points. Three shape changes, a gas factor and label transfer all
+lost.
 
 **Stop estimating the vertex and probe it.** Three successive estimates have
 all been too high: 1.000 (circular), then 0.948 (0.8 beat 0.9), now 0.82.

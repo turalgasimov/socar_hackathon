@@ -35,16 +35,16 @@ The first two land on the subcritical choke law without being told to, which is 
 
 | well | mean predicted oil | mean tested oil | diff |
 |---|--:|--:|--:|
-| GL-01 | 905 | 1,008 | -10.2% |
-| GL-02 | 1,191 | 1,281 | -7.0% |
-| GL-03 | 712 | 750 | -5.1% |
-| GL-04 | 706 | 764 | -7.7% |
-| GL-05 | 736 | 790 | -6.9% |
-| GL-06 | 696 | 720 | -3.3% |
-| GL-07 | 4,284 | 4,458 | -3.9% |
-| GL-08 | 1,419 | 1,476 | -3.8% |
-| GL-09 | 1,219 | 1,260 | -3.3% |
-| GL-10 | 1,858 | 1,956 | -5.0% |
+| GL-01 | 937 | 1,008 | -7.0% |
+| GL-02 | 1,222 | 1,281 | -4.6% |
+| GL-03 | 738 | 750 | -1.7% |
+| GL-04 | 738 | 764 | -3.5% |
+| GL-05 | 756 | 790 | -4.3% |
+| GL-06 | 710 | 720 | -1.3% |
+| GL-07 | 4,353 | 4,458 | -2.4% |
+| GL-08 | 1,440 | 1,476 | -2.5% |
+| GL-09 | 1,254 | 1,260 | -0.5% |
+| GL-10 | 1,891 | 1,956 | -3.3% |
 
 Predicted daily rates sitting a few per cent below tested rates is the
 expected direction: a test runs the well at lower back-pressure than normal
