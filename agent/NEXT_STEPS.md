@@ -171,6 +171,19 @@ the binding constraint. Saying so is worth more than pretending otherwise.
 
 ## Tried and rejected — do not redo these
 
+- **Critical choke flow as the reason the choke law overstates the routing
+  effect.** Rejected. `python ml/eda/routing_checks.py` reproduces it: one
+  pooled fit with only the dPc term split at a pressure ratio of 0.60 gives
+  an exponent of **0.475** above and **0.478** below, with zero mean residual
+  either side. Critical flow would collapse the low-ratio exponent toward 0;
+  34 of 85 tests sit below 0.55 and it does not budge.
+
+  Use this argument, not a correlation. A correlation across well averages
+  (−0.16) cannot detect a threshold effect and is easy for a reviewer to
+  dismiss. The same script also measures post-test recovery — 96.3% at +1 h,
+  97.5% at +6 h — which is what establishes that the windows either side of a
+  test are normal-regime and the label transfer is sound.
+
 - **Replacing the static `Rs` in the gas split with the well's own GOR
   history.** The diagnosis was right — static `Rs` sits ~2.1% above each
   well's actual producing GOR, which is where the +2.31% gas bias comes from —
