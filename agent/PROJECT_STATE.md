@@ -162,8 +162,8 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.pkl`, TF oil 2.56%) |
 | 1 | Excel: daily oil/water/gas predictions | **done** (2,729 well-days) |
 | 2 | Build-up detection | **done** (6 events identified) |
-| 2 | Horner analysis → k, skin, ΔP_skin | not started |
-| 2 | PTA plots per shut-in event | not started |
+| 2 | Horner analysis → k, skin, ΔP_skin | **exploratory reference done** (`ml/eda/pta_explore.py`, windows A/B); deliverable Excel not started |
+| 2 | PTA plots per shut-in event | **done as exploration** (`ml/outputs/figures/pta/`, 9 figures + README) |
 | 3 | Streamlit UI | not started |
 | — | Presentation | not started |
 
@@ -179,6 +179,21 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 - `reservoir_pvt.csv` and `well_completion.csv` audited — clean, no repairs needed.
 
 **EDA** (`ml/eda/run_eda.py`) — 7 figures + `ml/outputs/eda_summary.md`.
+
+**PTA exploration** (`ml/eda/pta_explore.py`, ~40 s) — theory atlas, all six
+build-ups with every classic plot (history, Cartesian, log-log + Bourdet
+derivative, Horner, MDH), and reference results for two Horner windows in
+`ml/outputs/figures/pta/` (see its README). Rate = VFM S1 oil of the last full
+day before each shut-in, t_p = 24·N_p/q.
+- Window A (IARF plateau) vs window B (last 0.3 cycle of the plateau) agree
+  within ~1.3% on k and ~0.1 on skin on GL-02/04/06/08.
+- GL-01 and GL-10 never reach a 0.3-cycle IARF plateau (boundary); flagged,
+  B = A.
+- Example: GL-08 m 93.47 psi/cycle, k 42.7 md, S −1.67, ΔP_skin −135 psi.
+- A constant gauge→datum offset cancels in m and in (P1hr − p_wf), so k, S and
+  ΔP_skin are datum-independent; only reported pressures (p*) move.
+- k scales 1:1 with the VFM rate: S0 → S1 raises k by 1.8–5.7%, while skin
+  moves by ≤ 0.03.
 
 **Features** (`ml/src/features.py`) — window aggregation, per-well robust
 z-scores, static capacity properties, physics interactions. Validated in
