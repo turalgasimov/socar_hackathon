@@ -91,10 +91,20 @@ optimum has not been bracketed yet — 0.8 still beats 0.9.
 | λ | score |
 |---:|--:|
 | 0.0 | 20.2110 |
+| 0.5 | 20.9100 |
 | **0.8** | **21.0200** |
 | 0.9 | 20.9960 |
 | 1.0 | 20.9463 |
 | 2.5 | 18.3400 |
+
+**Bracketed: the optimum is in (0.5, 0.9).** λ=0.8 has gained +0.074 over S1
+and +0.81 over the uncorrected model. The routing scale is the only lever in
+the whole project that has ever paid.
+
+**Stopping guidance.** The differences now being resolved are 0.024–0.05, and
+a mid-interval peak would be worth perhaps 0.01–0.02 more. That is the same
+order as the smallest gap measured, so one or two further probes is the
+sensible end. Beyond that we would be fitting leaderboard noise.
 
 **Stop estimating the vertex and probe it.** Three successive estimates have
 all been too high: 1.000 (circular), then 0.948 (0.8 beat 0.9), now 0.82.
