@@ -41,6 +41,7 @@ streamlit 1.53.1, pyarrow 23.0.0, openpyxl 3.1.5.
 ## 3. Layout
 
 ```
+CLAUDE.md        loader — imports the four agent/ docs at session start
 agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs; high_freq_data.csv (257 MB) via Git LFS
 data/processed/  derived parquet — GITIGNORED, regenerate with the pipeline
@@ -148,4 +149,6 @@ Also:
 
 - Check `NEXT_STEPS.md` before starting, so two agents do not take the same task.
 - Do not commit anything to `data/processed/` — it is derived and gitignored.
+- Do not delete the root `CLAUDE.md` or put content in it. It only imports the
+  `agent/` docs, and that import is what makes them load automatically.
 - Before committing, re-run the scripts you touched and confirm they still pass.

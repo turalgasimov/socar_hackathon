@@ -56,6 +56,7 @@ Full defect list and the reasoning behind each repair:
 ## Layout
 
 ```
+CLAUDE.md        loader — imports the agent/ docs for Claude Code
 agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs (high_freq_data.csv via Git LFS)
 data/processed/  derived parquet, gitignored — regenerate with the commands above

@@ -137,5 +137,6 @@ the binding constraint. Saying so is worth more than pretending otherwise.
 - Unseen-well CV is 69.7% MAPE — worse than predicting the global mean.
 - `data/processed/` is gitignored; a fresh clone must run the cleaning step.
 - `git lfs install` before cloning, or `high_freq_data.csv` is a 130-byte stub.
-- `origin/ui` is a stale branch off the old `36ff81e`; it only renames
-  `web/`→`ui/`, which master already did. Delete it rather than merging.
+- Root `CLAUDE.md` is a loader that imports the `agent/` docs. Claude Code only
+  auto-reads a root `CLAUDE.md`, so deleting it silently stops the agent docs
+  from loading. Edit the files in `agent/`, never the loader.
