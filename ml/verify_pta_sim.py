@@ -68,19 +68,28 @@ GATE = 0.02
 ORDERS = (10, 12, 14, 16)   # N=8 is far too coarse to be a reference
 
 
-def laplace(rock, k, S, C, q, t_h, ref_rw, N=12):
+def laplace(rock, k, S, C, q, t_h, ref_rw, N=12, re=None):
     """Drawdown, psi (negative). `ref_rw` is the radius C_D and t_D are
     referenced to: the true rw (shipped), or rw exp(-S) (the FD's own model, in
-    which case skin is already in the geometry so the explicit term is zero)."""
+    which case skin is already in the geometry so the explicit term is zero).
+
+    `re` selects the outer boundary and MUST match what the well ships with:
+    GL-01 and GL-10 ship a closed circle, the other four infinite-acting. An
+    earlier version of this script always used pd_infinite, so those two wells
+    were verified against a model they do not ship. Rovshan's agent spotted the
+    symptom -- our GL-01 inversion errors disagreed (0.0231 vs their 0.003)
+    because we were inverting different models, not different grids.
+    """
     h, phi, ct, rw, B, mu = (rock[x] for x in ("h", "phi", "ct", "rw", "B", "mu"))
     s_exp = S if ref_rw == rw else 0.0
     CD = 0.8936 * C / (phi * ct * h * ref_rw ** 2)
     tD = 0.0002637 * k * t_h / (phi * mu * ct * ref_rw ** 2)
+    pd0 = PM.pd_infinite if re is None else PM.pd_closed(re / ref_rw)
     saved = PM.V, PM._NV
     if N != 12:
         PM.V, PM._NV = PM.stehfest_weights(N), np.arange(1, N + 1)
     try:
-        pD = PM.invert(PM.with_storage_skin(PM.pd_infinite, CD, s_exp), tD)
+        pD = PM.invert(PM.with_storage_skin(pd0, CD, s_exp), tD)
     finally:
         PM.V, PM._NV = saved
     return -SK(q, rock, k) * pD
@@ -109,12 +118,16 @@ def main() -> None:
         rwe = p.wellbore_radius_ft * np.exp(-S)
         g = np.geomspace(0.1, r.duration_h, 40)
 
-        t, ps = PS.simulate(k, S, C, rock, [(r.duration_h, q)], boundary="closed")
+        # the boundary each well actually ships with
+        re_ship = float(r.r_e_ft) if r.boundary == "closed" else None
+        t, ps = PS.simulate(k, S, C, rock, [(r.duration_h, q)],
+                            re=re_ship, boundary=r.boundary)
         fd = np.interp(g, t, ps)
-        own = laplace(rock, k, S, C, q, g, rwe)
-        ship = laplace(rock, k, S, C, q, g, p.wellbore_radius_ft)
-        band = np.array([laplace(rock, k, S, C, q, g, rwe, N) for N in ORDERS])
-        n16 = laplace(rock, k, S, C, q, g, rwe, 16)
+        own = laplace(rock, k, S, C, q, g, rwe, re=re_ship)
+        ship = laplace(rock, k, S, C, q, g, p.wellbore_radius_ft, re=re_ship)
+        band = np.array([laplace(rock, k, S, C, q, g, rwe, N, re=re_ship)
+                         for N in ORDERS])
+        n16 = laplace(rock, k, S, C, q, g, rwe, 16, re=re_ship)
 
         d_own = float(np.abs(fd - own).max())
         d_best = min((float(np.abs(fd - c).max()), N) for c, N in zip(band, ORDERS))
