@@ -218,6 +218,58 @@ Only the shipped file is kept
 (`ml/outputs/submitted/pta_model_match_8.3840_SHIPPED.csv`). The A/B files
 were built on the S1 rate, which is itself no longer kept.
 
+**Next PTA probes — built, unscored** (`python ml/eda/pta_probes.py` →
+`ml/outputs/candidates/pta_*.csv`). Each file makes one change against the
+8.3840 base.
+
+The rate probes take q from the measured well tests through the inflow
+relation (`ml/src/pta_rate.py`), not from the VFM choke law. The routing
+over-response of the choke law is the known defect.
+
+- **Validation of the method.** Leave-one-out over 38 interior tests: MAE
+  1.85%, bias −0.15%.
+- **IPR / VFM rate ratio r**, last full day before each shut-in:
+
+  | well | r |
+  |---|--:|
+  | GL-01 | 1.0115 |
+  | GL-02 | 0.9676 |
+  | GL-04 | 1.0052 |
+  | GL-06 | 1.0579 |
+  | GL-08 | 0.9858 |
+  | GL-10 | 1.0305 |
+
+  GL-02, GL-06 and GL-10 differ by more than the method's own error.
+- **Rate scaling** (k × r, S − 1.1513·log10 r, m unchanged) is exact: a full
+  refit gives GL-06 k 312.72 against 312.59 analytic.
+
+| order | file | change | rule |
+|---|---|---|---|
+| P0 | `pta_P0_skin_sign_abs.csv` | \|S\|, \|ΔP_skin\| on GL-02/04/08 (positive-skin convention) | keep if > 8.3840; go to P1 either way |
+| P1 | `pta_P1_k_from_IPR_rate.csv` | k from the IPR rate, all six wells | won → P2_up; lost → P2_down |
+| P2 | `pta_P2_up_IPR_rate_x1.5.csv` | r^1.5 | only if P1 won; keep if > P1, then stop |
+| P2 | `pta_P2_down_IPR_rate_x-0.5.csv` | r^−0.5 | only if P1 lost; keep if > 8.3840, then stop |
+| P1b | `pta_P1b_IPR_rate_at_shutin_minute.csv` | IPR rate at the shut-in minute | only if P1 won and probes remain |
+
+Building the final file:
+
+- Combine only the changes that won individually:
+  `python ml/eda/pta_probes.py --rate <best> [--abs-skin] --out <file>`.
+- If nothing wins, the 8.3840 base stays the answer.
+- A winning change must then go into `ml/make_pta.py` (and `SHIPPED` be
+  replaced) and into `ui/pipeline.py`.
+
+Checked and not probed:
+
+- **Constant-pressure boundary:** fit 7–9x worse.
+- **Rate-history superposition:** k ≤ 0.23%.
+- **Weighting or dropping the early minutes:** k ≤ 0.37%.
+- **Exact (Talbot) inversion instead of Stehfest N=12:** k ≤ 0.074%.
+- **Effective-radius skin:** k ≤ 0.08%.
+
+These checks are scratch work by Rovshan's agent and are not in the repo;
+the boundary test is in the notebook.
+
 ## Deliverables checklist
 
 From `docs/Deliverables.pdf` — the authoritative list, stricter than the brief
@@ -227,7 +279,7 @@ in `docs/README.md`. Read it before assuming a deliverable is done.
 |---|---|---|
 | 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | **done** — VFM `ml/outputs/vfm_submission.csv`; PTA `ml/outputs/pta_submission.csv` + `pta_results.xlsx` (exact model match, **8.3840 / 20**, identical to the scored file). Both template-exact |
 | 2 | Trained model file(s) **in `.pkl` format** | **done** — `ml/models/vfm.pkl` (+ `.joblib`) |
-| 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` (VFM only; PTA results are not in a notebook yet) |
+| 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` (Phase 1) and `notebooks/PTA_Phase2.ipynb` (Phase 2, `python ml/build_pta_notebook.py`) |
 | 4 | A folder containing all necessary PTA plots | **done** — `ml/outputs/figures/pta/`: 9 figures (2 theory, 1 overview, 6 build-ups × 6 panels, model overlay on each) + README |
 
 > "During the evaluation, we will ask you to run and demonstrate your
@@ -315,6 +367,23 @@ Two results worth knowing:
   above the IARF level, coming down from the storage hump, so the straight
   line is too steep. There the model's k is 3.0–4.4% higher and its skin
   0.26–0.29 higher.
+
+**PTA notebook** (`python ml/build_pta_notebook.py`, ~90 s; needs nbformat,
+nbclient, ipykernel) — `notebooks/PTA_Phase2.ipynb`, 25 cells, all executed,
+9 inline figures. It rebuilds the scored file (identical), then runs two tests
+on data the fit never saw:
+
+- **Forecast from the early part of the build-up.**
+  - Closed wells forecast at noise level: GL-01 fitted on 24 h gives 0.038 psi
+    RMS over 24–72 h.
+  - Infinite wells: 0.15–0.18 psi RMS over a decade, ~0.2% of the pressure
+    rise.
+  - k from the early part alone is within 0.2% of the full-data k.
+- **The constant-pressure boundary is rejected on GL-01 and GL-10.**
+  - Fit RMS is 7–9x worse and the forecast 8–48x worse.
+  - The residuals form long same-sign runs: 3 in 41, against ~21 for noise.
+  - `pta_model.py` carries this boundary for the comparison only; the
+    submitted fit does not use it.
 
 **PTA exploration** (`ml/eda/pta_explore.py`, ~60 s) — theory atlas, all six
 build-ups with every classic plot (history, Cartesian, log-log + Bourdet
@@ -466,10 +535,13 @@ Artefacts (regenerate — `data/processed/` is gitignored):
 **The plan, with owners and estimates, lives in [`NEXT_STEPS.md`](NEXT_STEPS.md).**
 This file records what *is*; that file records what is *planned*.
 
-**Phase 1 is closed at 21.0200; PTA parameters at 8.3840 / 20** (result file
-and plot folder both done). What remains: Streamlit UI (10 pts), presentation
-(10 pts), and the PTA results in a notebook — deliverable 3 asks for a notebook
-showing the best results, and only the VFM one exists.
+**Phase 1 is closed at 21.0200; PTA parameters at 8.3840 / 20** (result file,
+plot folder and notebook all done). What remains: Streamlit UI (10 pts) and the
+presentation (10 pts). The app runs the same PTA on uploaded data
+(`ui/pipeline.py`), and `python ui/check_pipeline.py data` confirms it matches
+`ml/outputs/pta_submission.csv` (k within 0.5%, skin within 0.02). **Any change
+to the submitted PTA must be mirrored in `ui/pipeline.py`**, or the app and the
+submission disagree and that check fails.
 
 Two questions never answered, both still worth asking the organisers:
 

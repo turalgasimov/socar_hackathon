@@ -15,6 +15,7 @@ Build-up after a long production period t_p at rate q (superposition):
     dp_D(dt) = p_wD(dt_D) - [p_wD(t_pD + dt_D) - p_wD(t_pD)]
     infinite:  [ ] = 0.5 ln(1 + dt/t_p)        (t_p >> dt, logarithmic regime)
     closed:    [ ] = 2 dt_D / r_eD^2           (pseudo-steady state reached during t_p)
+    constant pressure at r_e: [ ] = 0          (steady state reached during t_p; comparison only)
 
 Fitted: ln k, S, ln C (+ ln r_e for the closed circle) by least squares on the build-up.
 Reported, as the brief asks: k, S, the semi-log (Horner) slope the model implies
@@ -67,6 +68,16 @@ def pd_closed(reD: float):
     return f
 
 
+def pd_constant_pressure(reD: float):
+    """Finite-wellbore radial flow with a constant-pressure circle at reD (pressure support).
+    Not used by the submitted fit; kept to show that the build-ups reject it (notebooks/PTA_Phase2.ipynb)."""
+    def f(s):
+        b = np.sqrt(s); a = b * reD
+        R = kve(0, a) / ive(0, a) * np.exp(-2 * (a - b))
+        return (kve(0, b) - R * ive(0, b)) / (s * b * (kve(1, b) + R * ive(1, b)))
+    return f
+
+
 def with_storage_skin(pD0, CD: float, S: float):
     return lambda s: (s * pD0(s) + S) / (s * (1 + CD * s * (s * pD0(s) + S)))
 
@@ -79,9 +90,14 @@ def buildup_dp(theta, dt_h, tp_h, q, rock, boundary):
     CD = 0.8936 * C / (phi * ct * h * rw ** 2)
     if boundary == "infinite":
         pD = invert(with_storage_skin(pd_infinite, CD, S), tD) - 0.5 * np.log(1 + dt_h / tp_h)
-    else:
+    elif boundary == "closed":
         reD = np.exp(theta[3]) / rw
         pD = invert(with_storage_skin(pd_closed(reD), CD, S), tD) - 2 * tD / reD ** 2
+    elif boundary == "constant_pressure":     # steady state reached during t_p: no superposition term
+        reD = np.exp(theta[3]) / rw
+        pD = invert(with_storage_skin(pd_constant_pressure(reD), CD, S), tD)
+    else:
+        raise ValueError(f"unknown boundary {boundary!r}")
     return 141.2 * q * B * mu / (k * h) * pD
 
 
@@ -93,7 +109,7 @@ def horner_slope(k, q, rock):
 def fit_buildup(dt_h, dp_psi, tp_h, q, rock, k0, S0, C0, boundary="infinite", re0=None):
     th0 = [np.log(k0), S0, np.log(max(C0, 1e-3))]
     lo, hi = [np.log(k0 / 5), -6, np.log(1e-4)], [np.log(k0 * 5), 40, np.log(2)]
-    if boundary == "closed":
+    if boundary in ("closed", "constant_pressure"):
         th0.append(np.log(re0)); lo.append(np.log(150)); hi.append(np.log(30000))
     # default tolerances = the configuration that produced the scored file. k and S are correlated,
     # so the misfit valley is flat: different starts or float32 vs float64 input move k by <= ~0.05%
@@ -102,7 +118,7 @@ def fit_buildup(dt_h, dp_psi, tp_h, q, rock, k0, S0, C0, boundary="infinite", re
                       bounds=(lo, hi), x_scale="jac")
     k, S, C = np.exp(r.x[0]), r.x[1], np.exp(r.x[2])
     m = horner_slope(k, q, rock)
-    return dict(boundary=boundary, k=k, S=S, C=C, re=np.exp(r.x[3]) if boundary == "closed" else np.nan,
+    return dict(boundary=boundary, k=k, S=S, C=C, re=np.exp(r.x[3]) if len(r.x) == 4 else np.nan,
                 m=m, dP_skin=0.869 * m * S, rms_psi=float(np.sqrt(np.mean(r.fun ** 2))),
                 max_abs_psi=float(np.max(np.abs(r.fun))), theta=r.x)
 
