@@ -151,6 +151,49 @@ def test_3b(ev, r, rk, rates):
     return out
 
 
+def test_3b_rate_sensitivity(ev, r, rk, rates, levels=(0.90, 1.10, 1.25)):
+    """How much of 3b is actually a test of the RATE LEVEL? Almost none.
+
+    k is proportional to q, so scaling every rate by L and k with it leaves the
+    prefactor 141.2 q B mu / (k h) unchanged. What does NOT cancel is
+    t_D proportional to k, so the solution is read at a shifted dimensionless
+    time and only a logarithmic residual survives. Measured below: a 10% level
+    error moves the predicted drawdown 0.4-0.9%, a sensitivity of 0.04-0.09.
+
+    So 3b corroborates k, S, C and the boundary in the opposite flow direction
+    and says nothing about the rate LEVEL in either direction. It cannot be used
+    to support or attack the IPR-rate question (P1). It also means the residual
+    after 6 h is not a level error: explaining 8% that way would need a rate
+    level wrong by about 100%.
+    """
+    post = rates[(rates.well_name == ev.well) & (rates.segment == "post_reopen")]
+    if post.empty:
+        return {}
+    q = post.sort_values("timestamp").oil_rate_stbd.to_numpy(float)
+    re = float(r.r_e_ft) if r.boundary == "closed" else None
+    pre_q, _ = X.rate_and_np(ev.well, ev.start)
+
+    def drawdown(L):
+        sched = [(2.0 * 365 * 24, pre_q * L), (float(r.duration_h), 0.0)]
+        sched += [(1.0 / 6.0, float(x * L)) for x in q]
+        t, p = PS.simulate(r.permeability_md * L, r.skin, r.storage_bbl_per_psi,
+                           rk, sched, re=re, boundary=r.boundary,
+                           steps_per_segment=200)
+        t0 = sum(d for d, _ in sched[:2])
+        m = t >= t0
+        pb, tb = p[m], (t[m] - t0) * 60.0
+        return float((pb - pb[0])[tb - tb[0] >= 6 * 60].min())
+
+    base = drawdown(1.0)
+    out, sens = {}, []
+    for L in levels:
+        rel = (drawdown(L) / base - 1) * 100
+        out[f"rate_L{L:.2f}_pct"] = rel
+        sens.append(abs(rel) / abs((L - 1) * 100))
+    out["rate_level_sensitivity"] = float(np.mean(sens))
+    return out
+
+
 def test_3c(ev, r, rk, daily):
     """Daily rate history: does the predicted depletion trend match?"""
     d = daily[daily.well_name == ev.well].sort_values("timestamp")
@@ -193,6 +236,7 @@ def main() -> None:
         rec = dict(well_name=ev.well, boundary=r.boundary)
         rec.update(test_3a(ev, r, rk, plot["tg"], plot["dpg"]))
         rec.update(test_3b(ev, r, rk, rates))
+        rec.update(test_3b_rate_sensitivity(ev, r, rk, rates))
         rec.update(test_3c(ev, r, rk, daily))
         rows.append(rec)
     df = pd.DataFrame(rows)
@@ -250,8 +294,31 @@ def main() -> None:
               f"(against {b.reopen_rel_pct.min():.1f}-"
               f"{b.reopen_rel_pct.max():.1f}% over the whole window).")
         print(f"  That first hour is gas-lift unloading, which the choke law "
-              f"does not describe -- so this\n  is a VFM rate limitation, and "
-              f"3b is a clean out-of-sample validation of k and S.")
+              f"does not describe -- a VFM\n  rate limitation, not a PTA error.")
+        print()
+        print(f"  WHAT 3b DOES AND DOES NOT VALIDATE. k is proportional to q, "
+              f"so scaling every rate by L")
+        print(f"  and k with it cancels the prefactor; only a log-time residual "
+              f"survives. Measured:")
+        print(f"    {'well':7s} " + " ".join(f"{f'L={L:.2f}':>9s}"
+                                             for L in (0.90, 1.10, 1.25))
+              + f" {'sensitivity':>12s}")
+        for _, x in b.iterrows():
+            print(f"    {x.well_name:7s} "
+                  + " ".join(f"{x[f'rate_L{L:.2f}_pct']:+8.3f}%"
+                             for L in (0.90, 1.10, 1.25))
+                  + f" {x.rate_level_sensitivity:12.3f}")
+        s = b.rate_level_sensitivity
+        print(f"  A 10% rate-level error moves the predicted drawdown "
+              f"{s.min()*10:.1f}-{s.max()*10:.1f}%. So 3b corroborates k, S, C")
+        print(f"  and the boundary in the OPPOSITE FLOW DIRECTION, and says "
+              f"nothing about the rate LEVEL")
+        print(f"  either way -- it cannot support or attack the IPR-rate "
+              f"question. Equally, the 0.1-8.4%")
+        print(f"  residual is not a level error: explaining 8% that way would "
+              f"need a rate level wrong by")
+        print(f"  ~{8.4/s.max():.0f}%. Corroboration at the level of the rate "
+              f"uncertainty, not a clean validation.")
 
     c = df.dropna(subset=["trend_obs_psi_per_day"])
     print("\n3c  DAILY HISTORY: does the fitted model reproduce the depletion "
