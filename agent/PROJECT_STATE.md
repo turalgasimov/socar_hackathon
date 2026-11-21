@@ -385,6 +385,17 @@ on data the fit never saw:
   - `pta_model.py` carries this boundary for the comparison only; the
     submitted fit does not use it.
 
+**The plots carry the submitted numbers.**
+
+- Panel D (Horner) of every build-up figure draws the radial-flow line implied
+  by the submitted k, S and m. Horner's skin formula applied to that line returns
+  the submitted S exactly.
+- The window-A fit is drawn next to it.
+- Panel C's IARF level is the submitted m.
+
+Before this, the Horner panel showed only the window-A slope, which differs
+from the submitted slope by 4–5.5% on GL-02, GL-04 and GL-06.
+
 **PTA exploration** (`ml/eda/pta_explore.py`, ~60 s) — theory atlas, all six
 build-ups with every classic plot (history, Cartesian, log-log + Bourdet
 derivative, Horner, MDH) and the model match overlaid, plus reference tables

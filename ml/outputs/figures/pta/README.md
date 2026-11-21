@@ -32,8 +32,10 @@ Every `pta_10_*` figure has six panels, all built from the same data:
 
 - **A. Pressure history** around the shut-in (gauge depth), with the rate used.
 - **B. Cartesian build-up**, measured p_ws vs Δt with the model match overlaid, and p* from window A.
-- **C. Log-log diagnostic.** Measured Δp and Bourdet derivative (dots); model Δp and Δp′ (lines). Also shown: a unit-slope (WBS) guide and the window-A IARF level m/2.303 (dashed). Window A is grey and window B hatched.
-- **D. Horner plot**, p_ws vs (t_p+Δt)/Δt, with the window-A straight line extended to p*.
+- **C. Log-log diagnostic.** Measured Δp and Bourdet derivative (dots); model Δp and Δp′ (lines). Also shown: a unit-slope (WBS) guide and the IARF level m/2.303 of the submitted slope (dashed). Window A is grey and window B hatched.
+- **D. Horner plot**, p_ws vs (t_p+Δt)/Δt, with two straight lines:
+  - the radial-flow line implied by the submitted k, S and m. Its slope is the submitted `horner_slope`, and Horner's skin formula applied to it returns the submitted skin exactly;
+  - the window-A least-squares line, for comparison.
 - **E. MDH plot**, p_ws vs log Δt.
 - **F. Results table:** Horner A, Horner B and the model match (submitted). The subtitle repeats the submitted values.
 
