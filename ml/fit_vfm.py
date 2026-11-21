@@ -115,6 +115,27 @@ def main() -> None:
     loaded = VFMModel.load(MODEL_PATH)
     Xd = build_inputs(daily, when="date")
     pred = loaded.predict(Xd)
+
+    # Partial shut-in days: the daily mean blends shut-in minutes with flowing
+    # ones, and the choke law is nonlinear, so f(mean) != mean(f). Those days
+    # get time-integrated instead. Fully flowing days keep the daily-mean path,
+    # which is the regime the model was calibrated on. See ml/src/daily_predict.
+    import daily_predict as DP
+    hf_clean = pd.read_parquet(PROC / "high_freq_clean.parquet")
+    pvt = pd.read_csv(ROOT / "data" / "reservoir_pvt.csv")
+    comp = pd.read_csv(ROOT / "data" / "well_completion.csv",
+                       parse_dates=["first_production_date"])
+    integ = DP.daily_rates(loaded, hf_clean, pvt, comp).set_index(["well_name", "date"])
+    key = pd.MultiIndex.from_arrays([daily.well_name.astype(str),
+                                     pd.to_datetime(daily.date)])
+    n_swapped = 0
+    for col in DP.PHASES:
+        repl = integ[col].reindex(key).to_numpy()
+        take = np.isfinite(repl)
+        pred.loc[take, col] = repl[take]
+        n_swapped = max(n_swapped, int(take.sum()))
+    print(f"  time-integrated {n_swapped} shut-in-affected well-days "
+          f"(the rest keep daily-mean inputs)")
     out = pd.DataFrame({
         "date": pd.to_datetime(daily.date).dt.strftime("%Y-%m-%d"),
         "well_name": daily.well_name.astype(str).values,
