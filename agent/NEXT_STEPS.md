@@ -58,9 +58,11 @@ measured size of the correction, plus whichever script implements it.
 Start from what already wins: **choke physics + per-well IPR**, phase split via
 the water-cut trend (`benchmark_vfm.py` already has all three).
 
-- Score **time-forward**, not LOO — `ml/eda/timeforward_vfm.py` already does
-  this for the choke model (liquid 2.04%, oil 3.07%, water 3.99%, gas 5.90%).
-  Those are the numbers to beat and to quote.
+- Score **time-forward**, not LOO. Current best on oil is **2.67%**
+  (`benchmark_vfm.py --tf-only`: choke × WC(t, `dp_tubing`, GL), variant chosen
+  by nested TF). `timeforward_vfm.py` gives the simpler choke × WC-trend at
+  3.07% oil / 2.04% liquid, with per-phase water 3.99% and gas 5.90%. **2.67%
+  is the number to beat and to quote.**
 - **Fix the gas bias — cheapest accuracy left.** Gas is currently
   `oil × Rs / 1000`, where `Rs` is the *static* solution GOR from the
   completion table. But measured GOR drifts 7–32% within a well over the nine
@@ -148,10 +150,15 @@ the binding constraint. Saying so is worth more than pretending otherwise.
   time-forward. Result: 2.04% → 2.04% (ridge) and 2.01% (GBM). Noise. The
   physics form has already taken the available signal; there is no structure
   left in the residuals at n=85.
-- **Pure ML on raw features.** RF 5.19%, GBM 3.80%, Ridge 2.93% LOO, against
-  1.82% for the choke model. Keep these in the benchmark as evidence for the
-  methodology score — showing the comparison is worth more than quietly
-  picking the winner.
+- **Pure ML on raw features.** Time-forward on oil: Ridge-58 scores 5.11%
+  against 2.67% for the best physics variant. A well-cluster bootstrap (5000
+  resamples) puts the gap at **+2.17 pp [+1.07, +3.42]** — the physics lead is
+  real, not noise. Worse for ML: **Ridge-58 is statistically indistinguishable
+  from persistence** (just copying the well's previous test): +0.89 pp
+  [−1.54, +3.34]. And as a well accumulates history the physics models improve
+  (choke 3.97 → 2.73%) while Ridge degrades (4.00 → 6.18%).
+  Keep all of this in the benchmark as evidence for the methodology score —
+  showing the comparison is worth more than quietly picking the winner.
 - **Sub-window augmentation** (splitting each test window into quarters to get
   340 rows). Sub-windows differ by 0.08–2.1%, so they are near-duplicates: no
   new information, and a leakage trap if they land in different CV folds.

@@ -121,29 +121,16 @@ Artefacts (regenerate — `data/processed/` is gitignored):
 
 ## Next
 
-Ordered by points at risk. VFM accuracy is 30 points and PTA parameters are 20,
-so 1–3 matter most; the UI is 10 and cannot start until 1 produces a model.
+**The plan, with owners and estimates, lives in [`NEXT_STEPS.md`](NEXT_STEPS.md).**
+It is kept in one place so the two cannot drift apart — this file records what
+*is*, that file records what is *planned*.
 
-1. **Settle the test-mode correction** (blocks everything downstream). The choke
-   model scores 1.82% under test conditions but carries a ~3.8% systematic bias
-   on normal days. Either de-bias, or refit on routing-invariant sensors and
-   accept a slightly worse LOO for an honest daily score. **Decide and record it
-   in this file** — the two teams must not pick differently.
-2. **Fit and persist the VFM model.** Choke physics + per-well IPR, phase split
-   via the water-cut trend. Score time-forward, not LOO. Persist the fitted
-   object so the UI loads it rather than refitting.
-3. **Predict onto `daily_table.parquet`** → Excel: `date, well_name,
-   oil_rate_stbd, water_rate_stbd, gas_rate_mscfd`. 2,729 well-days; flag the 14
-   low-coverage ones rather than dropping them silently.
-4. **PTA.** Horner on the 6 build-ups with predicted daily Qo as the rate term.
-   Apply the gauge→datum correction first (see below).
-5. **UI.** Streamlit: upload → visualise → predict → PTA plots → export.
-6. **Presentation.** 10 points, and the data-quality story (GL-06 unit error,
-   the `-999.25` sentinel, the test-mode skew) is the strongest material we have.
+In short: settle the test-mode correction (blocks everything), fit and persist
+the model, export the daily Excel, then PTA, UI, presentation.
 
 Open question for the organisers, worth asking early: **is the daily ground
 truth measured under test-separator routing or normal production?** The answer
-decides item 1.
+decides the first item.
 
 ## Decisions and constraints
 
