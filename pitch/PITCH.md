@@ -23,7 +23,7 @@ Markers:
 | Jury | SOCAR engineers + Caspian AI Institute: technical, not "product people" |
 | Language | TODO(you): Azerbaijani or English? `speech.txt` is in English for now |
 | Speakers | TODO(you): who says which part (marked `[SPEAKER ?]` in `speech.txt`) |
-| Product name | TODO(you): written as `[NAME]` everywhere |
+| Product name | **RizzML** |
 
 **Scoring (100 points):**
 - VFM 50: methodology 20 · accuracy 30
@@ -203,10 +203,24 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 | 1:05–3:35 | **Live demo** (the ~60 s processing wait is narrated with the data-quality story) | 4 (app embedded) |
 | 3:35–4:55 | Methodology and results | 5–6 |
 | 4:55–5:40 | Competition, value, deployment | 7–8 |
-| 5:40–6:20 | Team, ask, close | 9 |
+| 5:40–6:00 | Team | 9 |
+| 6:00–6:30 | The cost cut: SOCAR today vs RizzML (counter stops) | 10 |
 | 6:20–7:00 | **Buffer** for live-demo hiccups | — |
 
 ## 6. Slides
+
+The deck is built: `pitch/deck/` (HTML: reveal.js + three.js, works offline).
+Run `python3 -m http.server 8000 -d pitch/deck` from the repo root and open
+http://localhost:8000. Keys: F fullscreen, S speaker view with timer, Esc overview.
+PDF for the upload: open `/?print-pdf` and print. The demo slide loads the app
+from http://localhost:8501 only when it is running. A live counter (bottom right) starts when you
+leave slide 1: daily well rates RizzML could compute on one PC (44/s, from our measured 61.6 s for
+2,730 well-days) next to the well tests SOCAR runs in the same time (5,715 wells tested monthly):
+about 18,600 vs 1 after 7 minutes. It stops on the cost slide (10): today vs RizzML on time per rate
+(12–24 h vs 0.02 s), rates per well (monthly vs daily), error between tests (6.0% vs 2.6%) and hardware
+per well ($100–250k vs $0). Press R to reset it before you start. The pilot ask is no longer in the deck;
+team photos go in pitch/deck/team/ as rovshan.jpg, faig.jpg, tural.jpg (initials show until then).
+Press R to reset it before you start. Slide 10 is a references backup.
 
 | # | Slide | Content | Status |
 |--:|---|---|---|
@@ -218,7 +232,9 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 | 6 | Results + limits | Scores table (R², MAPE, WAPE) · routing gap 2.5% by 4 methods · unseen wells flagged · PTA results table | TODO(peers): PTA numbers |
 | 7 | Competition | The five-row table in §8 | text ready |
 | 8 | Value + deployment | Daily rates · skin → lost barrels → stimulation list · on-prem, browser only, one model version | TODO(peers): $ figure |
-| 9 | Team + ask | TODO(you): team · pilot ask | TODO(you) |
+| 9 | Team | TODO(you): one line per person | TODO(you) |
+| 10 | Cost cut | Centre: SOCAR today vs RizzML on time per rate, rates per well, error, hardware, the frozen compute counter, and money saved ($125–312k of meters per well; up to $1.8B if every SOCAR well were metered) | built |
+| 11 | References | 10 sources | built |
 | — | Backup | Q&A slides: validation scheme, routing gap, unseen wells, KAPPA | TODO(us) |
 
 ## 7. Demo plan
@@ -302,9 +318,9 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 
 | Name | Connection to oil, gas, wells | What they built here |
 |---|---|---|
-| TODO(you) | TODO(you) | Data cleaning, VFM model, submission, notebook |
-| TODO(you) | TODO(you) | Physics benchmarks, routing gap, partial shut-in fix |
-| TODO(you) | TODO(you) | UI, pitch, competitor research |
+| Rovshan Agayev | Physics Olympiad Champion; has a paper on reservoir engineering | Physics benchmarks, routing gap, partial shut-in fix |
+| Faig Tayibov | 2× ICPC Champion; has integrated ML and computer vision into LMS systems | Data cleaning, VFM model, submission, notebook |
+| Tural Gasimov | CanSat Global Finalist; has engineered military-grade simulations and software | UI, pitch, competitor research |
 
 ## 11. Q&A backup (3 min)
 
@@ -328,7 +344,8 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 - [ ] TODO(peers): Horner results and plots; whether the routing correction is applied
 - [ ] TODO(you): product name, language, speakers, team rows, pilot size, SOCAR user details
 - [ ] TODO(us): UI end to end on raw CSVs
-- [ ] TODO(us): hook figure, physics-vs-ML chart, deck, QR code
+- [x] Deck v1 in `pitch/deck/` (hook chart, physics-vs-ML bars, 3D field)
+- [ ] TODO(us): QR code for the demo; fill RizzML, team and PTA numbers in the deck
 - [ ] TODO(us): backup video
 - [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
 - [ ] Rehearse twice with a stopwatch; cut the speech if it runs past 6:20

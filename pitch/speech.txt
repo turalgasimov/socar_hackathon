@@ -1,6 +1,6 @@
     SOCAR HACKATHON 2026 - PITCH SCRIPT (7:00, live demo included)
 ===============================================================
-[NAME] = product name, TODO.  [SPEAKER ?] = who says it, TODO.
+[SPEAKER ?] = who says it, TODO.
 [CLICK] = next slide.  [DEMO] = action in the app.  (pause) = stop for a beat.
 Pace: about 140 words per minute. Do not read it word for word; know it.
 Placeholders in <angle brackets> wait on the PTA results.
@@ -24,19 +24,15 @@ least three a month for wells this size.
 So between tests, engineers estimate, across separate tools and
 spreadsheets. And what you can't see, you lose.
 
-More than half of SOCAR's oil comes from gas-lifted wells. If just one
-percent of it slips away unnoticed, that is about twenty-six million
-dollars a year.
-
-The hardware fix, a multiphase meter on every well, costs a hundred to
-two hundred and fifty thousand dollars each.
+More than half of SOCAR's oil comes from gas-lifted wells, and every rate
+you measure costs a well test of up to a day, or expensive hardware.
 
 
 --- 0:45-1:05 | SOLUTION | slide 3 ------------------------------------------
 
 [CLICK]
 
-[NAME] turns the sensors SOCAR already has into a daily rate for every well,
+RizzML turns the sensors SOCAR already has into a daily rate for every well,
 and turns every shut-in into a reservoir diagnosis.
 
 One browser app, running on SOCAR's own server. No new hardware.
@@ -147,26 +143,37 @@ rates are exactly the input those tools need.
 [CLICK]
 
 What does that buy? A rate for every well every day, instead of once a
-month. And every shut-in becomes a skin number, and skin is money: when
-PETRONAS screened its wells for skin, twenty-eight jobs added sixty-five
-hundred barrels a day.
+month. And every shut-in becomes a skin number automatically: with this
+kind of data-driven screening, PETRONAS cut the search for damaged wells
+from two weeks to one day.
 
-It all runs on one server inside SOCAR's network. The data never leaves.
+It all runs on one PC inside SOCAR's network. The data never leaves.
 
 
---- 5:40-6:20 | TEAM + ASK + CLOSE | slide 9 | [SPEAKER ?] ------------------
+--- 5:40-6:00 | TEAM | slide 9 | [SPEAKER ?] --------------------------------
 
 [CLICK]
 
-We are <TEAM: name, and what connects each of you to oil and gas, one line
-each>.
+We are RizzML. Rovshan Agayev, Physics Olympiad champion, has a paper on
+reservoir engineering. Faig Tayibov, two-time ICPC champion, has integrated
+machine learning and computer vision into learning management systems.
+Tural Gasimov, CanSat global finalist, has engineered military-grade
+simulations and software.
 
-Our ask: a three-month pilot on <N> gas-lift wells. Read access to the
-sensor data, one server inside SOCAR's network, and one production engineer
-to work with us.
 
-In three months you will know, every day, what every well produced, and
-which ones are losing oil to skin.
+--- 6:00-6:30 | THE COST CUT | slide 10 | [SPEAKER ?] -----------------------
+
+[CLICK]  (the counter stops here)
+
+In these seven minutes, SOCAR ran about one well test. On one PC, RizzML
+could have computed <the number on the right> daily well rates.
+
+Today: a test of up to a day, once a month, six percent error, and up to a
+quarter of a million dollars of hardware per well. RizzML: two hundredths of
+a second, every day, two point six percent, no hardware.
+
+That saves up to three hundred thousand dollars per well, and up to one
+point eight billion if SOCAR metered every well.
 
 So: how much oil did GL-04 produce yesterday?
 
@@ -175,8 +182,8 @@ So: how much oil did GL-04 produce yesterday?
 Now you know. Thank you.
 
 
---- 6:20-7:00 | BUFFER ------------------------------------------------------
+--- 6:30-7:00 | BUFFER ------------------------------------------------------
 
-Forty seconds of slack for the live demo. If the upload is slow, keep
+Thirty seconds of slack for the live demo. If the upload is slow, keep
 talking from the data-quality list. If the app fails, switch to the backup
 video and keep the same script.

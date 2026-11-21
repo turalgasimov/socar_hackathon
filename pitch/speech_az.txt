@@ -1,6 +1,6 @@
 SOCAR HAKATON 2026 - PİTÇ MƏTNİ (7:00, canlı demo daxil)
 ===============================================================
-[NAME] = məhsulun adı, TODO.  [SPEAKER ?] = kim danışır, TODO.
+[SPEAKER ?] = kim danışır, TODO.
 [CLICK] = növbəti slayd.  [DEMO] = tətbiqdə hərəkət.  (fasilə) = bir anlıq dayan.
 Sözbəsöz oxumayın; mətni bilin. Azərbaycanca versiyanı məşq edərək
 yenidən vaxtını ölçün (ingiliscə versiya ~6:20 çəkir).
@@ -27,18 +27,15 @@ təxminən bir test deməkdir. Kanadada tənzimləyici orqan bu ölçüdə quyul
 Yəni testlər arasında mühəndislər ayrı-ayrı alətlər və cədvəllər üzərində
 təxmin edir. Görünməyən itki isə real puldur.
 
-SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir. Bunun cəmi bir
-faizi xəbərsiz itsə, bu, ildə təxminən iyirmi altı milyon dollar deməkdir.
-
-Avadanlıq həlli, yəni hər quyuya çoxfazalı sərfölçən qoymaq, hər biri üçün
-yüz mindən iki yüz əlli min dollaradək başa gəlir.
+SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir, və ölçülən hər debit
+ya bir günədək çəkən quyu testi, ya da bahalı avadanlıq tələb edir.
 
 
 --- 0:45-1:05 | HƏLL | slayd 3 ----------------------------------------------
 
 [CLICK]
 
-[NAME] SOCAR-ın artıq mövcud olan sensorlarını hər quyu üçün gündəlik
+RizzML SOCAR-ın artıq mövcud olan sensorlarını hər quyu üçün gündəlik
 debitə, quyunun hər bağlanmasını isə lay diaqnozuna çevirir.
 
 Bir brauzer tətbiqi, SOCAR-ın öz serverində işləyir. Yeni avadanlıq lazım
@@ -157,25 +154,37 @@ datasıdır.
 [CLICK]
 
 Bu nə qazandırır? Ayda bir dəfə yox, hər gün, hər quyu üçün debit. Quyunun
-hər bağlanması skin rəqəminə çevrilir, skin isə puldur: PETRONAS quyularını
-skin üzrə yoxlayanda iyirmi səkkiz əməliyyat gündə altı min beş yüz barrel
-əlavə hasilat verdi.
+hər bağlanması avtomatik olaraq skin rəqəminə çevrilir: bu cür data əsaslı
+yoxlama ilə PETRONAS zədələnmiş quyuların axtarışını iki həftədən bir günə
+endirdi.
 
-Hamısı SOCAR şəbəkəsinin içində bir serverdə işləyir. Data heç yerə getmir.
+Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir. Data heç yerə getmir.
 
 
---- 5:40-6:20 | KOMANDA + XAHİŞ + YEKUN | slayd 9 | [SPEAKER ?] -------------
+--- 5:40-6:00 | KOMANDA | slayd 9 | [SPEAKER ?] -----------------------------
 
 [CLICK]
 
-Biz <KOMANDA: adlar və hər birinizi neft-qazla bağlayan bir cümlə>.
+Biz RizzML komandasıyıq. Fizika olimpiadasının qalibi Rövşən Ağayevin lay
+mühəndisliyi üzrə elmi məqaləsi var. İki dəfə ICPC çempionu Faiq Tayıbov
+maşın öyrənməsi və kompüter görməsini təlim idarəetmə sistemlərinə (LMS)
+inteqrasiya edib. CanSat qlobal finalçısı Tural Qasımov hərbi səviyyəli
+simulyasiyalar və proqram təminatı hazırlayıb.
 
-Xahişimiz: <N> qazlift quyusunda üç aylıq pilot layihə. Sensor datasına
-oxuma icazəsi, SOCAR şəbəkəsində bir server və bizimlə işləyəcək bir hasilat
-mühəndisi.
 
-Üç aydan sonra hər gün biləcəksiniz ki, hər quyu nə qədər hasil edib, və
-hansı quyular skin üzündən neft itirir.
+--- 6:00-6:30 | XƏRCLƏRİN AZALMASI | slayd 10 | [SPEAKER ?] ------------------
+
+[CLICK]  (sayğac burada dayanır)
+
+Bu yeddi dəqiqədə SOCAR təxminən bir quyu testi apardı. RizzML isə bir
+kompüterdə <sağdakı rəqəm> gündəlik quyu debiti hesablaya bilərdi.
+
+Bu gün: bir günədək çəkən test, ayda bir dəfə, altı faiz xəta və hər quyuya
+iki yüz əlli min dollaradək avadanlıq. RizzML: saniyənin yüzdə ikisi, hər gün,
+iki tam onda altı faiz, avadanlıqsız.
+
+Bu, hər quyuda üç yüz min dollaradək qənaət deməkdir; SOCAR bütün quyularına
+sərfölçən qoysaydı, bir milyard səkkiz yüz milyon dollaradək.
 
 Beləliklə: GL-04 quyusu dünən nə qədər neft hasil edib?
 
@@ -184,8 +193,8 @@ Beləliklə: GL-04 quyusu dünən nə qədər neft hasil edib?
 İndi bilirsiniz. Təşəkkür edirik.
 
 
---- 6:20-7:00 | EHTİYAT VAXT ------------------------------------------------
+--- 6:30-7:00 | EHTİYAT VAXT ------------------------------------------------
 
-Canlı demo üçün qırx saniyə ehtiyat. Yükləmə ləngisə, data keyfiyyəti
+Canlı demo üçün otuz saniyə ehtiyat. Yükləmə ləngisə, data keyfiyyəti
 siyahısından danışmağa davam edin. Tətbiq işləməsə, ehtiyat videoya keçin və
 eyni mətni davam etdirin.
