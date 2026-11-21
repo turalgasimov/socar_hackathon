@@ -20,8 +20,8 @@ parameters 20) · UI 10 · Presentation 10.
 | 0 | EDA | **done** |
 | 1 | Feature engineering | **done** |
 | 1 | VFM baselines benchmarked | **done** (physics wins time-forward: 2.67–3.10% vs Ridge 5.11%) |
-| 1 | Chosen VFM model, fitted and persisted | not started |
-| 1 | Excel: daily oil/water/gas predictions | not started |
+| 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.joblib`, TF oil 2.56%) |
+| 1 | Excel: daily oil/water/gas predictions | **done** (2,729 well-days) |
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | Horner analysis → k, skin, ΔP_skin | not started |
 | 2 | PTA plots per shut-in event | not started |
@@ -117,6 +117,37 @@ accumulates, Ridge does not. **Per-well IPR with free `t` and `Pwf` terms is not
 usable time-forward** (8.45%): it extrapolates the reservoir-pressure decline from
 3–8 points. All rows are still test-routed labels — the train–serve skew under
 Open risks applies to every number in this table.
+
+**The VFM model** (`ml/src/vfm.py`, fitted by `python ml/fit_vfm.py`). Choke law
+for liquid × water-cut split from the tubing gradient; gas from static Rs. The
+`choke_vlp` water-cut variant, which nested time-forward selection picks in 54
+of 55 folds.
+
+| phase | TF MAPE | bias |
+|---|--:|--:|
+| oil | **2.56%** | +0.25% |
+| water | **3.82%** | +0.15% |
+| gas | **5.65%** | +2.04% |
+
+Fitted exponents: `S^2.057`, `dPc^0.472`, `WHP^0.472`, `GLR^-0.612`. The first
+two are the subcritical choke law (`d²`, `√ΔP`) recovered from data.
+
+`fit_vfm.py` runs the time-forward check *before* persisting and refuses to
+save a model above 4% oil MAPE, so `vfm.joblib` is never an unscored model.
+Daily predictions go through the reloaded file, not the in-memory object, so
+the saved artefact is what gets exercised.
+
+Shut-in days are a hard zero, not a model output: 5 well-days have the choke
+closed for the full 24 h (`ln S` is undefined there).
+
+**Measured routing gap.** Predicting each test's own date from *daily* averages
+instead of the test window gives **−2.62%**, consistent across wells (−1.7% to
+−3.6%). That is the directly measured figure and it supersedes the −3.8%
+I previously derived from the `dPc^0.47` term alone. A counterfactual that
+re-runs normal days at test-level `dPc` suggests up to −7%, but it perturbs one
+variable while holding correlated ones fixed, so treat it as an upper bound.
+The three estimates spanning 2.6–7% is itself the argument for asking the
+organisers rather than guessing a correction.
 
 Artefacts (regenerate — `data/processed/` is gitignored):
 `high_freq_clean.parquet`, `well_tests_clean.parquet`,
