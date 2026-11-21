@@ -65,6 +65,11 @@ def loglog(plot: dict):
     ok = np.isfinite(plot["der"]) & (plot["der"] > 0)
     fig.add_trace(go.Scatter(x=plot["tg"][ok], y=plot["der"][ok], mode="markers", name="Bourdet derivative",
                              marker=dict(size=6, color=OIL)))
+    fig.add_trace(go.Scatter(x=plot["tg"], y=plot["mdp"], mode="lines", name="Model match Δp",
+                             line=dict(width=2, color=INK, dash="dot")))
+    mok = np.isfinite(plot["mder"]) & (plot["mder"] > 0)
+    fig.add_trace(go.Scatter(x=plot["tg"][mok], y=plot["mder"][mok], mode="lines", name="Model match derivative",
+                             line=dict(width=2, color=OIL, dash="dot")))
     fig.add_vrect(x0=plot["t0"], x1=plot["t1"], fillcolor=SHADE, line_width=0, layer="below",
                   annotation_text="radial flow window", annotation_position="top left")
     fig.update_xaxes(type="log", title="Shut-in time Δt (h)")
@@ -72,7 +77,7 @@ def loglog(plot: dict):
     return _style(fig, height=420, title="Log-log diagnostic", legend_y=-0.24)
 
 
-def horner(plot: dict, slope: float, p_star: float):
+def horner(plot: dict, p_star: float):
     ratio = 10 ** plot["hx"]
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=ratio, y=plot["p"], mode="markers", name="Build-up pressure",
@@ -81,8 +86,11 @@ def horner(plot: dict, slope: float, p_star: float):
                              marker=dict(size=5, color=OIL)))
     xs = np.array([1.0, ratio.max()])
     fig.add_trace(go.Scatter(x=xs, y=plot["c0"] + plot["c1"] * np.log10(xs), mode="lines",
-                             name=f"Straight line: m = {slope:.1f} psi/cycle, p* = {p_star:.0f} psia",
+                             name=f"Horner line: m = {-plot['c1']:.1f} psi/cycle, p* = {p_star:.0f} psia",
                              line=dict(width=2, color=INK, dash="dash")))
+    mr = (plot["tp"] + plot["tg"]) / plot["tg"]
+    fig.add_trace(go.Scatter(x=mr, y=plot["pwf"] + plot["mdp"], mode="lines", name="Model match",
+                             line=dict(width=2, color=OIL, dash="dot")))
     fig.update_xaxes(type="log", autorange="reversed", title="Horner time (tp + Δt) / Δt")
     fig.update_yaxes(title="Downhole pressure (psia)")
     return _style(fig, height=420, title="Horner plot", legend_y=-0.24)

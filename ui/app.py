@@ -67,7 +67,7 @@ def report_html(r: dict, source: str) -> str:
             continue
         parts += [f"<h3>{res['well_name']}, shut-in {res['shut_in_start']:%d %b %Y %H:%M}</h3>",
                   "<ul>" + "".join(f"<li>{html.escape(t).replace('**', '')}</li>" for t in P.explain(res)) + "</ul>",
-                  fig(charts.horner(plot, res["horner_slope_psi_per_cycle"], res["p_star_gauge_psia"])),
+                  fig(charts.horner(plot, res["p_star_gauge_psia"])),
                   fig(charts.loglog(plot)), fig(charts.history(plot))]
     css = "body{font-family:system-ui,sans-serif;max-width:1100px;margin:40px auto;color:#0b0b0b}" \
           "table{border-collapse:collapse;font-size:14px}td,th{border-bottom:1px solid #e4e3df;padding:4px 10px;text-align:right}"
@@ -120,7 +120,7 @@ with st.sidebar:
         st.caption(f"Loaded: {st.session_state.source}")
     st.divider()
     st.caption("Model: ml/models/vfm.pkl, a physics-based choke model (oil error 2.6%, time-forward). "
-               "PTA: Horner build-up analysis, single-phase oil.")
+               "PTA: exact model match of each build-up, seeded by Horner (ml/src/pta_model.py).")
 
 if run_upload or run_sample:
     folder, source = (save_uploads(files), ", ".join(got.values())) if run_upload else (SAMPLE, "sample dataset")
@@ -200,8 +200,9 @@ with tab_vfm:
 
 # ---------------------------------------------------------------------------------------- 3 PTA
 with tab_pta:
-    st.caption("Every shut-in is found from the choke data and analysed as a pressure build-up "
-               "(Horner method, single-phase oil), using the predicted daily oil rate.")
+    st.caption("Every shut-in is found from the choke data and analysed as a pressure build-up (single-phase oil, "
+               "predicted daily oil rate): a Horner analysis seeds an exact model match of the whole build-up "
+               "(wellbore storage + skin + radial flow), which gives the reported values.")
     ok = [(res, plot) for res, plot in r["pta"] if plot is not None]
     for res, _ in r["pta"]:
         if "error" in res:
@@ -221,7 +222,7 @@ with tab_pta:
         with st.container(border=True):
             st.markdown("**Interpretation**\n\n" + "\n".join(f"- {t}" for t in P.explain(res)))
         c = st.columns(2)
-        c[0].plotly_chart(charts.horner(plot, res["horner_slope_psi_per_cycle"], res["p_star_gauge_psia"]), **WIDE)
+        c[0].plotly_chart(charts.horner(plot, res["p_star_gauge_psia"]), **WIDE)
         c[1].plotly_chart(charts.loglog(plot), **WIDE)
         st.plotly_chart(charts.history(plot), **WIDE)
         st.subheader("All shut-ins")

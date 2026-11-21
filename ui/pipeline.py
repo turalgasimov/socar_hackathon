@@ -1,8 +1,9 @@
 """RizzML back end: raw well data -> cleaned sensors -> daily VFM rates -> PTA for every shut-in.
 
 Reuses the ML team's code unchanged: ml/src (clean, features, vfm) and ml/predict_from_raw.py.
-The PTA functions mirror ml/eda/pta_explore.py (window A). That script loads the repo's processed
-data when imported, so it cannot run on an uploaded data set; the logic here is the same, line for line.
+PTA = the submitted method: Horner window B seeds an exact model match (ml/src/pta_model.py, imported
+unchanged). The Horner steps mirror ml/eda/pta_explore.py, which loads the repo's processed data when
+imported and so cannot run on an uploaded data set; the logic here is the same, line for line.
 """
 from __future__ import annotations
 
@@ -20,6 +21,7 @@ sys.path[:0] = [str(ROOT / "ml"), str(ROOT / "ml" / "src")]
 import clean  # noqa: E402
 import features as F  # noqa: E402
 import predict_from_raw as PFR  # noqa: E402
+import pta_model as PM  # noqa: E402
 from config import SENSORS  # noqa: E402
 from vfm import VFMModel, build_inputs  # noqa: E402
 
@@ -41,9 +43,9 @@ SENSOR_LABELS = {
 }
 RATES = ["oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"]
 PTA_COLUMNS = ["well_name", "shut_in_start", "shut_in_end", "duration_h", "horner_slope_psi_per_cycle",
-               "permeability_md", "skin", "delta_p_skin_psi", "flow_efficiency", "p_star_gauge_psia",
-               "p_star_datum_psia", "pwf_gauge_psia", "qo_stbd", "tp_h", "window_start_h", "window_end_h",
-               "note", "r_inv_ft", "storage_bbl_per_psi"]
+               "permeability_md", "skin", "delta_p_skin_psi", "flow_efficiency", "boundary", "r_e_ft",
+               "fit_rms_psi", "p_star_gauge_psia", "p_star_datum_psia", "pwf_gauge_psia", "qo_stbd", "tp_h",
+               "k_horner_md", "skin_horner", "note", "r_inv_ft", "storage_bbl_per_psi"]
 
 
 def canonical_name(filename: str) -> str | None:
@@ -101,7 +103,7 @@ def analyse(data_dir: Path, progress=lambda msg: None) -> dict:
     pta = []
     for ev in events.itertuples(index=False):
         try:
-            pta.append(interpret(ev, hf, pvt.set_index("well_name"), comp.set_index("well_name"), rates, tests_raw))
+            pta.append(model_match(ev, hf, pvt.set_index("well_name"), comp.set_index("well_name"), rates, tests_raw))
         except Exception as e:  # one bad event must not take the whole run down
             pta.append((dict(well_name=ev.well, shut_in_start=ev.start, shut_in_end=ev.end, error=str(e)), None))
 
@@ -193,6 +195,23 @@ def window_A(t, der, s, tol=0.10, min_cycles=0.3):
     return t[best[0]], t[best[-1]], developed
 
 
+def window_B(t, der, s, tol=0.10, cycles=0.3):
+    """Late radial-flow points: the last 0.3 log-cycle of the window-A plateau (boundary points excluded)."""
+    t0, t1, developed = window_A(t, der, s, tol, cycles)
+    if not developed:
+        return t0, t1, False, True
+    start = max(t0, t1 / 10 ** cycles)
+    with warnings.catch_warnings():   # all-NaN tail slopes are expected at the very end of a build-up
+        warnings.simplefilter("ignore", RuntimeWarning)
+        boundary_after = t1 < t[-1] * 0.999 and np.nanmin(s[t > t1]) < -tol if (t > t1).any() else False
+    return start, t1, bool(boundary_after), False
+
+
+def rock(P):
+    return dict(h=P.net_pay_thickness_ft, phi=P.porosity_frac, ct=P.total_compressibility_1_psi,
+                rw=P.wellbore_radius_ft, B=P.oil_fvf_rb_stb, mu=P.oil_viscosity_cp)
+
+
 def fluid_gradient(w, tests_raw, comp, pvt):
     """Liquid gradient below the gauge, psi/ft, from test-average API, Rs, salinity and water cut."""
     t = tests_raw[tests_raw.well_name == w][["oil_gravity_api", "gas_sg", "water_salinity_ppm", "water_cut_pct"]].mean()
@@ -203,7 +222,7 @@ def fluid_gradient(w, tests_raw, comp, pvt):
     return ((1 - wc) * rho_o + wc * rho_w) / 144
 
 
-def interpret(ev, hf, pvt, comp, rates, tests_raw):
+def interpret(ev, hf, pvt, comp, rates, tests_raw, window="B"):
     """Horner analysis of one build-up, using our predicted daily oil rate as q."""
     P = pvt.loc[ev.well]
     g = hf[(hf.well_name == ev.well) & (hf.timestamp >= ev.start - pd.Timedelta("12h")) &
@@ -225,7 +244,11 @@ def interpret(ev, hf, pvt, comp, rates, tests_raw):
     tg, pg = _log_grid(dt, p)
     der = bourdet(np.log(tp * tg / (tp + tg)), pg - pwf)
     s = _deriv_log_slope(tg, der)
-    t0, t1, developed = window_A(tg, der, s)
+    if window == "A":
+        t0, t1, developed = window_A(tg, der, s)
+    else:
+        t0, t1, _, fallback = window_B(tg, der, s)
+        developed = not fallback
     win = (dt >= t0) & (dt <= t1)
     hx = np.log10((tp + dt) / dt)
     c1, c0 = np.polyfit(hx[win], p[win], 1)
@@ -253,12 +276,37 @@ def interpret(ev, hf, pvt, comp, rates, tests_raw):
     return res, plot
 
 
+def model_match(ev, hf, pvt, comp, rates, tests_raw):
+    """The submitted answer: exact model match (storage + skin + radial, infinite or closed circle) on the
+    log-grid build-up, seeded by Horner window B with the same q and tp (as ml/eda/pta_explore.py)."""
+    rB, plot = interpret(ev, hf, pvt, comp, rates, tests_raw, "B")
+    rk = rock(pvt.loc[ev.well])
+    re0 = np.sqrt(pvt.loc[ev.well, "estimated_drainage_area_acres"] * 43560 / np.pi)
+    best, _, _ = PM.fit_best(plot["tg"], plot["dpg"], rB["tp_h"], rB["qo_stbd"], rk,
+                             rB["permeability_md"], rB["skin"], rB["storage_bbl_per_psi"], re0)
+    tg, tp = plot["tg"], rB["tp_h"]
+    mdp = PM.buildup_dp(best["theta"], tg, tp, rB["qo_stbd"], rk, best["boundary"])
+    k, S, m, dps = best["k"], best["S"], best["m"], best["dP_skin"]
+    pstar, pwf = rB["p_star_gauge_psia"], rB["pwf_gauge_psia"]
+    res = {**rB, "horner_slope_psi_per_cycle": round(m, 3), "permeability_md": round(k, 2), "skin": round(S, 3),
+           "delta_p_skin_psi": round(dps, 2), "flow_efficiency": round((pstar - pwf - dps) / (pstar - pwf), 3),
+           "boundary": best["boundary"], "r_e_ft": round(best["re"]) if best["boundary"] == "closed" else None,
+           "fit_rms_psi": round(best["rms_psi"], 3), "storage_bbl_per_psi": round(best["C"], 4),
+           "k_horner_md": rB["permeability_md"], "skin_horner": rB["skin"],
+           "r_inv_ft": round(0.0325 * np.sqrt(k * rB["duration_h"] / (rk["phi"] * rk["mu"] * rk["ct"])))}
+    plot.update(mdp=mdp, mder=bourdet(np.log(tp * tg / (tp + tg)), mdp))
+    return res, plot
+
+
 def explain(r: dict) -> list[str]:
     """Plain-language reading of one build-up, for engineers who are not PTA specialists."""
     out = []
     k = r["permeability_md"]
     grade = "low" if k < 10 else "moderate" if k < 100 else "high"
-    out.append(f"Permeability is about **{k:.0f} md** ({grade}), from a Horner slope of {r['horner_slope_psi_per_cycle']:.1f} psi per log cycle.")
+    out.append(f"Permeability is about **{k:.0f} md** ({grade}), from a model match of the whole build-up "
+               f"(fit error {r['fit_rms_psi']:.2f} psi RMS); the implied Horner slope is {r['horner_slope_psi_per_cycle']:.1f} psi per log cycle.")
+    if r.get("boundary") == "closed":
+        out.append(f"The late build-up shows a **closed boundary** at about {r['r_e_ft']:,.0f} ft (drainage limit reached).")
     S, dps, fe = r["skin"], r["delta_p_skin_psi"], r["flow_efficiency"]
     if S > 0.5:
         out.append(f"Skin is **+{S:.1f}**: the near-wellbore zone is **damaged**. About {dps:.0f} psi is lost across it, "
@@ -269,8 +317,8 @@ def explain(r: dict) -> list[str]:
     else:
         out.append(f"Skin is **{S:.1f}**, close to zero: **no significant damage**.")
     if not r["developed"]:
-        out.append("Radial flow did not clearly develop: the derivative never stays flat for 0.3 log cycle, "
-                   "so the flattest part was used. Treat permeability and skin as **indicative**.")
+        out.append("Radial flow did not clearly develop (the derivative never stays flat for 0.3 log cycle). "
+                   "The model match still uses every point, but treat permeability and skin as **indicative**.")
     out.append(f"Extrapolated pressure p* is {r['p_star_gauge_psia']:.0f} psia at the gauge"
                + (f" ({r['p_star_datum_psia']:.0f} psia at datum)" if r.get("p_star_datum_psia") else "")
                + f"; the test investigated about {r['r_inv_ft']:,.0f} ft into the reservoir.")
