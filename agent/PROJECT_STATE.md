@@ -44,7 +44,15 @@ landed between the two and isolated neither change.
 | probe | change vs S1 | score |
 |---|---|--:|
 | widened water-cut split | routing-safe sensors added to WC | 20.5700 |
-| label transfer, a=1.0 | trained on 85 real + 170 transferred | **20.3300** |
+| label transfer, a=1.0 | trained on 85 real + 170 transferred | 20.3300 |
+| gas level ×1.02 | gas only, up | 20.6100 |
+
+**Gas is at its optimum too.** Three points — ×0.982 → 20.9100, ×1.000 →
+20.9463, ×1.020 → 20.6100 — put the V vertex at +0.00%. Both directions lose.
+
+Note the asymmetry: the slope above the optimum is **8× steeper** than below
+(0.168 vs 0.020 points per 1%). Over-predicting gas is punished far harder
+than under-predicting it. If anything ever nudges gas again, **err low**.
 
 **Label transfer is closed.** Tested three ways and it loses every time:
 unweighted time-forward (oil WAPE 2.30 → 4.55), with Rovshan's 1/σ² weighting
