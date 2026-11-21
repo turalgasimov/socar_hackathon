@@ -102,15 +102,21 @@ file before writing it:
 - **The water-cut files from 21 Nov (`cand_wc*`) are replaced, not submitted.** They let gas
   follow oil through Rs, so they also raised gas +1.5…+4.1%. Gas ×1.02 already scored 20.61 (−0.41)
   on this record. The V2a/V3a files hold gas and move only the oil/water split.
-- **GL-07 λ comes last.** λ 0.75 and 0.80 tied at 21.0200, and that change moved every well
-  further than V3c moves GL-07, so V3c is probably below what the board resolves.
-- **No path uses more than 3 submissions,** and the final answer is always one of these files or
+- **V3c (GL-07 λ) is a leftover-slot probe, expected to lose.**
+  - λ 0.75 and 0.80 tied at 21.0200, and that change moved every well further than V3c moves
+    GL-07.
+  - Real sensor data (`python ml/eda/lambda_split.py`, part B) says GL-07 needs *less* correction,
+    not more. Its routing offset is the lowest of the ten wells and falls from 18.7 to 13.0 psi
+    over the year.
+  - It is also per-well tuning, which we otherwise avoid.
+- **No branch uses more than 3 submissions,** and the final answer is always one of these files or
   the record. Nothing is combined.
 
 **If slots are limited:**
 - 1 slot: V1 only.
 - 2 slots: V1, then V2a or V2b.
-- 3 or more: the full sequence. A 4th slot is not needed.
+- 3 slots: the full branch (steps 1–3).
+- V3c only with a slot left over after the branch is finished.
 
 **Step 1 — `vfm_V1_water0.98.csv`**
 - **Score > 21.0200:** we over-predict water; the water-cut hypothesis is alive. Best = V1. Go to
@@ -130,17 +136,18 @@ file before writing it:
 **Step 2b — `vfm_V2b_ifV1lost_water1.02.csv`** (only if V1 lost)
 - **Score > 21.0200:** we under-predict water. Best = V2b. Go to step 3b.
 - **Score ≤ 21.0200:** water sits between ×0.98 and ×1.02; the water axis is closed in both
-  directions. Go to step 3c.
+  directions. The record stands. Stop the branch.
 
 **Step 3b — `vfm_V3b_ifV2bwon_water1.04.csv`** (only if V2b won)
 - **Score > V2b's score:** best = V3b.
 - **Otherwise:** best = V2b.
 - Stop either way.
 
-**Step 3c — `vfm_V3c_ifV2blost_GL07lam1.0.csv`** (only if V1 and V2b both lost)
-- **Score > 21.0200:** best = V3c.
-- **Otherwise:** the record file stays the answer.
-- Stop either way.
+**Last slot — `vfm_V3c_ifV2blost_GL07lam1.0.csv`** (only if a slot is left after the branch,
+on any path; never ahead of another probe)
+- **If no file has beaten 21.0200 and V3c scores > 21.0200:** record the score. Whether it ships is
+  decided by Rovshan and Faig, because it is a leaderboard-only change the model cannot justify.
+- **Otherwise:** record the score as information. The best so far stays.
 
 A tie keeps whatever is best so far, at every step.
 

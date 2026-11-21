@@ -336,6 +336,67 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 ## Done
 
+**λ overfitting check (22 Nov): negligible, unless the hidden split is by well.**
+`python ml/eda/lambda_split.py` (~1 min) tests whether tuning λ on the
+leaderboard would carry over to a hidden public/private split.
+
+*A. Simulated splits — assumption-dependent, a rough guide and not a
+measurement.* This part runs a scorer model fitted to nine leaderboard points,
+in three worlds (s_water free, 0.99 and 1.07). B, from real sensor data, is the
+stronger result. Full-data λ* is 0.76–0.79.
+
+| split | λ* range on private half (5–95%) | mean loss of shipping 0.80 |
+|---|---|--:|
+| random days, 50/50 | 0.72–0.82 | ≤ 0.003 |
+| random days, 30% public | 0.74–0.81 | ≤ 0.002 |
+| **by well, 5 public / 5 private** | **0.59–0.97** | **0.02–0.03** (p95 ≈ 0.10–0.12) |
+
+Tuning on a by-well public half would cost 0.08–0.11 on average, with p95 up to
+0.42. This depends on the model: the scorer assumes the truth has the λ = 0
+per-well shape. The simulated truth has no time drift, so time splits are left
+to B.
+
+*B. Real sensors: the routing offset drifts (the stronger result).* The offset is normal-day
+`whp_downstream` minus the test-window level. Field-wide it falls steadily from
+×1.08 of its all-year mean in January to ×0.89 in September. If the needed
+correction scales with that offset, the implied λ goes from 0.86 (Jan) to 0.71
+(Sep), so 0.80 is the right all-year value.
+
+On the leaderboard's slope around the peak, being 0.05–0.09 off on a late-months
+private set costs about 0.01–0.03 points. Per-well drift is larger:
+
+- GL-01: 33.7 → 19.7 psi
+- GL-10: 24.5 → 14.7 psi
+- GL-07: 18.7 → 13.0 psi
+
+GL-07 has the lowest all-year offset of the ten wells and it is falling, which is
+weak evidence *against* V3c (raising GL-07's λ). V3c is now a leftover-slot probe
+in the RUNBOOK, submitted only after the branch is finished.
+
+**Known, quantified drift for the delivered model (state it in the write-up; do
+not retune).**
+
+- The implied λ falls ~0.02 per month. Extrapolated to an Oct–Dec test period, it
+  is ~0.67.
+- The static λ = 0.80 would therefore over-correct by about
+  0.13 × mean(f − 1) = 0.13 × 3.35% ≈ +0.4% on rates. It is less once
+  volume-weighted, because GL-07's f − 1 is only 2.0%.
+- That is small against the 2.5–3.5% error expected on new months, and it cannot
+  be verified before the test, so nothing is retuned.
+- Future work that removes it without a tuned parameter (Rovshan's proposal): make
+  each well's daily correction follow its measured offset,
+  `factor_w(day) = 1 + λ·(f_w − 1)·offset_w(day) / mean_offset_w`.
+
+Ask the organisers: **"Is the hidden part of the leaderboard split by days or by
+wells?"** Only a split by wells makes λ overfitting matter.
+
+Per-well offsets also order like the physics-derived raw routing factors:
+
+- GL-01…05: 27–29 psi, factors 1.032–1.057;
+- GL-06…10: 18–19.5 psi, factors 1.018–1.036.
+
+That independently supports the per-well shape of the correction.
+
 **VFM notebook prints the organisers' metrics (22 Nov).** Section 4 of
 `notebooks/VFM_Phase1.ipynb` now computes R², MAPE, WAPE and bias per phase,
 time-forward on 55 of 85 tests, with the same functions as `ml/fit_vfm.py`:
