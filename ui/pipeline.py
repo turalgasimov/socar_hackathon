@@ -22,6 +22,7 @@ import clean  # noqa: E402
 import features as F  # noqa: E402
 import predict_from_raw as PFR  # noqa: E402
 import pta_model as PM  # noqa: E402
+import pta_rate as PR  # noqa: E402
 from config import SENSORS  # noqa: E402
 from vfm import VFMModel, build_inputs  # noqa: E402
 
@@ -43,7 +44,8 @@ SENSOR_LABELS = {
 }
 RATES = ["oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"]
 PTA_COLUMNS = ["well_name", "shut_in_start", "shut_in_end", "duration_h", "horner_slope_psi_per_cycle",
-               "permeability_md", "skin", "delta_p_skin_psi", "flow_efficiency", "boundary", "r_e_ft",
+               "permeability_md", "skin", "delta_p_skin_psi", "flow_efficiency", "drawdown_psi", "lost_oil_stbd",
+               "boundary", "r_e_ft",
                "fit_rms_psi", "p_star_gauge_psia", "p_star_datum_psia", "pwf_gauge_psia", "qo_stbd", "tp_h",
                "k_horner_md", "skin_horner", "note", "r_inv_ft", "storage_bbl_per_psi"]
 
@@ -287,9 +289,15 @@ def model_match(ev, hf, pvt, comp, rates, tests_raw):
     tg, tp = plot["tg"], rB["tp_h"]
     mdp = PM.buildup_dp(best["theta"], tg, tp, rB["qo_stbd"], rk, best["boundary"])
     k, S, m, dps = best["k"], best["S"], best["m"], best["dP_skin"]
-    pstar, pwf = rB["p_star_gauge_psia"], rB["pwf_gauge_psia"]
+    # pbar - pwf from the fitted model (ml/src/pta_rate.py, the team's drawdown), not from p*: p* overstates
+    # the average pressure of a bounded well. Lost oil = q dP_skin / (pbar - pwf - dP_skin), an upper bound
+    # (the skin must be removable damage, and the lift system must take the extra rate).
+    Pw = pvt.loc[ev.well]
+    dd = PR.drawdown(m, S, best["boundary"], best.get("re"), Pw.wellbore_radius_ft, Pw.estimated_drainage_area_acres)
+    lost = rB["qo_stbd"] * dps / (dd - dps) if dps > 0 else 0.0
     res = {**rB, "horner_slope_psi_per_cycle": round(m, 3), "permeability_md": round(k, 2), "skin": round(S, 3),
-           "delta_p_skin_psi": round(dps, 2), "flow_efficiency": round((pstar - pwf - dps) / (pstar - pwf), 3),
+           "delta_p_skin_psi": round(dps, 2), "flow_efficiency": round((dd - dps) / dd, 3),
+           "drawdown_psi": round(dd, 1), "lost_oil_stbd": round(lost),
            "boundary": best["boundary"], "r_e_ft": round(best["re"]) if best["boundary"] == "closed" else None,
            "fit_rms_psi": round(best["rms_psi"], 3), "storage_bbl_per_psi": round(best["C"], 4),
            "k_horner_md": rB["permeability_md"], "skin_horner": rB["skin"],
@@ -314,6 +322,10 @@ def explain(r: dict, t=lambda s: s) -> list[str]:
         out.append(t("Skin is **+{S:.1f}**: the near-wellbore zone is **damaged**. About {dps:.0f} psi is lost across it, "
                      "and the well flows at roughly {fe:.0%} of its undamaged potential. **Candidate for a stimulation review.**")
                    .format(S=S, dps=dps, fe=fe))
+        if r.get("lost_oil_stbd"):
+            out.append(t("Removing the damage could add up to about **{lost:,.0f} stb/d** of oil at today's drawdown. "
+                         "An upper bound: it assumes the damage can be removed and the lift system can take the rate.")
+                       .format(lost=r["lost_oil_stbd"]))
     elif S < -0.5:
         out.append(t("Skin is **{S:.1f}**: the near-wellbore zone is **stimulated** (better than undamaged rock). "
                      "No damage to remove; flow efficiency {fe:.0%}.").format(S=S, fe=fe))

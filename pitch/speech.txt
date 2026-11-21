@@ -3,7 +3,6 @@
 [SPEAKER ?] = who says it, TODO.
 [CLICK] = next slide.  [DEMO] = action in the app.  (pause) = stop for a beat.
 Pace: about 140 words per minute. Do not read it word for word; know it.
-Placeholders in <angle brackets> wait on the PTA results.
 
 
 --- 0:00-0:45 | HOOK + PROBLEM | slides 2-3 | [SPEAKER ?] -------------------
@@ -18,8 +17,9 @@ Nobody knows. Not us, and not the engineer responsible for it.
 
 In nine months, the ten wells in this field logged almost four million
 sensor readings. But only eighty-five measured production rates. That is
-about one test per well per month. In Canada, the regulator requires at
-least three a month for wells this size.
+about one test per well per month. Under API's well-testing practice,
+MPMS 20.5, every rate between tests is allocated, not measured. And
+research shows that error drops most going from one test a month to two.
 
 [CLICK]
 
@@ -79,22 +79,23 @@ two and a half percent.
 Done. Every well, every day: oil, water and gas. The dots are the real well
 tests; the line is our model, filling the days in between.
 
-[DEMO] Home, then Well Tests.
+[DEMO] Left menu: Well Tests.
 
-Now the reservoir. Every shut-in is found automatically: <N> wells closed
-in this data. Here is <WELL>.
+Now the reservoir. Every shut-in is found automatically: six wells closed
+in this data. Here is GL-01, shut in for three days in April.
 
 [DEMO] Horner plot.
 
-Horner plot, straight line, and the answer: permeability <k> millidarcy,
-skin <s>, and <dP> psi lost to skin damage.
+Horner plot, then a model of the well fitted to every point. The answer:
+permeability 105 millidarcy, skin plus 5.7, and 117 psi lost to skin damage.
 
 [DEMO] Open Interpretation.
 
-Skin <s> means this well is <damaged / stimulated>. It is losing about <N>
-barrels a day. That makes it a stimulation candidate.
+Skin plus 5.7 means this well is damaged: it flows at only 57% of its
+potential. Removing the damage could add up to 750 barrels of oil a day.
+That makes it a stimulation candidate.
 
-[DEMO] Home, then Export.
+[DEMO] Left menu: Export.
 
 One click: Excel and a report, for both parts.
 
@@ -127,6 +128,9 @@ rediscovered the choke-flow law from the data.
 Final scores: oil two point six percent error, water three point eight, gas
 five point seven. R-squared above zero point nine nine on all three.
 
+On the reservoir side: permeability from 43 to 295 millidarcy. Of the six
+wells, three are stimulated and three are damaged.
+
 Researchers in Norway found the same thing: with only well tests, physics
 beats machine learning.
 
@@ -152,6 +156,9 @@ month. And every shut-in becomes a skin number automatically: with this
 kind of data-driven screening, PETRONAS cut the search for damaged wells
 from two weeks to one day.
 
+On this field alone, the three damaged wells could make up to 1,470 barrels
+of oil a day more. That's an upper bound.
+
 It all runs on one PC inside SOCAR's network. The data never leaves.
 
 
@@ -171,7 +178,7 @@ learning and computer vision into learning management systems.
 [CLICK]  (the counter stops here)
 
 In these seven minutes, SOCAR ran about one well test. On one PC, RizzML
-could have computed <the number on the right> daily well rates.
+could have computed [the number on the right] daily well rates.
 
 Today: a test of up to a day, once a month, six percent error, and up to a
 quarter of a million dollars of hardware per well. RizzML: two hundredths of

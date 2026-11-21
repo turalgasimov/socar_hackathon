@@ -100,13 +100,14 @@ weights by volume, so GL-07 (34% of field oil) dominates.
   - Measured effect: **2.5%**, agreed by four independent methods (IPR
     2.50%, thermal ratio 2.51%, thermal slope 2.05%, daily vs test window
     2.62%).
-  - Whether the correction is applied in the submission: TODO(peers).
+  - Applied in the submission: daily rates are scaled up by 80% of each well's measured
+    routing factor, the setting that scored best on the leaderboard.
 - **Partial shut-in days:** on the 10 days where a well was shut in part of
   the day, using the daily average differs by 30% on average (up to 68%)
   from integrating only the flowing minutes. Fixed by integrating; field oil
   total moves −0.023%.
 
-### PTA: in progress (peers)
+### PTA: done (peers): 8.3840 / 20, best of five PTA submissions
 - **6 build-ups found automatically.** GL-03, GL-05, GL-07 and GL-09 never
   shut in, so PTA isn't possible on those wells, and we say so.
 
@@ -119,14 +120,36 @@ weights by volume, so GL-07 (34% of field oil) dominates.
   | GL-08 | 2025-08-19 09:00 | 72.0 h | +522 psi |
   | GL-10 | 2025-05-27 21:04 | 9.0 h | +228 psi |
 
-- The gauge sits 150–420 ft above datum, so it needs a hydrostatic
-  correction before Horner analysis.
-- Single-phase oil is justified: downhole pressure stays above bubble point
-  (e.g. GL-04: 2,269 vs 1,265 psia).
-- GL-02 and GL-06 are short build-ups, so their slopes are flagged as
-  uncertain.
-- **Horner results (m, k, skin, ΔP skin) and plots:** TODO(peers). The demo,
-  the value slide and the speech all need them.
+- **Method: an exact model match, not a hand-picked straight line.**
+  - The diffusivity equation (wellbore storage + skin + radial flow + boundary) is solved in
+    Laplace space and fitted to every point of each build-up.
+  - It is the model family KAPPA Saphir and SLB regress on.
+  - Fit error 0.03–0.08 psi RMS, against gauge noise of about 0.03 psi.
+
+  | well | boundary | k (md) | skin | ΔP skin (psi) | m (psi/cycle) |
+  |---|---|--:|--:|--:|--:|
+  | GL-01 | closed, r_e 1,367 ft | 105.25 | 5.741 | 116.78 | 23.41 |
+  | GL-02 | infinite | 61.34 | −0.264 | −11.49 | 50.14 |
+  | GL-04 | infinite | 57.35 | −0.904 | −108.13 | 137.57 |
+  | GL-06 | infinite | 295.48 | 2.307 | 29.04 | 14.48 |
+  | GL-08 | infinite | 43.07 | −1.589 | −127.44 | 92.27 |
+  | GL-10 | closed, r_e 1,048 ft | 176.40 | 2.195 | 54.41 | 28.52 |
+
+- **Validated on data the fit never saw.**
+  - Fitted on the first 24 h of GL-01, the model forecasts the next 48 h at noise level (0.04 psi).
+  - The aquifer / constant-pressure boundary is rejected: it fits 7–9× worse.
+  - A second, independent solver (time-domain finite differences) agrees within 0.02 psi.
+- **Better than the textbook Horner line where it should be.**
+  - On GL-08 (clean 72 h) the two agree within 0.3%.
+  - On the short or storage-dominated tests (GL-02/04/06) the derivative is still 3–5% above the
+    radial-flow level when the test ends, so the Horner line is too steep and the model's k is
+    3–4% higher.
+  - Leaderboard: Horner 7.25 / 7.38, model 8.38.
+- **Datum:** the gauge sits 150–420 ft above datum. The offset is constant through a build-up, so it
+  cancels in k, skin, m and ΔP skin (verified per well). Only p* and p̄ need it.
+- **Single-phase oil is justified:** pressure stays above bubble point (GL-04: 2,269 vs 1,265 psia).
+- **Where to see it:** `ml/outputs/figures/pta/` (9 figures) and `notebooks/PTA_Phase2.ipynb`. The
+  app shows the same results, and `ui/check_pipeline.py` checks it against the submission.
 
 ### UI: built (us), in `ui/`
 - **Run:** `pip install -r ui/requirements.txt`, then `cd ui && streamlit run app.py`
@@ -150,10 +173,14 @@ weights by volume, so GL-07 (34% of field oil) dominates.
   ML, and copying the last test beats most models (Hotvedt et al., 2022, 10
   wells).
 - **Problem numbers:**
-  - Canada's regulator (AER Directive 017) requires at least 3 tests per
-    month for oil wells above 30 m³/d. Ours average about 1,450 bbl/d (about
-    230 m³/d) and get about 1. (The average SOCAR well, about 4 m³/d, would
-    need only 1 a month there.)
+  - Well testing follows API MPMS Chapter 20.5 (2017), the recommended practice for production
+    well testing in measurement and allocation: separator, multiphase-meter and tank tests. It
+    treats test duration as a flow-stability question (Annex C). We found no fixed test frequency
+    in its public description; the text is paywalled, so we do not claim one either way.
+  - Between tests, every rate is allocated, not measured. Sadri & Shariatipour (J. Energy Resour.
+    Technol. 142(4), 2020): allocation error falls as tests get more frequent, most going from one
+    to two tests a month; monthly to weekly testing cut allocation-error costs by $27–80M in their
+    three cases. Our wells get about 1 a month.
   - A multiphase meter costs about US$100–250k, plus up to 25% to install
     (Shell/PDO, 2002);
     smart-well hardware about US$2–5M per well (Ma et al., 2020).
@@ -234,17 +261,18 @@ Press R to reset it before you start. Slide 1 is blank on purpose (stand there w
 
 | # | Slide | Content | Status |
 |--:|---|---|---|
-| 1 | Hook | One well, 9 months: a dense sensor line and ~9 dots for the tests. Question: "How much did GL-04 produce yesterday?" | TODO(us): build the figure |
-| 2 | Problem | 3.9 M readings vs 85 rates · ~1 test per month; Canada requires 3 for wells above 30 m³/d · **52% of SOCAR oil is gas-lifted; 1% unseen ≈ US$26M/yr** · meters US$100–250k each · separate, disconnected tools | text ready |
-| 3 | Solution | One-liner + 3 points: one connected flow · physics first · no hardware, on SOCAR's server | text ready |
-| 4 | Demo | Streamlit app embedded (`?embed=true`); QR code to open it on a phone | TODO(us) |
-| 5 | Physics vs ML | Three bars: copy last test 6.00 · Ridge 5.11 · physics 2.67. Exponents 2.06 / 0.47 vs 2 / 0.5 | TODO(us): chart |
-| 6 | Results + limits | Scores table (R², MAPE, WAPE) · routing gap 2.5% by 4 methods · unseen wells flagged · PTA results table | TODO(peers): PTA numbers |
-| 7 | Competition | The five-row table in §8 | text ready |
-| 8 | Value + deployment | Daily rates · skin → lost barrels → stimulation list · on-prem, browser only, one model version | TODO(peers): $ figure |
-| 9 | Team | TODO(you): one line per person | TODO(you) |
-| 10 | Cost cut | Centre: SOCAR today vs RizzML on time per rate, rates per well, error, hardware, the frozen compute counter, and money saved ($125–312k of meters per well; up to $1.8B if every SOCAR well were metered) | built |
-| 11 | References | 10 sources | built |
+| 1 | Blank | Empty on purpose: stand there while introduced. The live counter starts on the next click | built |
+| 2 | Hook | Question: "How much oil did GL-04 produce yesterday?" · 2D map of the ten wells · GL-04's nine measured tests as dots with "?" between them | built |
+| 3 | Problem | 1 test a month; allocation error drops most going to 2 (API MPMS 20.5, Sadri & Shariatipour 2020) · 52% of SOCAR oil is gas-lifted · separator $0.8–1.5M, meter $100–250k · GL-04's April as a calendar: 1 measured day, 29 unknown | built |
+| 4 | Solution | RizzML one-liner · no hardware, on SOCAR's server · the daily estimate drawn through the test dots · animated well cross-section (choke, gas-lift valves, gauge, reservoir) | built |
+| 5 | Demo | The app embedded live (sign in once on this slide before the talk) | built; TODO(us): QR code to open it on a phone |
+| 6 | Physics vs ML | Three bars: copy last test 6.0% · ML, 58 features 5.1% · physics 2.7%. Exponents 2.06 / 0.47 vs 2 / 0.5 | built |
+| 7 | Results + limits | VFM per phase (MAPE, WAPE, R²) · routing gap 2.5% by 4 methods · unseen wells flagged · PTA: k 43–295 md, skin −1.6 to +5.7; three wells stimulated (negative skin), three damaged | built |
+| 8 | Competition | Rates camp vs reservoir-diagnosis camp, RizzML bridging them; SOCAR already runs KAPPA (table in §8) | built |
+| 9 | Value + deployment | Daily rates · skin → lost barrels → stimulation list (up to ~1,470 stb/d of oil on the three damaged wells, ≈ $135k a day gross at $92; an upper bound) · PETRONAS 2 weeks → 1 day · one PC, data never leaves · the shut-in well, pressure building | built |
+| 10 | Team | Photos, education, one achievement and one line each; "Our team trying to understand the provided data" | built |
+| 11 | Cost cut | Centre: SOCAR today vs RizzML on time per rate, rates per well, error, hardware, the frozen compute counter, and money saved ($125–312k of meters per well; up to $1.8B if every SOCAR well were metered) | built |
+| 12 | References | 12 sources | built |
 | — | Backup | Q&A slides: validation scheme, routing gap, unseen wells, KAPPA | TODO(us) |
 
 ## 7. Demo plan
@@ -256,7 +284,8 @@ Press R to reset it before you start. Slide 1 is blank on purpose (stand there w
 3. **VFM:** daily oil, water and gas per well, with the test dots on top.
    Download the CSV.
 4. **PTA:** list of shut-ins → Horner plot → k, skin, ΔP skin →
-   interpretation. TODO(peers) numbers.
+   interpretation. Show GL-01: k 105 md, skin +5.7, ΔP skin 117 psi, flow
+   efficiency 57%, up to ~750 stb/d recoverable (upper bound).
 5. **Export:** Excel and the report.
 
 Fallbacks:
@@ -308,14 +337,17 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
   1. A rate every day instead of about once a month.
   2. Every shut-in turned into skin, then lost barrels, then a stimulation
      candidate list. PETRONAS benchmark: +6,500 bopd from 28 jobs.
-     TODO(peers): our own lost-barrels figure.
+     Ours: up to ~1,470 stb/d of oil lost to skin on the three damaged wells
+     (GL-01 ~750, flow efficiency 57%; GL-10 ~520; GL-06 ~190), at today's drawdown.
+     Say it as an **upper bound**: it assumes the skin is removable damage and the
+     lift system can take the extra rate. At $92 that is ≈ $135k a day gross.
   3. No meter hardware.
   4. One model version and an audit trail.
   5. Money: 1% of SOCAR's gas-lifted oil ≈ US$26M a year; 1% of our 10
      wells ≈ $4.9M a year (see §2, "What the problem costs").
-  6. Skin → dollars: lost rate = q × ΔP_skin / (p̄ − p_wf − ΔP_skin), so the
-     app can turn every shut-in into lost bbl/d and $/yr *(inference, standard
-     inflow equation)*. Real-world anchor: PETRONAS got about 232 bopd per
+  6. Skin → dollars: lost rate = q × ΔP_skin / (p̄ − p_wf − ΔP_skin), with
+     p̄ − p_wf from the fitted build-up model (`ml/src/pta_rate.py`). The app now
+     shows it for every damaged well. Real-world anchor: PETRONAS got about 232 bopd per
      acid job, which is about $7.8M a year gross per job at $92.
 - **Deployment:** one server inside SOCAR's network; engineers use a browser;
   the data never leaves. The roadmap later adds company login and a live
@@ -340,22 +372,24 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 | 85 labels: isn't that overfitting? | That's why physics wins. Few parameters, and ML was no better than copying the last test. |
 | Does it work on a new well? | Not reliably (~70% error). The app flags unseen wells instead of guessing quietly; a new well needs a few tests to calibrate. |
 | Is the data synthetic? Then the choke law is built in. | Possibly. We present it as a physics-consistency check, not proof that physics always wins. |
-| What about well-test vs normal-day conditions? | Measured at 2.5% by four independent methods. TODO(peers): whether it is corrected in the submission. |
+| What about well-test vs normal-day conditions? | Measured at 2.5% by four independent methods, and corrected in the submission (80% of each well's routing factor scored best). |
 | Why PTA on daily rates? | The brief asks for it. A 2.6% rate error moves skin by only ~0.013; permeability inherits the error one-to-one. |
 | Is single-phase valid? | Yes: pressure stays above bubble point on every well. |
-| GL-02 and GL-06 build-ups are short. | 5.7 h and 8 h; radial flow may not develop, so we flag them. |
+| GL-02 and GL-06 build-ups are short. | 5.7 h and 8 h. The model fits through the storage transition, so no straight-line window is needed. A Horner line on the last points reads k 3–4% low. |
+| How do you know the model is right, not just flexible? | Tests on data it never saw: it forecasts the late build-up from the early part at noise level, the competing boundary is rejected 7–9×, and a second solver agrees within 0.02 psi. |
 | KAPPA already does this. | KAPPA-Automate gets rates from a reservoir model. Ours come from choke physics calibrated on well tests, for gas lift, and can feed KAPPA. Complementary. |
+| Is this KAPPA? | Same physics family (analytical diffusivity solutions + regression). What we add: automatic shut-in detection, and the rates come from our own VFM on the same well. |
 | Deployment and security? | On-premises server, browser access; the data never leaves SOCAR. |
 | Where does the $26M come from? | SOCAR Annual Report 2024: 52.4% of oil is gas-lifted (3.92 Mt ≈ 78,800 bbl/d). 1% of that at Brent $92 is ≈ $26M a year gross. 1% is the top-quartile deferment benchmark (PDO, SPE-214005). |
 | SOCAR wells make ~26 bbl/d, yours ~1,450. | True; the hackathon wells aren't typical. Value scales with total volume, and software costs almost nothing per extra well. |
 
 ## 12. Open before 13:00 tomorrow
 
-- [ ] TODO(peers): Horner results and plots; whether the routing correction is applied
+- [x] PTA results and plots (exact model match, 8.3840 / 20); routing correction applied in the submission
 - [ ] TODO(you): product name, language, speakers, team rows, pilot size, SOCAR user details
-- [ ] TODO(us): UI end to end on raw CSVs
+- [x] UI end to end on raw CSVs (`ui/check_pipeline.py` passes)
 - [x] Deck in `pitch/deck/` (hook chart, physics-vs-ML bars, 2D field map, month calendar, well cross-section); single file and PDF in `pitch/`
-- [ ] TODO(us): QR code for the demo; fill RizzML, team and PTA numbers in the deck
+- [ ] TODO(us): QR code for the demo (PTA and lost-oil lines are on slides 7 and 9)
 - [ ] TODO(us): backup video
 - [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
 - [ ] Rehearse twice with a stopwatch; cut the speech if it runs past 6:20

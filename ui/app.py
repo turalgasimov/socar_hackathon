@@ -128,6 +128,7 @@ MODULES = {
     "convert": ("swap_horiz", N_("Convert"), N_("CSV and Excel"), "green", False),
     "history": ("history", N_("History"), N_("Your uploads and files"), "green", False),
     "settings": ("settings", N_("Settings"), N_("Theme and language"), "green", False),   # opened from the account bar
+    "help": ("help", N_("Help"), N_("How to use RizzML"), "green", False),                  # opened from the account bar
 }
 # Top row is the workflow, left to right; the row below holds what each step needs less often.
 ROWS = (("big", ["load", "rates", "pta", "graph", "export"]), ("small", ["sample", "field", "quality", "history", "convert"]))
@@ -222,7 +223,7 @@ NAV = (["load", "field", "quality"], ["rates", "pta", "graph"], ["export", "hist
 def nav_item(key: str):
     icon, title, colour, locked = (("apps", "Home", "home", False) if key == "home" else
                                    (MODULES[key][0], MODULES[key][1], MODULES[key][3], MODULES[key][4] and r is None))
-    if key == "settings":          # account item, not a feature group: no colour bar
+    if key in ("settings", "help"):   # account items, not a feature group: no colour bar
         colour = "none"
     active = "-active" if ss.view == key else ""
     st.button(t(title), key=f"nav_{colour}_{key}{active}", icon=f":material/{'lock' if locked else icon}:",
@@ -240,6 +241,7 @@ def sidebar():
                     nav_item(key)
         with st.container(key="navaccount"):
             st.caption(f":material/account_circle: {ss.user.replace('@', '@' + chr(0x200b))}")
+            nav_item("help")
             nav_item("settings")
             st.button(t("Log out"), icon=":material/logout:", type="tertiary", key="nav_none_logout", on_click=logout, **WIDE)
 
@@ -284,6 +286,7 @@ def label(col: str) -> str:
 def page_home():
     with st.container(horizontal=True, horizontal_alignment="right", vertical_alignment="center", key="account"):
         st.markdown(f":material/account_circle: {ss.user.replace('@', '@' + chr(0x200b))}")   # no mailto link
+        st.button(t("Help"), icon=":material/help:", type="tertiary", on_click=open_module, args=("help",))
         st.button(t("Settings"), icon=":material/settings:", type="tertiary", on_click=open_module, args=("settings",))
         st.button(t("Log out"), icon=":material/logout:", type="tertiary", on_click=logout)
     for size, keys in ROWS:
@@ -558,6 +561,16 @@ def set_theme():
         ss.theme_pick = theme
 
 
+def page_help():
+    """The user guide, docs/guide.<lang>.md; each "## " section is a tab, so tab names come translated."""
+    header("help")
+    guide = HERE / "docs" / f"guide.{ss.lang}.md"
+    text = (guide if guide.exists() else HERE / "docs" / "guide.en.md").read_text(encoding="utf-8")
+    sections = [part.split("\n", 1) for part in re.split(r"^## ", text, flags=re.M)[1:]]
+    for tab, (_, body) in zip(st.tabs([title.strip() for title, _ in sections]), sections):
+        tab.markdown(body)
+
+
 def page_settings():
     header("settings")
     st.segmented_control(t("Theme"), ["dark", "light"], default=theme, key="theme_pick", on_change=set_theme,
@@ -648,7 +661,7 @@ if ss.user:
         sidebar()
     {"home": page_home, "load": page_load, "field": page_field, "quality": page_quality, "rates": page_rates,
      "pta": page_pta, "graph": page_graph, "export": page_export, "convert": page_convert,
-     "history": page_history, "settings": page_settings}[ss.view]()
+     "history": page_history, "help": page_help, "settings": page_settings}[ss.view]()
 else:
     page_login()
 

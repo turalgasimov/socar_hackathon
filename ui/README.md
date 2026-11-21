@@ -81,6 +81,8 @@ Each prints a line starting with `OK` when it passes.
 4. **History** lists your uploads, analyses and downloaded files, and reopens or re-downloads them.
 5. **Settings** (top right on Home, bottom left elsewhere): dark or light, Azerbaijani, English or Russian.
    Remembered per browser.
+6. **Help** (next to Settings): how to use the app, the data it expects, how the method works, a
+   glossary and troubleshooting, in all three languages.
 
 ## Files
 
@@ -90,6 +92,7 @@ Each prints a line starting with `OK` when it passes.
 | `pipeline.py` | Back end: cleaning, features, VFM prediction, shut-in detection, PTA model match, exports |
 | `charts.py` | Plotly charts, light and dark |
 | `i18n.py` | Screen text in Azerbaijani, English and Russian |
+| `docs/guide.*.md` | The in-app Help guide, one file per language; each `##` section is a tab |
 | `store.py` | Sign-in, per-user history, stored files |
 | `style.css` | Tiles, sidebar and sign-in styling (SOCAR colours) |
 | `check_pipeline.py` | End-to-end check against the submitted results |

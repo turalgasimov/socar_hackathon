@@ -37,7 +37,7 @@
     <svg class="trace hook-chart" data-mode="tests" viewBox="0 0 1408 300" role="img"
          aria-label="GL-04 oil rate in 2025: nine measured well tests, about a month apart"></svg>
     <p class="src">Hackathon dataset: high_freq_data.csv (3,914,560 rows after cleaning), well_tests.csv (85 tests)</p>
-    <aside class="notes">0:00–0:45. Ask the question, pause. "Nobody knows." Readings vs rates; one test a month, Canada requires three for wells this size.</aside>
+    <aside class="notes">0:00–0:45. Ask the question, pause. "Nobody knows." Readings vs rates; one test a month. Between tests every rate is allocated (API MPMS 20.5); the error drops most going from one test a month to two.</aside>
   </section>
 
   <section>
@@ -47,13 +47,13 @@
       <h2>What you can't see, you lose</h2>
       <p>Between tests, engineers estimate, across separate tools and spreadsheets.</p>
       <div class="readout">
-        <b>1 / month</b><span>well tests here; Canada requires 3 for wells this size</span>
+        <b>1 / month</b><span>well tests here; allocation error drops most going to 2 a month</span>
         <b>52%</b><span>of SOCAR's oil comes from gas-lifted wells</span>
         <b>$0.8–1.5M</b><span>for one test separator, plus $20–80k a year to run</span>
         <b>$100–250k</b><span>for one multiphase meter, plus up to 25% to install</span>
       </div>
     </div>
-    <p class="src">AER Directive 017 (2026); SOCAR Annual Report 2024; Scheers et al., Shell/PDO, NSFMW 2002 (2002 dollars)</p>
+    <p class="src">API MPMS Ch. 20.5 (2017); Sadri &amp; Shariatipour, J. Energy Resour. Technol. 2020; SOCAR Annual Report 2024; Scheers et al., Shell/PDO, NSFMW 2002 (2002 dollars)</p>
     <aside class="notes">Between tests engineers estimate. More than half of SOCAR's oil is gas-lifted, and every measured rate costs time and hardware: a separator up to $1.5M, a meter $100–250k.</aside>
   </section>
 
@@ -101,8 +101,9 @@
     <ul class="points">
       <li>Well tests read 2.5% high against normal days. Measured four independent ways.</li>
       <li>A well the model has never seen is flagged, not guessed.</li>
+      <li>Well tests (PTA): permeability 43–295 md, skin −1.6 to +5.7. Three wells stimulated, three damaged.</li>
     </ul>
-    <p class="src">Time-forward on 55 of 85 tests, same scale as the previous slide; routing gap from IPR, thermal ratio, thermal slope and daily-vs-test-window checks</p>
+    <p class="src">Time-forward on 55 of 85 tests, same scale as the previous slide; routing gap from IPR, thermal ratio, thermal slope and daily-vs-test-window checks; PTA from the submitted model match</p>
     <aside class="notes">Read the three scores. Norway (Hotvedt et al.) found the same with only well tests. Unseen wells are flagged.</aside>
   </section>
 
@@ -130,11 +131,12 @@
       <h2>Every shut-in becomes a skin number</h2>
       <div class="readout">
         <b>Daily</b><span>rates for every well, instead of one test a month</span>
+        <b>1,470</b><span>stb/d more oil from the 3 damaged wells, at most (≈ $135k a day)</span>
         <b>1 day</b><span>instead of 2 weeks to screen wells for skin damage (PETRONAS)</span>
         <b>1 PC</b><span>runs it, inside SOCAR's network; the data never leaves</span>
       </div>
     </div>
-    <p class="src">PETRONAS stimulation screening, SPE-199253, 2020</p>
+    <p class="src">PETRONAS screening, SPE-199253, 2020. Lost oil from the submitted PTA: q·ΔP<sub>skin</sub>/(p̄ − p<sub>wf</sub> − ΔP<sub>skin</sub>), upper bound, $92/bbl</p>
     <aside class="notes">Every shut-in becomes a skin number automatically. PETRONAS cut skin screening from two weeks to one day. One PC, data never leaves.</aside>
   </section>
 
@@ -171,7 +173,8 @@
     <h2>References</h2>
     <ol>
       <li>SOCAR Annual Report 2024: 52.4% of oil from gas lift (3,921.7 kt); 5,715 operating wells.</li>
-      <li>Alberta Energy Regulator, Directive 017, Sep 2026, Table 6.1: test frequency by well class.</li>
+      <li>API MPMS Chapter 20.5 (2017), Recommended Practice for Application of Production Well Testing in Measurement and Allocation.</li>
+      <li>Sadri &amp; Shariatipour, "Mitigating allocation and hydrocarbon accounting uncertainty using more frequent flow test data", J. Energy Resour. Technol. 142(4), 2020: error falls most going from one to two tests a month.</li>
       <li>Scheers et al., "Multiphase flow metering per well: can it be justified?", Shell/PDO, NSFMW 2002.</li>
       <li>Hotvedt, Grimstad, Imsland, "Passive learning to address nonstationarity in virtual flow metering", Expert Systems with Applications, 2022 (arXiv 2202.03236).</li>
       <li>Bikmukhametov &amp; Jäschke, "First principles and machine learning virtual flow metering: a literature review", JPSE 184, 2020.</li>

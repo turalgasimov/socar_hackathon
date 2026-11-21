@@ -29,6 +29,21 @@ if ref_file.exists():
             k_ref, s_ref = ref.loc[row.well_name, "permeability_md"], ref.loc[row.well_name, "skin"]
             assert abs(row.permeability_md / k_ref - 1) < 0.005, (row.well_name, row.permeability_md, k_ref)
             assert abs(row.skin - s_ref) < 0.02, (row.well_name, row.skin, s_ref)
+shipped = P.ROOT / "ml/outputs/pta_results.xlsx"
+if shipped.exists():   # lost oil must match the shipped model and the submitted daily rates (2% for the app's own VFM)
+    sr = pd.read_excel(shipped, sheet_name="results").set_index("well_name")
+    vfm = pd.read_csv(P.ROOT / "ml/outputs/vfm_submission.csv", parse_dates=["timestamp"]).set_index(["well_name", "timestamp"])
+    pvt = pd.read_csv(data / "reservoir_pvt.csv").set_index("well_name")
+    for row in pta.itertuples():
+        if row.well_name in sr.index and sr.loc[row.well_name, "delta_p_skin_psi"] > 0:
+            s = sr.loc[row.well_name]
+            dd = P.PR.drawdown(s.horner_slope_psi_per_cycle, s.skin, s.boundary, s.r_e_ft,
+                               pvt.loc[row.well_name, "wellbore_radius_ft"], pvt.loc[row.well_name, "estimated_drainage_area_acres"])
+            q = vfm.loc[(row.well_name, pd.Timestamp(s.shut_in_start).normalize() - pd.Timedelta(days=1)), "oil_rate_stbd"]
+            want = q * s.delta_p_skin_psi / (dd - s.delta_p_skin_psi)
+            assert abs(row.lost_oil_stbd / want - 1) < 0.02, (row.well_name, row.lost_oil_stbd, round(want))
+    print(f"Lost oil to skin, upper bound: {pta.lost_oil_stbd.sum():,.0f} stb/d "
+          f"({', '.join(f'{w} {v:,.0f}' for w, v in zip(pta.well_name, pta.lost_oil_stbd) if v)})")
 for name, df in {"rates": r["rates"], "pta": pta}.items():
     assert len(pd.read_excel(io.BytesIO(P.to_excel({name: df})))) == len(df)
     assert len(pd.read_csv(io.BytesIO(P.to_csv(df)))) == len(df)

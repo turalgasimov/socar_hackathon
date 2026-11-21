@@ -34,6 +34,8 @@ TEXT = {
     "Sample data not found": ("Nümunə məlumat tapılmadı", "Демо-данные не найдены"),
     "History": ("Tarixçə", "История"),
     "Your uploads and files": ("Yükləmələriniz və fayllarınız", "Ваши загрузки и файлы"),
+    "Help": ("Kömək", "Справка"),
+    "How to use RizzML": ("RizzML-dən necə istifadə etməli", "Как пользоваться RizzML"),
     "Log out": ("Çıxış", "Выйти"),
     "Daily well rates and well-test analysis": ("Gündəlik quyu debitləri və quyu sınaqlarının analizi",
                                                 "Суточные дебиты и анализ исследований скважин"),
@@ -178,6 +180,12 @@ TEXT = {
     "Extrapolated pressure p* is {p:.0f} psia at the gauge; the test investigated about {ri:,.0f} ft into the reservoir.":
         ("Ekstrapolyasiya olunmuş təzyiq p* manometrdə {p:.0f} psia-dır; sınaq laya təxminən {ri:,.0f} ft dərinliyə baxıb.",
          "Экстраполированное давление p* на манометре {p:.0f} psia; исследование охватило около {ri:,.0f} ft пласта."),
+    "Removing the damage could add up to about **{lost:,.0f} stb/d** of oil at today's drawdown. "
+    "An upper bound: it assumes the damage can be removed and the lift system can take the rate.":
+        ("Zədəni aradan qaldırmaq bugünkü depressiyada gündə təxminən **{lost:,.0f} stb/d**-ə qədər əlavə neft verə bilər. "
+         "Bu yuxarı həddir: zədənin aradan qaldırıla biləcəyi və qazlift sisteminin bu debiti qəbul edəcəyi fərz olunur.",
+         "Устранение загрязнения может добавить до **{lost:,.0f} stb/d** нефти при текущей депрессии. "
+         "Это верхняя оценка: предполагается, что загрязнение устранимо, а газлифт примет этот дебит."),
     # export
     "Production rates (VFM)": ("Hasilat debitləri (VFM)", "Дебиты (VFM)"),
     "Well tests (PTA)": ("Quyu sınaqları (PTA)", "Исследования скважин (PTA)"),
