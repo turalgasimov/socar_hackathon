@@ -62,6 +62,25 @@ Phase split from the choke model: oil 2.35%, water 3.25%, gas 5.33%. The fitted
 exponents (`S^2.05`, `dPc^0.47`) reproduce the subcritical choke law, so the
 model is recovering real physics rather than curve-fitting.
 
+**Time-forward scores** (`ml/eda/timeforward_vfm.py`) — the honest number for
+the deliverable. Predicting well *w* at time *T*, training sees the other nine
+wells plus *w*'s own earlier tests only; the water-cut trend is extrapolated
+from past tests. 55 of 85 tests scored (a well needs 3 prior tests).
+
+| target | MAPE | bias |
+|---|--:|--:|
+| liquid | **2.04%** | +0.26% |
+| oil | **3.07%** | +0.53% |
+| water | **3.99%** | −0.03% |
+| gas | **5.90%** | +2.31% |
+
+Worth noting: LOO (1.82%) is only mildly optimistic here, 2.04% time-forward.
+A constrained physical form cannot memorise a well's level the way a free ML
+model can — the same comparison on the Ridge feature stack degrades 3.99% →
+6.44%. **LOO is still the wrong number to report**, but the choke model is not
+leaning on leakage. Gas carries a +2.31% bias from the `gas = oil × Rs` split;
+worth revisiting if gas accuracy matters to scoring.
+
 Artefacts (regenerate — `data/processed/` is gitignored):
 `high_freq_clean.parquet`, `well_tests_clean.parquet`,
 `train_table.parquet` (85 × 147), `daily_table.parquet` (2,729 well-days × 143).
@@ -130,8 +149,11 @@ decides item 1.
   it must predict on.
 
   It reaches the choke model through `dPc`: 129.6 psi on test windows vs 119.2
-  on normal days. Through `dPc^0.47` that alone biases predictions **−3.8%** —
-  about twice the model's own 1.82% LOO error. Independently confirmed in
+  on normal days. Through `dPc^0.47` that alone biases predictions **−3.8%**.
+  Against the honest time-forward errors that is ~1.9× the liquid error (2.04%)
+  and ~1.2× the oil error (3.07%) — comparable to the model's accuracy, not
+  dwarfed by it, and *systematic*, so unlike random error it does not average
+  out over 2,729 well-days. Independently confirmed in
   `docs/DATA_REPORT_TASK1_TASK2.md` §6, which estimates test rates 1–4% high.
 
   **This is a correction to apply, not a reason to discard the model.** Decide

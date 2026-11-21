@@ -25,14 +25,16 @@ change before you start.
 
 **Is the daily ground truth measured under test-separator routing or normal
 production?** The answer decides task 1 and could be worth several points of
-accuracy. Everything below assumes we do not get an answer and have to hedge.
+accuracy. Everything below assumes we do not get an answer and have to hedge
 
 ## 1. Settle the test-mode correction — **blocks everything**
 
-The choke model scores 1.82% MAPE, but that is measured under test-separator
-routing. On normal production days `dPc` is 119.2 psi against 129.6 during
-tests, and through `dPc^0.47` that is a systematic **−3.8%** on every daily
-prediction — roughly twice the model's own error.
+The choke model scores 2.04% MAPE time-forward on liquid (3.07% oil), but that
+is measured under test-separator routing. On normal production days `dPc` is
+119.2 psi against 129.6 during tests, and through `dPc^0.47` that is a
+systematic **−3.8%** on every daily prediction — comparable to the model's own
+error, and systematic rather than random, so it does not average out across
+2,729 well-days.
 
 Three options, in order of preference:
 
@@ -56,8 +58,12 @@ measured size of the correction, plus whichever script implements it.
 Start from what already wins: **choke physics + per-well IPR**, phase split via
 the water-cut trend (`benchmark_vfm.py` already has all three).
 
-- Score **time-forward**, not LOO. LOO is for comparing feature sets, not for
-  reporting.
+- Score **time-forward**, not LOO — `ml/eda/timeforward_vfm.py` already does
+  this for the choke model (liquid 2.04%, oil 3.07%, water 3.99%, gas 5.90%).
+  Those are the numbers to beat and to quote.
+- **Gas has a +2.31% bias** from the `gas = oil × Rs` split, while oil and
+  water are unbiased. If gas is scored equally, a better gas path than
+  multiplying by solution GOR is the cheapest accuracy left on the table.
 - Fit on all 85 tests once the scheme is settled, then **persist the fitted
   object** (`ml/models/vfm.joblib`) so the UI loads it instead of refitting.
 - Write a thin `predict(features_df) -> DataFrame` wrapper — the UI and the
