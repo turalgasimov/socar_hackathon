@@ -43,9 +43,26 @@ landed between the two and isolated neither change.
 
 | probe | change vs S1 | score |
 |---|---|--:|
-| widened water-cut split | routing-safe sensors added to WC | **20.5700** |
+| widened water-cut split | routing-safe sensors added to WC | 20.5700 |
+| label transfer, a=1.0 | trained on 85 real + 170 transferred | **20.3300** |
 
-**Time-forward is a poor guide to leaderboard performance, twice over.** The
+**Label transfer is closed.** Tested three ways and it loses every time:
+unweighted time-forward (oil WAPE 2.30 → 4.55), with Rovshan's 1/σ² weighting
+at every α from 0.05 to 1.0 (monotonically worse), and on the leaderboard
+(20.33 against 20.9463). An isolation run showed the transferred rows
+themselves do the damage, not the `whp_downstream` feature they were meant to
+unlock: at α=0.05, 2.30 → 3.88 with the same water-cut set, → 3.84 with
+`whp_downstream` added.
+
+The idea was sound and the diagnosis behind it was right — the transferred
+rows really do land where the predictions live (`whp_downstream` 168.8–204.7
+against 158.0–205.3). It simply does not pay. Those 170 rows are not
+measurements; they are 85 labels moved by a physics assumption, and
+correlated error in two-thirds of the training set costs more than the
+feature coverage is worth. The same correction applied as a post-hoc scale
+is worth +0.735 and leaves the exponents alone.
+
+**Time-forward is a poor guide to leaderboard performance, in both directions.** The
 widened water-cut split improved WAPE *and* R² on all three phases
 time-forward and lost 0.38 on the leaderboard. S3's gas factor improved all
 three gas metrics and lost 0.04. Both are reverted.
