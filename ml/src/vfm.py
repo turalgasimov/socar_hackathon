@@ -137,16 +137,27 @@ class VFMModel:
         # That is a hard zero, not something to extrapolate a log-law onto --
         # ln(S) is undefined at S=0. Affects the middle days of the multi-day
         # build-ups; partial days are modelled normally from the day's mean.
-        shut = X.S.values <= 0
+        shut = np.asarray(X.S.values <= 0)
 
-        S = np.where(shut, 1.0, X.S.values)  # placeholder, masked out below
-        base = (W @ b[:n] + b[n] * np.log(S)
-                + b[n + 1] * np.log(X.dpc.values) + b[n + 2] * np.log(X.whp.values))
+        # A window with no sensor rows aggregates to NaN. brentq raises on a
+        # NaN objective, which would take the whole run down, so those rows are
+        # skipped and returned as NaN for the caller to handle.
+        need = ["S", "dpc", "whp", "gl", "rs", "dp_tubing", "t"]
+        bad = ~np.isfinite(X[need].to_numpy(dtype="float64")).all(axis=1) | ~np.isfinite(wc)
+        if bad.any():
+            warnings.warn(f"{int(bad.sum())} row(s) have incomplete sensor data and "
+                          "cannot be predicted; returning NaN for those rows.",
+                          UserWarning, stacklevel=2)
+
+        S = np.where(shut | bad, 1.0, X.S.values)  # placeholder, masked out below
+        with np.errstate(invalid="ignore", divide="ignore"):
+            base = (W @ b[:n] + b[n] * np.log(S)
+                    + b[n + 1] * np.log(X.dpc.values) + b[n + 2] * np.log(X.whp.values))
         b_glr = b[n + 3]
         gl, rs = X.gl.values, X.rs.values
 
-        qL = np.zeros(len(X))
-        for i in np.flatnonzero(~shut):
+        qL = np.where(bad, np.nan, 0.0)
+        for i in np.flatnonzero(~shut & ~bad):
             def f(lq: float, i: int = i) -> float:
                 q = np.exp(lq)
                 glr = (gl[i] + q * (1 - wc[i]) * rs[i] / 1000) / q
@@ -154,7 +165,7 @@ class VFMModel:
             qL[i] = np.exp(brentq(f, np.log(10.0), np.log(1e6)))
 
         qL *= self.routing_factor
-        wc = np.where(shut, 0.0, wc)
+        wc = np.where(shut, 0.0, np.where(bad, np.nan, wc))
         oil = qL * (1 - wc)
         return pd.DataFrame({
             "well_name": X.well_name.values,

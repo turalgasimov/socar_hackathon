@@ -9,6 +9,8 @@ decisions stay auditable.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
@@ -23,8 +25,20 @@ DTYPES = {c: "float32" for c in SENSORS}
 # --------------------------------------------------------------------------- #
 # high-frequency sensor data
 # --------------------------------------------------------------------------- #
-def load_high_freq(use_cache: bool = True) -> pd.DataFrame:
-    """Read the 3.9M-row per-minute file, caching it as parquet (257MB -> 62MB)."""
+def load_high_freq(use_cache: bool = True, data_dir: Path | None = None) -> pd.DataFrame:
+    """Read the per-minute file, caching it as parquet (257MB -> 62MB).
+
+    `data_dir` points the whole pipeline at a different copy of the raw CSVs,
+    which is what the app does with an upload. The parquet cache is bypassed
+    entirely in that case -- otherwise a run against new data would silently
+    return the cached rows from *our* dataset, which is the worst possible
+    failure in a live demo because it looks like it worked.
+    """
+    if data_dir is not None:
+        return pd.read_csv(
+            Path(data_dir) / "high_freq_data.csv",
+            dtype={**DTYPES, "well_name": "category"}, parse_dates=["timestamp"],
+        ).sort_values(["well_name", "timestamp"], ignore_index=True)
     if use_cache and F_HF_PARQUET.exists():
         return pd.read_parquet(F_HF_PARQUET)
     hf = pd.read_csv(
@@ -54,8 +68,9 @@ def _despike(s: pd.Series, floor: float, n_sigma: float = 6.0,
     return mask.fillna(False)
 
 
-def clean_high_freq(use_cache: bool = True, verbose: bool = True) -> tuple[pd.DataFrame, dict]:
-    hf = load_high_freq(use_cache)
+def clean_high_freq(use_cache: bool = True, verbose: bool = True,
+                    data_dir: Path | None = None) -> tuple[pd.DataFrame, dict]:
+    hf = load_high_freq(use_cache, data_dir)
     rep: dict = {"rows_in": len(hf)}
 
     # 1. duplicate (well, timestamp) keys -- byte-identical repeated records
@@ -104,7 +119,8 @@ def clean_high_freq(use_cache: bool = True, verbose: bool = True) -> tuple[pd.Da
 
     # 6. choke position: an event log, so hold each setting until the next change
     # merge_asof requires both frames sorted by the `on` key alone
-    ck = pd.read_csv(F_CHOKE, parse_dates=["timestamp"]).sort_values("timestamp")
+    choke_path = (Path(data_dir) / "choke_events.csv") if data_dir else F_CHOKE
+    ck = pd.read_csv(choke_path, parse_dates=["timestamp"]).sort_values("timestamp")
     hf["well_name"] = hf.well_name.astype(str)  # and matching key dtypes
     hf = pd.merge_asof(
         hf.sort_values("timestamp"),
@@ -132,7 +148,8 @@ def clean_high_freq(use_cache: bool = True, verbose: bool = True) -> tuple[pd.Da
 # --------------------------------------------------------------------------- #
 # well tests (the VFM labels)
 # --------------------------------------------------------------------------- #
-def clean_well_tests(verbose: bool = True) -> tuple[pd.DataFrame, dict]:
+def clean_well_tests(verbose: bool = True,
+                     data_dir: Path | None = None) -> tuple[pd.DataFrame, dict]:
     """Repair the label table.
 
     Two defect classes, both exactly recoverable from redundant columns:
@@ -141,7 +158,8 @@ def clean_well_tests(verbose: bool = True) -> tuple[pd.DataFrame, dict]:
     GOR and GLR are treated as ground truth: gas + gas_lift - total_gas closes
     to 0.11 mscfd when gas is rebuilt from them.
     """
-    wt = pd.read_csv(F_WELL_TESTS, parse_dates=["test_start", "test_end"])
+    wt_path = (Path(data_dir) / "well_tests.csv") if data_dir else F_WELL_TESTS
+    wt = pd.read_csv(wt_path, parse_dates=["test_start", "test_end"])
     rep: dict = {"rows": len(wt)}
 
     # 1. sign flips -- magnitude agrees with redundant columns, only sign is wrong
