@@ -231,7 +231,8 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | 1 | Feature engineering | **done** |
 | 1 | VFM baselines benchmarked | **done** (physics wins time-forward: 2.67–3.10% vs Ridge 5.11%) |
 | 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.pkl`, TF oil 2.56%) |
-| 1 | Excel: daily oil/water/gas predictions | **done** (2,729 well-days) |
+| 1 | Excel: daily oil/water/gas predictions | **done** (2,730 rows, template-exact) |
+| 1 | **Leaderboard tuning** | **closed** — 14 submissions, best **21.0200** |
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | Horner analysis → k, skin, ΔP_skin | **exploratory reference done** (`ml/eda/pta_explore.py`, windows A/B); deliverable Excel not started |
 | 2 | PTA plots per shut-in event | **done as exploration** (`ml/outputs/figures/pta/`, 9 figures + README) |
@@ -397,15 +398,36 @@ Artefacts (regenerate — `data/processed/` is gitignored):
 ## Next
 
 **The plan, with owners and estimates, lives in [`NEXT_STEPS.md`](NEXT_STEPS.md).**
-It is kept in one place so the two cannot drift apart — this file records what
-*is*, that file records what is *planned*.
+This file records what *is*; that file records what is *planned*.
 
-In short: settle the test-mode correction (blocks everything), fit and persist
-the model, export the daily Excel, then PTA, UI, presentation.
+**Phase 1 is closed at 21.0200.** What remains: PTA deliverables (30 pts),
+Streamlit UI (10 pts), presentation (10 pts).
 
-Open question for the organisers, worth asking early: **is the daily ground
-truth measured under test-separator routing or normal production?** The answer
-decides the first item.
+Two questions never answered, both still worth asking the organisers:
+
+1. **Is there a public/private split on the leaderboard?** λ was tuned across
+   six submissions. One physics-derived parameter is defensible and we
+   deliberately avoided fitting ten per-well factors, but a private split
+   would still punish some of it.
+2. **What is the leader doing?** They sit at 21.22 against our 21.02 and we
+   never identified the 0.20. Every structural change we tried lost points,
+   so the gap is not something we found by searching our own model.
+
+## The methodological lesson, stated once
+
+**Every one of the 85 labels is test-separator routed; the 2,729 scored days
+are not.** Time-forward validation therefore measures fit *inside the test
+regime*, and it misled us in **both** directions:
+
+| change | time-forward | leaderboard |
+|---|---|--:|
+| widened water-cut | improved WAPE **and** R² on all 3 phases | **−0.38** |
+| gas GOR factor | improved all 3 gas metrics | **−0.04** |
+| label transfer | degraded badly (2.30 → 4.55 oil WAPE) | **−0.62** |
+
+Treat time-forward as a guard against obvious regressions, **not** as evidence
+a change will score. Level and bias questions are settled only by the
+leaderboard; shape and variance questions are what time-forward is for.
 
 ## Decisions and constraints
 

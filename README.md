@@ -74,8 +74,21 @@ python ml/eda/benchmark_vfm.py        # physics vs ML, leave-one-test-out
 python ml/eda/validate_features.py    # feature sets x 4 CV schemes, time-forward
 ```
 
-Best so far: choke physics at **1.82% MAPE** on liquid rate (oil 2.35%, water
-3.25%, gas 5.33%). Read
-[`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md) before trusting that number —
-it is measured under test-separator routing, which is not the condition the
-daily predictions are made under.
+**Phase 1 is closed: leaderboard 21.0200 / 30.**
+
+The model is a physics-constrained choke law, 14 fitted parameters, no ML —
+its exponents come out at `S^2.057` and `dPc^0.472` against textbook 2 and
+0.5, which is the evidence the form is right rather than curve-fitted. Honest
+time-forward scores: oil 2.56% MAPE / 2.33% WAPE, water 3.82 / 3.48, gas
+5.65 / 4.61.
+
+Rebuild and submit with one command:
+
+```bash
+python ml/fit_vfm.py        # writes ml/outputs/vfm_submission.csv
+```
+
+**Before trusting any local score, read the methodological lesson in
+[`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md).** All 85 labels are
+test-separator routed and the scored days are not, so time-forward
+improvements have twice turned into leaderboard losses.

@@ -11,12 +11,12 @@ change before you start.
 
 | # | Task | Owner | Blocks | Est. |
 |---|---|---|---|---|
-| 0 | Ask organisers: is daily ground truth test-routed or normal production? | — | 1 | 5 min |
-| 1 | Settle the test-mode correction | — | 2, 3 | 1–2 h |
+| ~~0~~ | ~~Ask organisers about routing~~ | — | — | **answered by the leaderboard** |
+| ~~1~~ | ~~Settle the test-mode correction~~ | Faig | — | **done — λ=0.80, 21.0200** |
 | ~~2~~ | ~~Fit + persist the VFM model~~ | Faig | — | **done** |
 | ~~3~~ | ~~Excel: daily rate predictions~~ | Faig | — | **done** |
-| 4 | PTA: Horner on 6 build-ups | — | 5 | 3–4 h |  **<- next**
-| 5 | Streamlit UI | — | — | 4–6 h |
+| 4 | PTA: Horner deliverables on 6 build-ups | Rovshan | 5 | 3–4 h |  **<- active**
+| 5 | Streamlit UI | — | — | 4–6 h |  **<- unclaimed, 10 pts**
 | 6 | Presentation | — | — | 2 h |
 | ~~7~~ | ~~Export the model as `.pkl`~~ | Faig | — | **done** |
 | ~~8~~ | ~~Notebook with all cells run~~ | Faig | — | **done** |
@@ -27,11 +27,31 @@ and was only read after tasks 2–3 were built. None is hard; all are required.
 
 ---
 
-## 0. Ask the organisers (do this first, it is free)
+## 0–1. Routing — **CLOSED, λ = 0.80, score 21.0200**
 
-**Is the daily ground truth measured under test-separator routing or normal
-production?** The answer decides task 1 and could be worth several points of
-accuracy. Everything below assumes we do not get an answer and have to hedge
+The question "is the ground truth test-routed or normal-production?" never
+needed an answer from the organisers in the end — the leaderboard settled it.
+Scaling predictions up by the per-well routing factor gained **+0.735**, which
+only happens if the truth is normal-production routed.
+
+A one-parameter ladder then found the full physics correction overshoots:
+
+| λ | 0.0 | 0.5 | 0.70 | **0.75** | **0.80** | 0.85 | 0.90 | 1.00 | 2.5 |
+|---|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| score | 20.2110 | 20.9100 | lost | **21.0200** | **21.0200** | lost | 20.9960 | 20.9463 | 18.3400 |
+
+0.75 and 0.80 tie, so the peak is flat and λ pruning is finished.
+`ROUTING_LAMBDA = 0.80` lives in `ml/src/vfm.py`, so `python ml/fit_vfm.py`
+writes the best-scoring submission directly.
+
+**Net: 20.2110 → 21.0200, +0.81, entirely from this one correction.**
+
+Two questions that remain genuinely open:
+
+- **Is there a public/private split?** λ was tuned over six submissions.
+- **What is the leader doing?** 21.22 against our 21.02, cause unidentified.
+  Every structural change we tried lost, so the 0.20 is not something our own
+  search was going to surface.
 
 ## 1. Settle the test-mode correction — **blocks everything**
 

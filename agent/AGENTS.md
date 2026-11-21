@@ -46,9 +46,14 @@ agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs; high_freq_data.csv (257 MB) via Git LFS
 data/processed/  derived parquet — GITIGNORED, regenerate with the pipeline
 docs/            brief, data dictionary, data report, physics report
-ml/src/          config.py · clean.py · features.py · viz.py
-ml/eda/          run_eda.py · validate_features.py · benchmark_vfm.py
-ml/outputs/      figures/ + generated markdown reports
+ml/src/          config · clean · features · vfm · daily_predict · viz
+                 (label_transfer.py is built but NOT shipped — see rejected)
+ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py
+ml/eda/          run_eda · validate_features · benchmark_vfm ·
+                 timeforward_vfm · routing_checks · pta_explore
+ml/models/       vfm.pkl (required format) + vfm.joblib
+ml/outputs/      figures/ · submitted/ · reports · vfm_submission.csv
+notebooks/       VFM_Phase1.ipynb (all cells executed)
 ui/              Streamlit app (Phase 3, not started)
 ```
 
@@ -73,6 +78,14 @@ PY="C:/Users/Faiq/AppData/Local/Programs/Python/Python313/python.exe"
 
 # 4. physics vs ML baselines (reads raw CSVs directly, no step 1 needed)
 "$PY" ml/eda/benchmark_vfm.py
+
+# 5. FIT + SHIP -> ml/models/vfm.pkl and ml/outputs/vfm_submission.csv
+#    This is the one that produces the deliverable. It verifies time-forward
+#    BEFORE persisting and refuses to save above 4% oil MAPE.
+"$PY" ml/fit_vfm.py
+
+# 6. the demo path: raw CSVs in, predictions out, nothing from data/processed/
+"$PY" ml/predict_from_raw.py --data <dir> --out <file.csv>
 ```
 
 The raw→parquet cache makes reloads near-instant. Delete
@@ -110,15 +123,26 @@ The raw→parquet cache makes reloads near-instant. Delete
   carry well identity (per-well z-scores + static properties) or a model learns
   the between-well trend and inverts the within-well one — downhole temperature
   flips sign, −0.41 pooled to +0.57 within-well.
-- **Physics beats ML at n=85.** Choke model 1.82% vs Ridge 2.93%, GBM 3.80%,
-  RF 5.19%. Reach for a physical relation before a bigger learner.
+- **Physics beats ML at n=85.** Time-forward oil: choke 2.56% vs Ridge-58
+  5.11%, GBM 3.80% (LOO), RF 5.19% (LOO), persistence 6.00%. A well-cluster
+  bootstrap puts Ridge-58 *statistically level with copying the previous
+  test*. Reach for a physical relation before a bigger learner.
 - **Unseen-well generalisation does not work** (69.7% MAPE, worse than the
   global mean). Ten wells is not enough to generalise to an eleventh.
 - **136 features, 85 labelled rows.** Keep regularisation strong, prefer the
   smaller feature sets, fit scalers **inside** a `Pipeline`.
 - **Watch the test-mode skew.** During a test the well is routed to the test
-  separator, so `whp_downstream_psia` runs 19–29 psi low (−2.6σ). See
-  `PROJECT_STATE.md` → Open risks before trusting any LOO number.
+  separator, so `whp_downstream_psia` runs 19–29 psi low (−2.6σ) and 99% of
+  daily values fall outside the tested range. Keep it out of any model term;
+  putting it in the water-cut split moved base oil +5.24% and scored 20.57.
+- **Time-forward does not predict the leaderboard.** All 85 labels are
+  test-routed, the 2,729 scored days are not, so it measures fit inside the
+  wrong regime. Two changes that improved every time-forward metric *lost*
+  points. Use it as a regression guard; let the leaderboard settle level and
+  bias. See `PROJECT_STATE.md` → the methodological lesson.
+- **The routing correction is settled at λ=0.80** (`ROUTING_LAMBDA` in
+  `ml/src/vfm.py`), worth +0.81 and the only change that ever gained points.
+  Do not re-tune it; 0.75 and 0.80 tie and both neighbours lose.
 
 ## 7. Conventions
 
