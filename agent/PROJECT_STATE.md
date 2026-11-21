@@ -23,21 +23,36 @@ as oil despite being the hardest phase.
 
 | # | Submission | Change vs S0 | Score |
 |---|---|---|--:|
-| S0 | shipped model, uncorrected | — | **20.211 / 30** |
-| S1 | per-well routing factor, all phases | oil +2.84% | *pending* |
-| S2 | scaled to test-separator level | oil +5.30% | *not submitted* |
-| S3 | global GOR factor, gas only | gas −1.80% | *not submitted* |
+| S0 | shipped model, uncorrected | ×1.000 | 20.2110 |
+| S1 | per-well routing factor, all phases | ×1.028 | **20.9463** |
+| S2 | scaled to test-separator level | ×1.053 | *next* |
+| S3 | global GOR factor, gas only | gas ×0.982 | *not submitted* |
+
+**S1 settled the routing question: the ground truth is normal-production
+routed.** Scaling up by the per-well factor gained **+0.735 points**, about
+0.26 points per 1% of upward scaling on that segment. Rovshan's downhole
+estimate was right and the choke law was overstating the response, exactly as
+he argued.
+
+Still open: whether 2.8% is the optimum or we are still short. WAPE against a
+systematically-offset truth is **V-shaped, not quadratic** — it falls linearly
+until the bias reaches zero, then rises — so three points bracket the minimum
+rather than needing a curve fit. S2 at ×1.053 does that: still descending puts
+it near 21.6; past the minimum it scores below 20.95 and the optimum lies
+between ×1.028 and ×1.053.
 
 Built by `python ml/make_variants.py`. One hypothesis per submission.
 
-**Reading S0.** 20.211/30 is 67%. Our time-forward R² is 0.994–0.998, so if R²
-scores near full marks that is ~9/9, leaving 11.2 of the 21 points carried by
-MAPE and WAPE — far less than oil WAPE 2.33% / water 3.48% / gas 4.61% ought
-to earn. Two explanations, not mutually exclusive: a systematic offset (the
-routing bias, which WAPE passes straight through), or simply a strict mapping
-from metric value to points. **A single scalar cannot separate them; S1 can.**
-If the gap is the routing offset, S1 moves materially. If the mapping is
-strict, it barely moves.
+**What S0 and S1 together establish.** S0 at 67% was well below what our
+validation implied. The two candidate explanations were a systematic routing
+offset or a merely strict metric-to-points mapping. S1 separated them: the
+score moved, so the offset is real. Both effects are probably present — the
+remaining gap after correction is consistent with a strict mapping on top.
+
+**Validation cannot see this.** Every one of the 85 labels is test-routed, so
+a correction whose value lives on normal-production days scores identically
+in time-forward and only shows on the leaderboard. That is why the probes are
+worth their submissions.
 
 ## Deliverables checklist
 
