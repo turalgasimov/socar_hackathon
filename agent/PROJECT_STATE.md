@@ -92,7 +92,9 @@ optimum has not been bracketed yet — 0.8 still beats 0.9.
 |---:|--:|
 | 0.0 | 20.2110 |
 | 0.5 | 20.9100 |
+| 0.7 | lost to 0.8 |
 | **0.8** | **21.0200** |
+| 0.85 | beat 0.9 and 1.0, lost to 0.8 |
 | 0.9 | 20.9960 |
 | 1.0 | 20.9463 |
 | 2.5 | 18.3400 |
@@ -121,9 +123,12 @@ Kept artefacts, everything else deleted:
 | file | score |
 |---|--:|
 | `ml/outputs/vfm_submission.csv` | the champion, regenerated |
-| `ml/outputs/submitted/rank1_21.0200_lam0.80.csv` | 21.0200 |
-| `ml/outputs/submitted/rank2_20.9960_lam0.90.csv` | 20.9960 |
-| `ml/outputs/submitted/rank3_20.9463_lam1.00.csv` | 20.9463 |
+| `ml/outputs/submitted/rank1_21.0200_lam0.80.csv` | **21.0200** |
+| `ml/outputs/submitted/rank2_lam0.85.csv` | beat 0.90 and 1.00 — exact score TBC |
+| `ml/outputs/submitted/probe_lam0.75.csv` | pending |
+
+λ=0.90 (20.9960) and λ=1.00 (20.9463) are deleted: 0.85 beat both, so they
+are no longer in the top three.
 
 `make_ladder.py`, `make_variants.py` and `make_probes.py` are retired. They
 scaled an *uncorrected* base, and now that the correction lives inside the
