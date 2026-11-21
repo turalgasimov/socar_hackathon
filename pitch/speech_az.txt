@@ -48,11 +48,12 @@ deyil.
 
 Gəlin göstərim, bizə verdiyiniz test datası üzərində.
 
-[DEMO] Tətbiqi ikinci noutbukda açın və ya QR kodu göstərin.
+[DEMO] Tətbiqi ikinci noutbukda açın və ya QR kodu göstərin. Çıxışdan əvvəl
+daxil olun (rizzman@socar.az / guessme), tətbiq birbaşa menyuda açılsın.
 
 Tətbiq mərkəzi serverdə işləyir, mən sadəcə brauzerdən qoşuluram.
 
-[DEMO] Xam CSV fayllarını yükləyin. Run düyməsini basın.
+[DEMO] Məlumat yüklə: xam CSV fayllarını atın. Analizi başlat düyməsini basın.
 
 Bunlar xam fayllardır, necə qeydə alınıbsa elə. Proses təxminən bir dəqiqə
 çəkir, ona görə deyim ki, sistem nəyi yoxlayır. Çünki bizə verilən yataq
@@ -73,12 +74,12 @@ separatoruna yönəlir, ona görə quyuağzı təzyiq adi gündən iyirmi-otuz p
 aşağı göstərir. Bu effekti dörd müstəqil üsulla ölçdük. Nəticələr üst-üstə
 düşür: iki yarım faiz.
 
-[DEMO] Nəticələr görünür. VFM bölməsini açın.
+[DEMO] Nəticələr görünür: plitələr aktivləşir. Hasilat debitləri bölməsini açın.
 
 Hazırdır. Hər quyu, hər gün: neft, su və qaz. Nöqtələr real quyu
 testləridir; xətt isə aradakı günləri dolduran modelimizdir.
 
-[DEMO] PTA bölməsini açın.
+[DEMO] Ana səhifə, sonra Quyu sınaqları.
 
 İndi lay. Quyunun hər bağlanması avtomatik tapılır: bu datada <N> quyu
 bağlanıb. Budur, <WELL>.
@@ -88,12 +89,12 @@ bağlanıb. Budur, <WELL>.
 Horner qrafiki, düz xətt və cavab: keçiricilik <k> millidarsi, skin <s>,
 skin zədələnməsinə görə itirilən təzyiq isə <dP> psi.
 
-[DEMO] İnterpretasiya paneli.
+[DEMO] Şərh bölməsini açın.
 
 Skin <s> o deməkdir ki, bu quyu <zədələnib / stimulyasiya olunub>. Gündə
 təxminən <N> barrel itirir. Deməli, stimulyasiya üçün namizəddir.
 
-[DEMO] Eksport.
+[DEMO] Ana səhifə, sonra İxrac.
 
 Bir klik: hər iki hissə üçün Excel və hesabat.
 
@@ -165,11 +166,12 @@ Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir. Data heç ye
 
 [CLICK]
 
-Biz RizzML komandasıyıq. Fizika olimpiadasının qalibi Rövşən Ağayevin lay
-mühəndisliyi üzrə elmi məqaləsi var. İki dəfə ICPC çempionu Faiq Tayıbov
-maşın öyrənməsi və kompüter görməsini təlim idarəetmə sistemlərinə (LMS)
-inteqrasiya edib. CanSat qlobal finalçısı Tural Qasımov hərbi səviyyəli
-simulyasiyalar və proqram təminatı hazırlayıb.
+Biz RizzML komandasıyıq. Fizika olimpiadasının qalibi Rövşən Ağabəyov
+"PI-ML and Physical Type Curves for Water-Injection Wells" məqaləsinin
+müəllifidir. CanSat qlobal finalçısı Tural Qasımov hərbi səviyyəli
+simulyasiyalar və proqram təminatı hazırlayıb. İki dəfə ICPC çempionu Faiq
+Tayıbov maşın öyrənməsi və kompüter görməsini təlim idarəetmə sistemlərinə
+(LMS) inteqrasiya edib.
 
 
 --- 6:00-6:30 | XƏRCLƏRİN AZALMASI | slayd 10 | [SPEAKER ?] ------------------

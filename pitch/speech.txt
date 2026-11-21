@@ -44,11 +44,12 @@ One browser app, running on SOCAR's own server. No new hardware.
 
 Let me show you, on the test data you gave us.
 
-[DEMO] Open the app on the second laptop, or show the QR code.
+[DEMO] Open the app on the second laptop, or show the QR code. Sign in
+before the talk (rizzman@socar.az / guessme) so it opens on the tile menu.
 
 This runs on a central server. I'm only a browser.
 
-[DEMO] Upload the raw CSVs. Press Run.
+[DEMO] Load Data: drop in the raw CSVs. Press Run analysis.
 
 These are the raw files, exactly as recorded. It takes about a minute, so
 here is what it checks for, because in the field data we were given,
@@ -69,12 +70,12 @@ test separator, so wellhead pressure reads twenty to thirty psi lower than
 on a normal day. We measured that effect four independent ways. They agree:
 two and a half percent.
 
-[DEMO] Results appear. Open the VFM view.
+[DEMO] Results appear: the tiles light up. Open Production Rates.
 
 Done. Every well, every day: oil, water and gas. The dots are the real well
 tests; the line is our model, filling the days in between.
 
-[DEMO] Open the PTA view.
+[DEMO] Home, then Well Tests.
 
 Now the reservoir. Every shut-in is found automatically: <N> wells closed
 in this data. Here is <WELL>.
@@ -84,12 +85,12 @@ in this data. Here is <WELL>.
 Horner plot, straight line, and the answer: permeability <k> millidarcy,
 skin <s>, and <dP> psi lost to skin damage.
 
-[DEMO] Interpretation panel.
+[DEMO] Open Interpretation.
 
 Skin <s> means this well is <damaged / stimulated>. It is losing about <N>
 barrels a day. That makes it a stimulation candidate.
 
-[DEMO] Export.
+[DEMO] Home, then Export.
 
 One click: Excel and a report, for both parts.
 
@@ -154,11 +155,11 @@ It all runs on one PC inside SOCAR's network. The data never leaves.
 
 [CLICK]
 
-We are RizzML. Rovshan Agayev, Physics Olympiad champion, has a paper on
-reservoir engineering. Faig Tayibov, two-time ICPC champion, has integrated
-machine learning and computer vision into learning management systems.
-Tural Gasimov, CanSat global finalist, has engineered military-grade
-simulations and software.
+We are RizzML. Rovshan Agabeyov, Physics Olympiad champion, is the author of
+"PI-ML and Physical Type Curves for Water-Injection Wells". Tural Gasimov,
+CanSat global finalist, has engineered military-grade simulations and
+software. Faig Tayibov, two-time ICPC champion, has integrated machine
+learning and computer vision into learning management systems.
 
 
 --- 6:00-6:30 | THE COST CUT | slide 10 | [SPEAKER ?] -----------------------

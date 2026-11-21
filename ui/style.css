@@ -1,0 +1,88 @@
+/* Start screen of coloured module tiles in SOCAR's colours (socar.az), readable in light and dark.
+   SOCAR's exact blue #00a3e0 and green #64a70b fail white-text contrast (2.9:1), so tiles use the same
+   hues one step deeper; SOCAR red #e4002b passes as it is. Every tile text pair is at least 4.5:1. */
+:root { --blue:#0077a6; --red:#e4002b; --green:#4c8008; --locked:#6e6e6e; }
+/* Streamlit's header stays (it holds the button that reopens a collapsed sidebar) but is see-through
+   and click-through; its menu and deploy items are hidden, so only that button can show. */
+header[data-testid="stHeader"] { background:transparent; pointer-events:none; }
+[data-testid="stExpandSidebarButton"] { pointer-events:auto; }
+[data-testid="stMainMenu"], [data-testid="stAppDeployButton"], [data-testid="stToolbarActions"],
+[data-testid="stDecoration"] { display:none; }
+[data-testid="stIFrame"] { display:none; }   /* settings helper frames: script only */
+.stMainBlockContainer { max-width:1400px; padding-top:2.2rem; }
+
+/* tiles: a keyed container painted in its colour, with its button stretched invisibly over all of it */
+[class*="st-key-tile_"] { position:relative; border-radius:6px; padding:20px 20px 18px; gap:0;
+                          transition:filter .12s, transform .12s; cursor:pointer; }
+[class*="st-key-tile_big"] { min-height:224px; }
+[class*="st-key-tile_small"] { min-height:116px; }   /* room for a two-line title and subtitle in AZ and RU */
+[class*="st-key-tile_"][class*="_blue_"] { background:var(--blue); }
+[class*="st-key-tile_"][class*="_red_"] { background:var(--red); }
+[class*="st-key-tile_"][class*="_green_"] { background:var(--green); }
+[class*="st-key-tile_"] p { margin:0 !important; color:#fff; font-size:.92rem; line-height:1.35; }
+[class*="st-key-tile_"] strong { display:block; color:#fff; font-weight:700; }
+[class*="st-key-tile_big"] strong { font-size:1.75rem; line-height:1.1; margin:16px 0 8px; }
+[class*="st-key-tile_small"] strong { font-size:1.12rem; line-height:1.2; margin-top:2px; }
+[class*="st-key-tile_"] p:first-child span[role="img"] { color:#fff; font-size:50px; }
+/* small tiles: icon in its own column, so a long (translated) subtitle never wraps under it */
+[class*="st-key-tile_small"] [data-testid="stMarkdownContainer"] { display:grid; grid-template-columns:48px 1fr; align-items:start; }
+[class*="st-key-tile_small"] [data-testid="stMarkdownContainer"] p:first-child { grid-row:1 / span 2; }
+[class*="st-key-tile_small"] [data-testid="stMarkdownContainer"] p:not(:first-child) { grid-column:2; }
+[class*="st-key-tile_small"] p:first-child span[role="img"] { font-size:36px; }
+[class*="st-key-tile_"] p:last-child span[role="img"] { font-size:1.05em; vertical-align:-3px; }
+/* Streamlit gives the button's wrapper a fixed width; override it so the whole tile is the hit area */
+[class*="st-key-go_"] { position:absolute !important; inset:0; width:100% !important; height:100% !important;
+                        max-width:none !important; margin:0 !important; z-index:3; }
+[class*="st-key-go_"] div, [class*="st-key-go_"] button { width:100% !important; height:100% !important; max-width:none !important; }
+[class*="st-key-go_"] button { opacity:0; cursor:pointer; }
+[class*="st-key-tile_"]:hover { filter:brightness(.88); transform:translateY(-2px); }
+[class*="st-key-tile_"]:has(button:focus-visible) { outline:3px solid #00a3e0; outline-offset:3px; }
+[class*="st-key-tile_"]:has(button:disabled) { background:var(--locked) !important; filter:none; transform:none; cursor:not-allowed; }
+[class*="st-key-tile_"]:has(button:disabled) button { cursor:not-allowed; }
+@media (prefers-reduced-motion: reduce) { [class*="st-key-tile_"] { transition:none; } [class*="st-key-tile_"]:hover { transform:none; } }
+
+/* page header: the title behind a bar in the colour of the tile that opened it */
+[class*="st-key-head_"] { --bar:var(--blue); margin-bottom:.4rem; }
+.st-key-head_red { --bar:var(--red); }
+.st-key-head_green { --bar:var(--green); }
+[class*="st-key-head_"] p { font-size:1.65rem; font-weight:700; margin:0; line-height:1.2;
+                            border-left:6px solid var(--bar); padding-left:14px; }
+[class*="st-key-head_"] span[role="img"] { font-size:1.9rem; vertical-align:-5px; margin-right:4px; }
+
+/* left-hand menu (every page but Home): groups and colours match the tiles */
+.rz-side-brand { display:flex; align-items:center; gap:10px; margin:-.5rem 0 .4rem; }
+.rz-side-brand .rz-logo { width:36px; height:36px; }
+.rz-side-brand b { font-size:1.45rem; font-weight:800; letter-spacing:-.03em; }
+[class*="st-key-navgroup_"], .st-key-navaccount { gap:.1rem; }
+[class*="st-key-navgroup_"] + [class*="st-key-navgroup_"], .st-key-navaccount { margin-top:.7rem; }
+[class*="st-key-nav_"] button { justify-content:flex-start; padding:.4rem .7rem; min-height:2.4rem;
+                                border-left:4px solid transparent; border-radius:4px; }
+[class*="st-key-nav_"] button > div { justify-content:flex-start; }
+[class*="st-key-nav_"] button p { font-size:.98rem; }
+[class*="st-key-nav_blue_"] button { border-left-color:var(--blue); }
+[class*="st-key-nav_red_"] button { border-left-color:var(--red); }
+[class*="st-key-nav_green_"] button { border-left-color:var(--green); }
+[class*="st-key-nav_"] button:hover:not(:disabled) { background:rgba(127,127,127,.14); }
+[class*="st-key-nav_"][class*="-active"] button { background:rgba(127,127,127,.22); }
+[class*="st-key-nav_"][class*="-active"] button p { font-weight:700; }
+.st-key-navaccount [data-testid="stCaptionContainer"] p { margin:0 0 .2rem .2rem; }
+
+/* account bar on Home */
+.st-key-account { margin:-1.2rem 0 .3rem; gap:.25rem; }
+.st-key-account p { font-size:.92rem; }
+
+/* brand: RizzML mark and wordmark, with SOCAR's three colours under it */
+.rz-brand { display:flex; align-items:center; gap:14px; }
+.rz-logo { width:56px; height:56px; flex:none; }
+.rz-brand b { display:block; font-size:2.3rem; font-weight:800; letter-spacing:-.03em; line-height:1; }
+.rz-brand small { display:block; opacity:.75; font-size:.95rem; margin-top:5px; }
+.rz-sq span { display:inline-block; width:16px; height:5px; margin:8px 3px 0 0; }
+.rz-foot { display:flex; justify-content:space-between; align-items:flex-end; margin-top:2.4rem; }
+.rz-foot > small { opacity:.7; }
+
+/* history rows: what happened on the left, its action on the right */
+[class*="st-key-get_"], [class*="st-key-open_"] { margin-left:auto; }
+
+/* sign-in page */
+.st-key-loginpage { margin-top:9vh; gap:1rem; }
+.st-key-loginpage [data-testid="stForm"] { padding:1.4rem 1.4rem 1.2rem; }

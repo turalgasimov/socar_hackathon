@@ -298,30 +298,37 @@ def model_match(ev, hf, pvt, comp, rates, tests_raw):
     return res, plot
 
 
-def explain(r: dict) -> list[str]:
-    """Plain-language reading of one build-up, for engineers who are not PTA specialists."""
+def explain(r: dict, t=lambda s: s) -> list[str]:
+    """Plain-language reading of one build-up, for engineers who are not PTA specialists. `t` translates."""
     out = []
     k = r["permeability_md"]
     grade = "low" if k < 10 else "moderate" if k < 100 else "high"
-    out.append(f"Permeability is about **{k:.0f} md** ({grade}), from a model match of the whole build-up "
-               f"(fit error {r['fit_rms_psi']:.2f} psi RMS); the implied Horner slope is {r['horner_slope_psi_per_cycle']:.1f} psi per log cycle.")
+    out.append(t("Permeability is about **{k:.0f} md** ({grade}), from a model match of the whole build-up "
+                 "(fit error {rms:.2f} psi RMS); the implied Horner slope is {m:.1f} psi per log cycle.").format(
+        k=k, grade=t(grade), rms=r["fit_rms_psi"], m=r["horner_slope_psi_per_cycle"]))
     if r.get("boundary") == "closed":
-        out.append(f"The late build-up shows a **closed boundary** at about {r['r_e_ft']:,.0f} ft (drainage limit reached).")
+        out.append(t("The late build-up shows a **closed boundary** at about {re:,.0f} ft (drainage limit reached).")
+                   .format(re=r["r_e_ft"]))
     S, dps, fe = r["skin"], r["delta_p_skin_psi"], r["flow_efficiency"]
     if S > 0.5:
-        out.append(f"Skin is **+{S:.1f}**: the near-wellbore zone is **damaged**. About {dps:.0f} psi is lost across it, "
-                   f"and the well flows at roughly {fe:.0%} of its undamaged potential. **Candidate for a stimulation review.**")
+        out.append(t("Skin is **+{S:.1f}**: the near-wellbore zone is **damaged**. About {dps:.0f} psi is lost across it, "
+                     "and the well flows at roughly {fe:.0%} of its undamaged potential. **Candidate for a stimulation review.**")
+                   .format(S=S, dps=dps, fe=fe))
     elif S < -0.5:
-        out.append(f"Skin is **{S:.1f}**: the near-wellbore zone is **stimulated** (better than undamaged rock). "
-                   f"No damage to remove; flow efficiency {fe:.0%}.")
+        out.append(t("Skin is **{S:.1f}**: the near-wellbore zone is **stimulated** (better than undamaged rock). "
+                     "No damage to remove; flow efficiency {fe:.0%}.").format(S=S, fe=fe))
     else:
-        out.append(f"Skin is **{S:.1f}**, close to zero: **no significant damage**.")
+        out.append(t("Skin is **{S:.1f}**, close to zero: **no significant damage**.").format(S=S))
     if not r["developed"]:
-        out.append("Radial flow did not clearly develop (the derivative never stays flat for 0.3 log cycle). "
-                   "The model match still uses every point, but treat permeability and skin as **indicative**.")
-    out.append(f"Extrapolated pressure p* is {r['p_star_gauge_psia']:.0f} psia at the gauge"
-               + (f" ({r['p_star_datum_psia']:.0f} psia at datum)" if r.get("p_star_datum_psia") else "")
-               + f"; the test investigated about {r['r_inv_ft']:,.0f} ft into the reservoir.")
+        out.append(t("Radial flow did not clearly develop (the derivative never stays flat for 0.3 log cycle). "
+                     "The model match still uses every point, but treat permeability and skin as **indicative**."))
+    if r.get("p_star_datum_psia"):
+        out.append(t("Extrapolated pressure p* is {p:.0f} psia at the gauge ({pd:.0f} psia at datum); "
+                     "the test investigated about {ri:,.0f} ft into the reservoir.").format(
+            p=r["p_star_gauge_psia"], pd=r["p_star_datum_psia"], ri=r["r_inv_ft"]))
+    else:
+        out.append(t("Extrapolated pressure p* is {p:.0f} psia at the gauge; the test investigated about {ri:,.0f} ft into the reservoir.")
+                   .format(p=r["p_star_gauge_psia"], ri=r["r_inv_ft"]))
     return out
 
 

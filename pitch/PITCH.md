@@ -132,9 +132,11 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 - **Run:** `pip install -r ui/requirements.txt`, then `cd ui && streamlit run app.py`
   (add `--server.address 0.0.0.0` to serve other PCs). Check before a demo:
   `python ui/check_pipeline.py <folder with the raw CSVs>`.
-- **Flow:** upload the raw files (CSV or Excel) → Run analysis (~30 s) → tabs: 1 Field data,
-  2 Production rates (VFM), 3 Well tests (PTA) with interpretation, 4 Export, plus a CSV/Excel
-  converter. Exports: VFM and PTA as CSV and Excel, one combined workbook, an HTML report.
+- **Flow:** sign in (demo account `rizzman@socar.az` / `guessme`, no real authentication yet) → a
+  tile menu in SOCAR colours: Load Data → Production Rates (VFM) → Well Tests (PTA) → Generate Graph →
+  Export, plus Sample Data, Field Data, Data Quality, History and a CSV/Excel converter. Settings
+  (dark/light, AZ/EN/RU) sit in the account bar. History keeps each user's uploads, analyses and
+  downloaded files, and reopens them. Exports: VFM and PTA as CSV and Excel, one workbook, an HTML report.
 - Uses the ML team's code unchanged (`ml/src`, `ml/predict_from_raw.py`, `ml/models/vfm.pkl`); the
   PTA mirrors `ml/eda/pta_explore.py` and matches its reference to within 1% on k.
 
@@ -321,11 +323,11 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 
 ## 10. Team
 
-| Name | Connection to oil, gas, wells | What they built here |
-|---|---|---|
-| Rovshan Agayev | Physics Olympiad Champion; has a paper on reservoir engineering | Physics benchmarks, routing gap, partial shut-in fix |
-| Faig Tayibov | 2× ICPC Champion; has integrated ML and computer vision into LMS systems | Data cleaning, VFM model, submission, notebook |
-| Tural Gasimov | CanSat Global Finalist; has engineered military-grade simulations and software | UI, pitch, competitor research |
+| Name | Education | Connection to oil, gas, wells | What they built here |
+|---|---|---|---|
+| Rovshan Agabeyov | ASOIU, Petroleum Engineering | Physics Olympiad Champion; author of "PI-ML and Physical Type Curves for Water-Injection Wells" | Physics benchmarks, routing gap, partial shut-in fix |
+| Tural Gasimov | ASOIU, Robotics Engineering; ADA, BSc Computer Science | CanSat Global Finalist; has engineered military-grade simulations and software | UI, pitch, competitor research |
+| Faig Tayibov | ADA, BSc Computer Science | 2× ICPC Champion; has integrated ML and computer vision into LMS systems | Data cleaning, VFM model, submission, notebook |
 
 ## 11. Q&A backup (3 min)
 
