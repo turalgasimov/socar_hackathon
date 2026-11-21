@@ -24,7 +24,8 @@ sys.path.insert(0, str(ROOT / "ml" / "src"))
 from config import OUT, PROC  # noqa: E402
 from vfm import VFMModel, build_inputs  # noqa: E402
 
-MODEL_PATH = ROOT / "ml" / "models" / "vfm.joblib"
+MODEL_PATH = ROOT / "ml" / "models" / "vfm.pkl"        # required format, see Deliverables.pdf
+MODEL_PATH_JOBLIB = ROOT / "ml" / "models" / "vfm.joblib"
 MIN_HISTORY = 3
 TF_MAX_OIL_MAPE = 4.0  # refuse to persist if time-forward oil error exceeds this
 
@@ -87,7 +88,9 @@ def main() -> None:
     X = build_inputs(tr)
     model = VFMModel().fit(X, tr.oil_rate_stbd.values, tr.water_rate_stbd.values)
     model.save(MODEL_PATH)
-    print(f"\nfitted on all {model.trained_on} tests -> {MODEL_PATH.relative_to(ROOT)}")
+    model.save(MODEL_PATH_JOBLIB)   # same object, both formats, written together so they cannot drift
+    print(f"\nfitted on all {model.trained_on} tests -> {MODEL_PATH.relative_to(ROOT)} "
+          f"(+ {MODEL_PATH_JOBLIB.suffix})")
     print("  choke exponents: " + ", ".join(f"{k.replace('exp_','')}={v:+.3f}"
                                             for k, v in model.coefficients().items()))
 

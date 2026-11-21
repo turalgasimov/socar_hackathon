@@ -21,6 +21,8 @@ can load the model without importing a training stack.
 """
 from __future__ import annotations
 
+import pickle
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -63,14 +65,24 @@ class VFMModel:
     trained_on: int = 0
 
     # ---------------------------------------------------------------- fitting
-    def _dummies(self, well: np.ndarray) -> np.ndarray:
-        return np.stack([(well == w).astype(float) for w in self.wells], axis=1)
+    def _dummies(self, well: np.ndarray, pool_unknown: bool = False):
+        """One-hot over the fitted wells.
+
+        With `pool_unknown`, a well the model has never seen gets 1/n in every
+        column, which evaluates to the mean intercept across the fitted wells.
+        That keeps prediction running instead of raising -- see predict().
+        """
+        W = np.stack([(well == w).astype(float) for w in self.wells], axis=1)
+        unknown = ~np.isin(well, self.wells)
+        if pool_unknown and unknown.any():
+            W[unknown] = 1.0 / len(self.wells)
+        return W, unknown
 
     def fit(self, X: pd.DataFrame, oil: np.ndarray, water: np.ndarray) -> "VFMModel":
         qL = oil + water
         wc = water / qL
         self.wells = sorted(pd.unique(X.well_name))
-        W = self._dummies(X.well_name.values)
+        W, _ = self._dummies(X.well_name.values)
 
         # water cut: tubing gradient + gas-lift rate + time, per-well intercept
         A = np.c_[W, X.t.values, X.dp_tubing.values, X.gl.values]
@@ -85,8 +97,17 @@ class VFMModel:
         return self
 
     # ------------------------------------------------------------- prediction
-    def predict(self, X: pd.DataFrame) -> pd.DataFrame:
-        """Return oil / water / gas rates.
+    def predict(self, X: pd.DataFrame, strict: bool = False) -> pd.DataFrame:
+        """Return oil / water / gas rates, plus an `unseen_well` flag.
+
+        The choke law carries a per-well intercept, so a well the model was
+        not fitted on has no intercept of its own. Rather than raise, such a
+        well falls back to the mean intercept across the fitted wells and is
+        flagged in the `unseen_well` column. Those predictions are unreliable
+        -- leave-one-well-out is ~70% MAPE -- but the evaluation runs this
+        model live on data we have not seen, and a flagged number is
+        recoverable there while a traceback is not. Pass `strict=True` to
+        raise instead, which is the right choice in a batch pipeline.
 
         `routing_factor` multiplies the liquid rate and defaults to 1.0 (off).
         The model already responds to the lower choke drop of a normal
@@ -96,11 +117,17 @@ class VFMModel:
         """
         if self.choke_coef is None:
             raise RuntimeError("model is not fitted")
-        unknown = set(X.well_name) - set(self.wells)
-        if unknown:
-            raise ValueError(f"model has no intercept for {sorted(unknown)}; "
-                             "it does not generalise to unseen wells")
-        W = self._dummies(X.well_name.values)
+        W, unseen = self._dummies(X.well_name.values, pool_unknown=not strict)
+        if unseen.any():
+            names = sorted(set(np.asarray(X.well_name)[unseen]))
+            if strict:
+                raise ValueError(f"model has no intercept for {names}; "
+                                 "it does not generalise to unseen wells")
+            warnings.warn(
+                f"{unseen.sum()} row(s) for well(s) {names} are not in the fitted set "
+                f"{self.wells}. Falling back to the pooled intercept; these predictions "
+                "are unreliable (leave-one-well-out is ~70% MAPE).",
+                UserWarning, stacklevel=2)
         b, n = self.choke_coef, len(self.wells)
 
         wc = np.c_[W, X.t.values, X.dp_tubing.values, X.gl.values] @ self.wc_coef
@@ -135,20 +162,36 @@ class VFMModel:
             "water_rate_stbd": qL * wc,
             "gas_rate_mscfd": oil * rs / 1000,
             "water_cut_frac": wc,
+            "unseen_well": unseen,
         })
 
     # ----------------------------------------------------------- persistence
     def save(self, path: str | Path) -> Path:
-        import joblib
+        """Write the model. `.pkl` uses plain pickle, anything else joblib.
+
+        docs/Deliverables.pdf item 2 requires a .pkl, so that is the primary
+        artefact; the joblib copy exists only because the rest of the stack
+        reaches for it by habit. The object holds nothing but numpy arrays and
+        a list of strings, so both formats round-trip identically.
+        """
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        joblib.dump(self, path)
+        if path.suffix == ".pkl":
+            with path.open("wb") as fh:
+                pickle.dump(self, fh, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            import joblib
+            joblib.dump(self, path)
         return path
 
     @staticmethod
     def load(path: str | Path) -> "VFMModel":
+        path = Path(path)
+        if path.suffix == ".pkl":
+            with path.open("rb") as fh:
+                return pickle.load(fh)
         import joblib
-        return joblib.load(Path(path))
+        return joblib.load(path)
 
     # ------------------------------------------------------------- reporting
     def coefficients(self) -> pd.Series:

@@ -18,9 +18,9 @@ change before you start.
 | 4 | PTA: Horner on 6 build-ups | — | 5 | 3–4 h |  **<- next**
 | 5 | Streamlit UI | — | — | 4–6 h |
 | 6 | Presentation | — | — | 2 h |
-| 7 | Export the model as `.pkl` (spec requires it) | — | — | 10 min |
-| 8 | Notebook with all cells run (required deliverable) | — | — | 1–2 h |
-| 9 | Unseen-well fallback so the live demo cannot crash | — | 5 | 30 min |
+| ~~7~~ | ~~Export the model as `.pkl`~~ | Faig | — | **done** |
+| ~~8~~ | ~~Notebook with all cells run~~ | Faig | — | **done** |
+| ~~9~~ | ~~Unseen-well fallback~~ | Faig | — | **done** |
 
 Tasks 7–9 come from `docs/Deliverables.pdf`, which is stricter than the brief
 and was only read after tasks 2–3 were built. None is hard; all are required.
@@ -70,7 +70,7 @@ measured size of the correction, plus whichever script implements it.
 `ml/src/vfm.py`, fitted by `python ml/fit_vfm.py`. Time-forward: oil **2.56%**,
 water **3.82%**, gas **5.65%**.
 
-- `ml/models/vfm.joblib` — the fitted model. `fit_vfm.py` runs the time-forward
+- `ml/models/vfm.pkl` (+ `.joblib`) — the fitted model. `fit_vfm.py` runs the time-forward
   check *before* persisting and refuses to save above 4% oil MAPE, so the file
   is never an unscored model.
 - `ml/outputs/vfm_daily_predictions.xlsx` — 2,729 well-days, with `data_coverage`
@@ -111,39 +111,22 @@ Order of work:
 Done when: an Excel of `Horner slope, k (md), skin, ΔP_skin (psi)` per event,
 plus the plots saved under `ml/outputs/figures/pta/`.
 
-## 7. Export the model as `.pkl`
+## 7–9. Deliverables-PDF gaps — **done**
 
-`docs/Deliverables.pdf` item 2 says "trained model file(s) in .pkl format".
-We ship `ml/models/vfm.joblib`. Emit both from `fit_vfm.py` — same object,
-`pickle.dump` alongside the joblib — and keep them in step so they cannot
-drift. Ten minutes, and it is a stated requirement, so do not skip it.
+- **`.pkl` export.** `fit_vfm.py` writes `ml/models/vfm.pkl` (the required
+  format) and `vfm.joblib` together from the same object, so they cannot
+  drift. Verified identical predictions from both.
+- **Notebook.** `notebooks/VFM_Phase1.ipynb`, 29 cells, all executed with
+  outputs, no errors. Generated and run by `ml/build_notebook.py` so the
+  committed outputs can never drift from the code — regenerate rather than
+  editing cells by hand.
+- **Unseen-well fallback.** `VFMModel.predict` now pools the intercept, sets
+  an `unseen_well` flag and warns, instead of raising. `strict=True` restores
+  the raise for batch pipelines.
 
-## 8. Notebook with all cells run
-
-`docs/Deliverables.pdf` item 3, and we have none. It wants the code with
-outputs already visible, showing the best results. Narrate the actual path:
-the data defects and their repairs, why physics beats ML at n=85, the
-time-forward protocol and why a random split is meaningless here, the fitted
-choke exponents landing on the textbook law, then the PTA. Import from
-`ml/src/`, do not re-implement — the notebook is the narrative, the modules
-stay the source of truth.
-
-## 9. Unseen-well fallback — do this before the demo
-
-`VFMModel.predict` raises `ValueError` on any well outside the fitted ten,
-because the choke law carries a per-well intercept. The organisers will hand
-us **test data we have not seen** and watch us run it. If it names a new well,
-we crash live.
-
-Fall back to a pooled intercept (the mean across the ten), return the
-prediction, and surface a clear warning in the UI that this well was not in
-training and the estimate is unreliable. Leave-one-well-out is ~70% MAPE, so
-the number will be poor — but a flagged poor number is recoverable in a demo
-and a traceback is not.
-
-Equally: the app must run **from raw CSVs**, not from `data/processed/`.
-Nothing has been exercised that way end to end. Test it before the demo with
-a fresh copy of the raw files.
+Still untested: **the chain running from raw CSVs end to end.** Everything so
+far starts from `data/processed/`, which will not exist for the organisers'
+test data. Exercise that path before the demo.
 
 ## 5. Streamlit UI
 

@@ -9,3 +9,4 @@ docs stop loading automatically.
 @agent/AGENTS.md
 @agent/PROJECT_STATE.md
 @agent/NEXT_STEPS.md
+@docs/Deliverables.pdf

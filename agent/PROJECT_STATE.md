@@ -20,8 +20,8 @@ in `docs/README.md`. Read it before assuming a deliverable is done.
 | # | Required | State |
 |---|---|---|
 | 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | VFM done; PTA pending |
-| 2 | Trained model file(s) **in `.pkl` format** | ✗ we ship `.joblib` — must also emit `.pkl` |
-| 3 | **A notebook** with all cells run, outputs showing best results | ✗ **not started** |
+| 2 | Trained model file(s) **in `.pkl` format** | **done** — `ml/models/vfm.pkl` (+ `.joblib`) |
+| 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` |
 | 4 | A folder containing all necessary PTA plots | pending with PTA |
 
 > "During the evaluation, we will ask you to run and demonstrate your
@@ -29,15 +29,14 @@ in `docs/README.md`. Read it before assuming a deliverable is done.
 > **test data**."
 
 That sentence is the one to design against. The app must ingest *raw, unseen*
-data live, run cleaning → features → predict → PTA, and not fall over. Two
-consequences we are not yet ready for:
+data live, run cleaning → features → predict → PTA, and not fall over.
 
-- **The model raises on an unknown well.** `VFMModel.predict` throws
-  `ValueError` for any `well_name` outside the fitted ten, because the choke
-  law carries a per-well intercept. If the organisers' test data names a new
-  well, the demo crashes in front of the judges. Needs a graceful fallback —
-  a pooled intercept plus a visible warning. The prediction will be poor
-  (leave-one-well-out is ~70% MAPE) but a flagged number beats a traceback.
+- **Unknown wells no longer crash.** `VFMModel.predict` falls back to the
+  pooled intercept, sets an `unseen_well` flag on the row and emits a
+  `UserWarning`. The numbers are still unreliable (leave-one-well-out is ~70%
+  MAPE), which is why they are flagged rather than quietly returned.
+  `strict=True` restores the old raise, for batch pipelines where silence is
+  worse than failure.
 - **The whole chain must run from raw CSVs**, not from `data/processed/`.
   Nothing has been exercised that way end to end yet.
 
@@ -49,7 +48,7 @@ consequences we are not yet ready for:
 | 0 | EDA | **done** |
 | 1 | Feature engineering | **done** |
 | 1 | VFM baselines benchmarked | **done** (physics wins time-forward: 2.67–3.10% vs Ridge 5.11%) |
-| 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.joblib`, TF oil 2.56%) |
+| 1 | Chosen VFM model, fitted and persisted | **done** (`ml/models/vfm.pkl`, TF oil 2.56%) |
 | 1 | Excel: daily oil/water/gas predictions | **done** (2,729 well-days) |
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | Horner analysis → k, skin, ΔP_skin | not started |
