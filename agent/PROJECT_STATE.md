@@ -226,6 +226,9 @@ The rate probes take q from the measured well tests through the inflow
 relation (`ml/src/pta_rate.py`), not from the VFM choke law. The routing
 over-response of the choke law is the known defect.
 
+**The step-by-step for the platform (both tasks, exact records 8.38397 and
+21.0200, what to do at each score) is `ml/outputs/candidates/RUNBOOK.md`.**
+
 - **Validation of the method.** Leave-one-out over 38 interior tests: MAE
   1.85%, bias −0.15%.
 - **IPR / VFM rate ratio r**, last full day before each shut-in:
@@ -249,7 +252,7 @@ over-response of the choke law is the known defect.
 | P1 | `pta_P1_k_from_IPR_rate.csv` | k from the IPR rate, all six wells | won → P2_up; lost → P2_down |
 | P2 | `pta_P2_up_IPR_rate_x1.5.csv` | r^1.5 | only if P1 won; keep if > P1, then stop |
 | P2 | `pta_P2_down_IPR_rate_x-0.5.csv` | r^−0.5 | only if P1 lost; keep if > 8.3840, then stop |
-| P1b | `pta_P1b_IPR_rate_at_shutin_minute.csv` | IPR rate at the shut-in minute | only if P1 won and probes remain |
+| P3 | `pta_P3_IPR_rate_at_shutin_minute.csv` | IPR rate at the shut-in minute | only if P1 won and probes remain |
 
 Building the final file:
 

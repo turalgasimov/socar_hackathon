@@ -41,7 +41,7 @@ PROBES = {  # file name -> (rate variant, abs skin)
     "pta_P1_k_from_IPR_rate.csv": ("ipr", False),
     "pta_P2_up_IPR_rate_x1.5.csv": ("ipr_up", False),
     "pta_P2_down_IPR_rate_x-0.5.csv": ("ipr_down", False),
-    "pta_P1b_IPR_rate_at_shutin_minute.csv": ("ipr_minute", False),
+    "pta_P3_IPR_rate_at_shutin_minute.csv": ("ipr_minute", False),
 }
 
 
@@ -127,7 +127,7 @@ Decision table (base = shipped 8.3840; one change per probe):
   P1  pta_P1_k_from_IPR_rate.csv         won -> P2_up ; lost -> P2_down
   P2  pta_P2_up_IPR_rate_x1.5.csv        only if P1 won;  keep if > P1, then stop the rate ladder
       pta_P2_down_IPR_rate_x-0.5.csv     only if P1 lost; keep if > 8.3840, then stop
-  P1b pta_P1b_IPR_rate_at_shutin_minute  only if P1 won and probes remain; keep if > best so far
+  P3  pta_P3_IPR_rate_at_shutin_minute   only if P1 won and probes remain; keep if > best so far
 Final: combine only individually winning changes (--rate <best> [--abs-skin]); no winner -> the base stays.""")
 
 
