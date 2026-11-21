@@ -149,8 +149,11 @@ The raw→parquet cache makes reloads near-instant. Delete
   smaller feature sets, fit scalers **inside** a `Pipeline`.
 - **Watch the test-mode skew.** During a test the well is routed to the test
   separator, so `whp_downstream_psia` runs 19–29 psi low (−2.6σ) and 99% of
-  daily values fall outside the tested range. Keep it out of any model term;
-  putting it in the water-cut split moved base oil +5.24% and scored 20.57.
+  daily values fall outside the tested range. Keep it out of any model term:
+  putting it in the water-cut split moved base oil +5.24% offline and was caught
+  before submission (d0ac161). The widening that was submitted instead used only
+  routing-safe sensors (whp, dh_p, dh_t, ann) and still scored 20.57 against
+  20.9463, so it was reverted (7fefd46).
 - **Time-forward does not predict the leaderboard.** All 85 labels are
   test-routed, the 2,729 scored days are not, so it measures fit inside the
   wrong regime. Two changes that improved every time-forward metric *lost*
