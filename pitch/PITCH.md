@@ -1,243 +1,341 @@
 # Pitch — SOCAR Hackathon 2026
 
-Working draft, built on `pitch_template.txt`: problem → solution → audience →
-business model → competition → roadmap → team → call to action. Adapted where
-our jury and rubric differ from the business hackathons the template was
-written for.
+What we have, what we say, and what is still missing. Status as of 21 Nov
+2026, ~17:30 (GitHub `master` at `6e00f4a`).
 
-- `TODO(you)` — information only you can provide.
-- `TODO(peers)` — waits on the ML / PTA results.
-- ⚠ — interim number from the repo; replace it with the final model's score.
+- The spoken script is [`speech.txt`](speech.txt).
+- The research behind every claim is in [`../research/`](../research/).
 
-## Format and audience
+Markers:
+- `TODO(you)`: only you can fill it.
+- `TODO(peers)`: waits on the ML/PTA work.
+- `TODO(us)`: UI or pitch work we still have to build.
+
+---
+
+## 1. Format and scoring
 
 | | |
 |---|---|
-| Slot | 7 min pitch + 3 min Q&A |
-| Deadline | slides are uploaded with the code by **22 Nov 13:00** |
-| Scored directly | Presentation: 10 pts |
-| Scored *through* the pitch | VFM methodology: 20 pts; PTA plots: 10 pts. The judges see these here and in the UI |
-| Jury | SOCAR engineers + Caspian AI Institute. Technical people, not the template's "product people" |
-| Language | TODO(you): Azerbaijani or English? |
-| Speakers | TODO(you): who presents which section |
-| Product name | TODO(you) |
+| Slot | **7:00 total, including the live demo**, then 3 min Q&A |
+| Demo | We run the app live on the **organisers' test data**, raw CSVs in and results out (`docs/Deliverables.pdf`) |
+| Deadline | Code, `.pkl` model, results, notebook, PTA plots and slides on GitHub by **22 Nov 13:00** |
+| Jury | SOCAR engineers + Caspian AI Institute: technical, not "product people" |
+| Language | TODO(you): Azerbaijani or English? `speech.txt` is in English for now |
+| Speakers | TODO(you): who says which part (marked `[SPEAKER ?]` in `speech.txt`) |
+| Product name | TODO(you): written as `[NAME]` everywhere |
 
-## Where we break the template
+**Scoring (100 points):**
+- VFM 50: methodology 20 · accuracy 30
+- PTA 30: plots 10 · parameters 20
+- UI 10: functionality 4 · workflow 6
+- Presentation 10
 
-- **We add a live demo and a methodology section.** The template has neither,
-  and the rubric pays 20 pts for methodology, so the judges must see it.
-- **"Business model" becomes "Value and deployment".** SOCAR is our only buyer.
-  The rules give SOCAR a perpetual, royalty-free licence, plus exclusive use if
-  we place in the top 3, so selling to other companies is off the table. We
-  pitch an internal service.
-- **The roadmap shrinks to one line inside the call to action.** "What we already
-  did" moves into Methodology, where it scores.
-- **Technical jargon is allowed in Methodology only.** Everywhere else the
-  template's rule holds: the half-asleep manager with a coffee must follow.
-
-## Run sheet
-
-| # | Section | Time | Slides |
-|---|---|--:|--:|
-| 1 | Problem + hook | 0:45 | 1–2 |
-| 2 | Solution | 0:30 | 1 |
-| 3 | Live demo | 2:15 | — |
-| 4 | Methodology and results | 1:30 | 2 |
-| 5 | Who it is for | 0:20 | 1 |
-| 6 | Value and deployment | 0:30 | 1 |
-| 7 | Competition | 0:20 | 1 |
-| 8 | Team | 0:20 | 1 |
-| 9 | Call to action | 0:10 | 1 |
-| | **Total** | **6:40** | 20 s buffer |
+VFM accuracy is 10 points per phase, split R² /3 + MAPE /2 + WAPE /5. WAPE
+weights by volume, so GL-07 (34% of field oil) dominates.
 
 ---
 
-## 1. Problem + hook (0:45)
+## 2. What we have right now
 
-*Template: crystal clear for everyone, put the hook here, say nothing about the
-product yet. One image, and ask the audience 1–2 questions.*
+### VFM: done
+- **Model:** a choke-flow physics model for liquid rate, water cut estimated
+  from the tubing pressure drop, gas from the static solution GOR (Rs). Saved
+  as `ml/models/vfm.pkl` (plus `.joblib`). It refuses to save itself if oil
+  MAPE is above 4%.
+- **Scores, time-forward** (55 of 85 tests; each predicted only from the past):
 
-**Opening question:** "How much oil did well GL-04 produce yesterday?" Pause.
-"Nobody knows. Not us, and not the engineer responsible for it."
+  | phase | R² | MAPE | WAPE | bias |
+  |---|--:|--:|--:|--:|
+  | oil | 0.9981 | **2.56%** | **2.33%** | +0.25% |
+  | water | 0.9959 | **3.82%** | **3.48%** | +0.15% |
+  | gas | 0.9940 | **5.65%** | **4.61%** | +2.04% |
 
-**The fact:** over 9 months, 10 wells logged **3.9 million sensor readings** but
-only **85 measured production rates**. That is about one measurement per well
-per month, and roughly 46,000 sensor readings for every measured rate.
+- **Physics vs machine learning** (time-forward oil MAPE, same folds):
 
-**The pain:** between tests the rates are guessed. The analysis that turns
-rates into reservoir decisions is spread across "disconnected tools, scripts
-and spreadsheets", which is how the challenge brief itself puts it.
+  | model | MAPE |
+  |---|--:|
+  | Copy the well's previous test | 6.00% |
+  | Ridge regression, 58 features | 5.11% |
+  | **Choke physics (best variant)** | **2.67%** |
 
-- TODO(you): what a late or wrong rate costs SOCAR. One number, or a quote from a
-  mentor (for example, a damaged well losing production unnoticed for weeks).
-- Visual: one well over 9 months, with a dense sensor line and ~9 dots marking
-  the tests. Needs a new simple figure; `fig06_rate_history.png` has 10 panels,
-  which is too busy for an opener.
+  - The physics lead is real: **+2.17 pp, 95% CI [1.07, 3.42]**
+    (well-cluster bootstrap, 5,000 resamples).
+  - Ridge is **statistically no better than copying the last test**:
+    +0.89 pp [−1.54, 3.34].
+  - As a well collects more tests, physics improves (3.97 → 2.73%) and
+    Ridge gets worse (4.00 → 6.18%).
+- **The model rediscovered the choke law:** fitted exponents S^2.057 and
+  ΔP^0.472, against the textbook 2 and 0.5. Nobody told it those values.
+- **Deliverables done:**
+  - `ml/outputs/vfm_submission.csv`: 2,730 rows in the template's exact
+    format
+  - `ml/outputs/vfm_daily_predictions.xlsx`: 2,729 well-days, with the 14
+    low-coverage days flagged
+  - `notebooks/VFM_Phase1.ipynb`: all cells run
+- **Ready for the live demo:**
+  - `ml/predict_from_raw.py` takes the raw CSVs and produces predictions in
+    **61.6 s** on the full dataset, bit-identical to the submission.
+  - A hostile test (renamed wells, two months of data) finishes in 11.8 s.
+    It **flags unseen wells instead of crashing**: unseen-well error is about
+    70%, so those numbers are marked, not trusted.
 
-## 2. Solution (0:30)
-
-*Template: simple, no jargon, and say what makes us unique. Keep that unique
-point running through the whole pitch.*
-
-**One-liner (draft):** "[NAME] turns the sensor data SOCAR already records into
-daily oil, water and gas rates. From those rates it reads each well's reservoir
-health at every shut-in, all in one browser app on SOCAR's own server."
-
-What makes us unique:
-1. **One connected flow:** rate estimate → well-test interpretation → report.
-   Today these are separate tools.
-2. **Physics first:** the model rediscovers the choke-flow law from the data,
-   so engineers can check it instead of just trusting it.
-3. **No new hardware, nothing to install:** it uses existing sensors and a
-   browser, and the data never leaves SOCAR.
-
-- TODO(you): pick one of the three to own. Three is a lot for 30 seconds.
-
-## 3. Live demo (2:15)
-
-| Step | Show | Say |
-|---|---|---|
-| 1 | Open the app from a second laptop, or let a judge scan a QR code | "It runs on a central server. I'm just a browser." |
-| 2 | Pick a well → sensor history with the test dots | "This is everything the well tells us…" |
-| 3 | VFM → daily oil, water and gas line through the test dots | "…and now every day has a rate. The dots are the real measurements." |
-| 4 | PTA → shut-in list → Horner plot → k, skin, ΔP skin | "Every shut-in is found and interpreted automatically." |
-| 5 | Interpretation | "Skin +X: this well is damaged and loses ~Y bbl/d." TODO(peers) |
-| 6 | Export | "One click: Excel and report for both parts." |
-
-- Demo well: TODO(peers). GL-04 has the largest build-up (+837 psi, 48 h);
-  GL-01 and GL-08 have the longest (72 h). Pick the one with the cleanest Horner.
-- Record a backup video by TODO(you). Test whether the venue Wi-Fi lets two
-  devices reach each other; keep a phone hotspot as the fallback.
-- Rehearse with a stopwatch. 2:15 means one well only, with no detours.
-
-## 4. Methodology and results (1:30) — this is where the points are
-
-*Not in the template. VFM methodology is worth 20 pts, and this is the only
-place the judges hear it. Slide titles should use the rubric's own words.*
-
-**Slide A: "We didn't trust the data"** (the repo itself calls this our strongest
-material)
-- Missing values were hidden as `-999.25`: 7,410 readings in a file that
-  reported zero nulls.
-- GL-06 gas rates were recorded in m³/d under an Mscf/d header, so they were
-  off by 28×.
-- 5 sign flips, 2,513 duplicate rows, and a 4.5-hour outage on all 10 wells at
-  once (2025-08-09, a data-recording system failure).
-- **The test-mode trap:** during a well test the flow is routed to the test
+### Data quality: done (our strongest story)
+- **Hidden missing values:** 7,410 readings coded as `-999.25` in a file that
+  reports zero missing values.
+- **Wrong units:** GL-06 gas rates were in m³/d under an Mscf/d header, so off
+  by 28×.
+- **Other repairs:**
+  - 5 sign flips
+  - 2,513 duplicate rows
+  - 449 spikes removed (0.011%)
+  - 3,914,560 clean rows out
+- **A night when every well went silent:** on 2025-08-09, 01:09–05:40, all
+  10 wells dropped out at once. That's a data-recording system failure, not
+  10 broken sensors.
+- **The test-mode trap:** during a well test, flow goes to the test
   separator, so downstream wellhead pressure reads 19–29 psi lower than on
-  normal days, on all 10 wells. Left untreated, this biases the daily
-  predictions by about −3.8%. TODO(peers): the correction you chose.
+  normal days, on all 10 wells. On GL-04 the test range and the normal-day
+  range don't even overlap.
+  - Measured effect: **2.5%**, agreed by four independent methods (IPR
+    2.50%, thermal ratio 2.51%, thermal slope 2.05%, daily vs test window
+    2.62%).
+  - Whether the correction is applied in the submission: TODO(peers).
+- **Partial shut-in days:** on the 10 days where a well was shut in part of
+  the day, using the daily average differs by 30% on average (up to 68%)
+  from integrating only the flowing minutes. Fixed by integrating; field oil
+  total moves −0.023%.
 
-**Slide B: "Physics first, validated honestly"**
-- **VFM:** at this data size, a physics model of the choke beats machine
-  learning: 1.82% error on liquid rate vs 2.93% for Ridge regression and
-  3.80% for gradient boosting ⚠ (these are leave-one-test-out scores;
-  replace them with the final time-forward score).
-- The fitted exponents (S^2.05, ΔP^0.47) match the textbook choke law (2 and
-  0.5), so the model learned real physics, not a curve fit.
-- Per phase: oil 2.35%, water 3.25%, gas 5.33% ⚠.
-- **Validation:** time-forward, never a random split. A random split leaks each
-  well's rate level and scores about 4% no matter how bad the model is.
-- **PTA:** 6 shut-ins found automatically. 4 wells never shut in, so PTA is
-  impossible there, and we say so. Gauges are corrected to datum (they sit
-  150–420 ft above it). Single-phase oil is justified because pressure stays
-  above bubble point (GL-04: 2,269 vs 1,265 psia).
-- Results table: TODO(peers), with m, k, skin and ΔP skin per event.
+### PTA: in progress (peers)
+- **6 build-ups found automatically.** GL-03, GL-05, GL-07 and GL-09 never
+  shut in, so PTA isn't possible on those wells, and we say so.
 
-## 5. Who it is for (0:20)
+  | well | start | duration | build-up |
+  |---|---|--:|--:|
+  | GL-01 | 2025-04-15 08:00 | 72.0 h | +271 psi |
+  | GL-02 | 2025-03-08 14:23 | 5.7 h | +281 psi |
+  | GL-04 | 2025-06-03 08:00 | 48.0 h | +837 psi |
+  | GL-06 | 2025-07-22 03:11 | 8.0 h | +119 psi |
+  | GL-08 | 2025-08-19 09:00 | 72.0 h | +522 psi |
+  | GL-10 | 2025-05-27 21:04 | 9.0 h | +228 psi |
 
-*Template: be specific to the point of absurdity, profile the early adopters,
-and say where you would hang the banner.*
+- The gauge sits 150–420 ft above datum, so it needs a hydrostatic
+  correction before Horner analysis.
+- Single-phase oil is justified: downhole pressure stays above bubble point
+  (e.g. GL-04: 2,269 vs 1,265 psia).
+- GL-02 and GL-06 are short build-ups, so their slopes are flagged as
+  uncertain.
+- **Horner results (m, k, skin, ΔP skin) and plots:** TODO(peers). The demo,
+  the value slide and the speech all need them.
 
-- **User:** the production engineer responsible for a cluster of gas-lifted
-  wells. TODO(you): which SOCAR fields or production units, how many such
-  engineers, how many gas-lift wells.
-- **Second user:** the reservoir engineer who interprets build-ups today in
-  TODO(you): which tool?
-- **Decision maker:** TODO(you), e.g. head of production or digital
-  transformation.
-- **Early adopter:** the field with the most wells per test separator.
-  TODO(you): ask a mentor.
-- **Banner:** TODO(you), e.g. the office where well-test schedules are planned.
+### UI: not started (us)
+- Streamlit calling `predict_from_raw.run()`, then Horner on top.
+- 6-step flow: upload → explore → VFM → PTA → interpret → export.
+- Embedded in the deck as the demo slide. TODO(us).
 
-**Do this today:** ask a SOCAR mentor two questions: "How do you get rates
-between tests now?" and "How long does one build-up interpretation take you?"
-One real quote beats any slide, and the template counts it as validation.
+### Research: done (`research/`)
+- **Nobody combines gas-lift VFM and PTA.** About 30 products checked.
+  KAPPA-Automate comes closest, but its rates come from a reservoir model
+  and it needs an expert to set up.
+- **SOCAR already uses three KAPPA products** (Report.az, Nov 2025). We are
+  complementary, never against KAPPA.
+- **The literature agrees:** with only well tests, physics-based models beat
+  ML, and copying the last test beats most models (Hotvedt et al., 2022, 10
+  wells).
+- **Problem numbers:**
+  - Canada's regulator (AER Directive 017) requires at least 3 tests per
+    month for oil wells above 30 m³/d. Ours average about 1,450 bbl/d (about
+    230 m³/d) and get about 1. (The average SOCAR well, about 4 m³/d, would
+    need only 1 a month there.)
+  - A multiphase meter costs about US$100–250k, plus up to 25% to install
+    (Shell/PDO, 2002);
+    smart-well hardware about US$2–5M per well (Ma et al., 2020).
+  - PETRONAS skin screening: 28 jobs, +6,500 bopd, screening time from 2
+    weeks to 1 day.
 
-## 6. Value and deployment (0:30)
+### What the problem costs (from `research/COMPETITORS.md` §12)
+- **SOCAR is a gas-lift company:** 52.4% of its oil is gas-lifted, 64.6% at
+  Azneft (SOCAR Annual Report 2024).
+- **One percent of that oil going unseen = about US$26M a year** (about 78,800
+  bbl/d at Brent $91.98 on 20 Nov 2026, gross). 1% is the top-quartile
+  deferment benchmark (PDO, SPE-214005); a mature field there ran at 3.7%.
+- **Our 10 wells:** 1% lost = **$4.9M a year**, 5% = $24.3M. A single unseen
+  20% drop on one well for 15 days (half a monthly test interval) = about
+  $0.4M.
+- **Allocation:** testing weekly instead of monthly is worth $27–80M a year in
+  a 36-well field (Sadri & Shariatipour, ASME JERT 2020, simulation). A 1%
+  metering error on 20,000 bbl/d is about $18k a day at $92 (NEL 2014,
+  rescaled).
+- **Upside documented elsewhere:** skin screening +6,500 bopd from 28 jobs
+  (PETRONAS); gas-lift optimisation +7% on 200+ wells (ExxonMobil, 2024).
+- **Caution:** SOCAR wells average about 26 bbl/d; ours about 1,450. Value
+  scales with total volume, and software costs almost nothing per extra well
+  *(inference)*.
 
-*Template: "business model". Show that it is sustainable and that the value
-outweighs the cost.*
+---
 
-- **Model:** an internal service on a central server inside SOCAR's network.
-  Engineers use a browser.
-- **Costs:** one server, maintenance, and retraining as new well tests arrive.
-- **Value** (pick two and attach a number to each):
-  1. A daily rate for every well between tests → issues caught earlier, better
-     allocation.
-  2. Skin → barrels lost per day → a ranked list of stimulation candidates.
-     TODO(peers): the $ figure from our PTA results.
-  3. Fewer test-separator hours and fewer physical meters. TODO(you): what a
-     multiphase meter or a well test costs at SOCAR.
-  4. Engineer time: hours → minutes per analysis. Time it during the demo.
-- **Consistency:** one model version for everyone, an audit trail, nothing to
-  install.
+## 3. What the jury must remember
 
-## 7. Competition (0:20)
+1. **A rate for every well, every day, from sensors SOCAR already has.** No
+   new hardware.
+2. **Physics beat machine learning, and the model rediscovered the choke law
+   by itself.**
+3. **The only workflow that connects rates to reservoir diagnosis (VFM →
+   PTA) for gas-lifted wells**, and it complements the KAPPA tools SOCAR
+   already uses.
 
-*Template: show that you know the alternatives and say how we are better. No
-promises.*
+## 4. Where we break the template
 
-| Alternative | Its weakness for this job | Our edge |
+- **Added a live demo and a methodology section.** They carry about 60 of the
+  points.
+- **Target audience, business model and competition squeezed into about 45
+  s,** because the demo takes a third of the slot.
+- **The roadmap is one line inside the ask.** "What we already did" is the
+  methodology section.
+- **Jargon only in the methodology section.**
+
+## 5. Run sheet (7:00)
+
+| Time | Section | Slides |
 |---|---|---|
-| Physical multiphase flow meters | Hardware on every well, plus calibration and maintenance | Uses the sensors already installed |
-| Periodic well tests (status quo) | About one per well per month; no rate between tests | A rate every day |
-| Commercial VFM software (TODO(you): vendors SOCAR uses) | Licence cost, and it stays separate from PTA | VFM and PTA in one flow |
-| Commercial PTA suites (e.g. KAPPA Saphir; TODO(you): which SOCAR uses) | Manual, expert-only, needs a rate history from elsewhere | Shut-ins detected automatically; rates come from our VFM |
-| In-house spreadsheets and scripts | Disconnected and not traceable | One flow, one model version, an audit trail |
+| 0:00–0:45 | Hook + problem | 1–2 |
+| 0:45–1:05 | Solution | 3 |
+| 1:05–3:35 | **Live demo** (the ~60 s processing wait is narrated with the data-quality story) | 4 (app embedded) |
+| 3:35–4:55 | Methodology and results | 5–6 |
+| 4:55–5:40 | Competition, value, deployment | 7–8 |
+| 5:40–6:20 | Team, ask, close | 9 |
+| 6:20–7:00 | **Buffer** for live-demo hiccups | — |
 
-## 8. Team (0:20)
+## 6. Slides
 
-*Template: incredibly important. Don't list "frontend dev"; say what ties each
-of you to oil, gas and wells, and show the passion.*
+| # | Slide | Content | Status |
+|--:|---|---|---|
+| 1 | Hook | One well, 9 months: a dense sensor line and ~9 dots for the tests. Question: "How much did GL-04 produce yesterday?" | TODO(us): build the figure |
+| 2 | Problem | 3.9 M readings vs 85 rates · ~1 test per month; Canada requires 3 for wells above 30 m³/d · **52% of SOCAR oil is gas-lifted; 1% unseen ≈ US$26M/yr** · meters US$100–250k each · separate, disconnected tools | text ready |
+| 3 | Solution | One-liner + 3 points: one connected flow · physics first · no hardware, on SOCAR's server | text ready |
+| 4 | Demo | Streamlit app embedded (`?embed=true`); QR code to open it on a phone | TODO(us) |
+| 5 | Physics vs ML | Three bars: copy last test 6.00 · Ridge 5.11 · physics 2.67. Exponents 2.06 / 0.47 vs 2 / 0.5 | TODO(us): chart |
+| 6 | Results + limits | Scores table (R², MAPE, WAPE) · routing gap 2.5% by 4 methods · unseen wells flagged · PTA results table | TODO(peers): PTA numbers |
+| 7 | Competition | The five-row table in §8 | text ready |
+| 8 | Value + deployment | Daily rates · skin → lost barrels → stimulation list · on-prem, browser only, one model version | TODO(peers): $ figure |
+| 9 | Team + ask | TODO(you): team · pilot ask | TODO(you) |
+| — | Backup | Q&A slides: validation scheme, routing gap, unseen wells, KAPPA | TODO(us) |
+
+## 7. Demo plan
+
+1. **Open** the app from a second laptop or a phone (QR code): "it runs on a
+   server, I'm only a browser".
+2. **Upload** the organisers' raw CSVs and press Run. About 60 s; narrate the
+   data-quality story meanwhile.
+3. **VFM:** daily oil, water and gas per well, with the test dots on top.
+   Download the CSV.
+4. **PTA:** list of shut-ins → Horner plot → k, skin, ΔP skin →
+   interpretation. TODO(peers) numbers.
+5. **Export:** Excel and the report.
+
+Fallbacks:
+- **Test data has a new well:** the app flags it as unseen; say so openly.
+- **Upload fails:** switch to our bundled dataset.
+- **App fails:** play the backup video. TODO(us): record it.
+- **Venue Wi-Fi blocks laptop-to-laptop:** use a phone hotspot. Test it early
+  on 22 Nov.
+
+## 8. Competition
+
+From `research/COMPETITORS.md` and `research/FINDING.md`: about 30 products
+checked, and **none combines gas-lift VFM and PTA in one workflow**. **SOCAR
+already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
+*complementary* to KAPPA, never against it.
+
+| Alternative | Examples | What's missing for gas-lifted wells | Our edge |
+|---|---|---|---|
+| Physical multiphase meters | SLB Vx, Emerson Roxar | ~US$100–250k per meter, plus up to 25% to install (Shell/PDO, 2002) | **US$0 hardware**: uses the sensors already on the well |
+| "Smart well" hardware | SLB intelligent completions, Baker Hughes fibre and downhole flowmeters | New downhole hardware, US$2–5M per well (Ma et al., 2020) | Runs on standard wellhead sensors |
+| VFM software | Weatherford MetaFlow, SLB + Dataiku, Olga Online, Solution Seeker | Rates only, no PTA; heavy simulators or ML black boxes; mostly cloud | Physics choke model calibrated on your well tests; explainable; on your own server |
+| PTA software | KAPPA Saphir and KAPPA-Automate, SLB WellTest, Petex IVM | Expert tools; rates come from a reservoir model or from somewhere else | Automatic shut-ins + Horner on our own daily rates, same well, one view |
+| Reservoir simulation suites | tNavigator (Rock Flow Dynamics) | Model-centric: they *consume* rates and well-test results for history matching; no VFM, no automatic build-up analysis | Supplies the daily rates and k/skin their models need |
+| Status quo | Periodic well tests + spreadsheets | ~1 test per well per month; separate, disconnected tools | A rate every day; one workflow; an audit trail |
+
+**Rules:**
+- Never pitch against KAPPA. We supply the daily rate history its PTA needs.
+- No promises. Say what the prototype already does.
+- Use public facts only, and don't quote vendors' accuracy claims.
+- Don't raise vendor ownership or sanctions on stage; compare capabilities only.
+
+**If the jury asks**
+- *"We already use tNavigator."* "Good, then we feed it. tNavigator builds
+  and history-matches reservoir models, and it needs measured rates and
+  well-test results as inputs. It doesn't estimate rates from sensors or
+  interpret build-ups automatically. Our daily rates and k/skin go straight
+  into its history matching and material balance."
+- *"KAPPA already does this."* See §11: we supply the daily rate history
+  KAPPA's PTA needs.
+
+## 9. Users, value and the ask
+
+- **Users:**
+  - the production engineer for a cluster of gas-lifted wells
+  - the reservoir engineer who interprets build-ups
+  - TODO(you): which SOCAR fields or production units, how many engineers,
+    how many gas-lift wells; the decision maker
+- **Value:**
+  1. A rate every day instead of about once a month.
+  2. Every shut-in turned into skin, then lost barrels, then a stimulation
+     candidate list. PETRONAS benchmark: +6,500 bopd from 28 jobs.
+     TODO(peers): our own lost-barrels figure.
+  3. No meter hardware.
+  4. One model version and an audit trail.
+  5. Money: 1% of SOCAR's gas-lifted oil ≈ US$26M a year; 1% of our 10
+     wells ≈ $4.9M a year (see §2, "What the problem costs").
+  6. Skin → dollars: lost rate = q × ΔP_skin / (p̄ − p_wf − ΔP_skin), so the
+     app can turn every shut-in into lost bbl/d and $/yr *(inference, standard
+     inflow equation)*. Real-world anchor: PETRONAS got about 232 bopd per
+     acid job, which is about $7.8M a year gross per job at $92.
+- **Deployment:** one server inside SOCAR's network; engineers use a browser;
+  the data never leaves. The roadmap later adds company login and a live
+  data feed.
+- **Ask (draft):** a 3-month pilot on TODO(you) N gas-lift wells: read access
+  to the sensor data, one server inside SOCAR's network, and one production
+  engineer as our counterpart.
+
+## 10. Team
 
 | Name | Connection to oil, gas, wells | What they built here |
 |---|---|---|
-| TODO(you) | TODO(you) | Data cleaning, EDA, features |
-| TODO(you) | TODO(you) | VFM physics benchmark |
-| TODO(you) | TODO(you) | UI and pitch |
+| TODO(you) | TODO(you) | Data cleaning, VFM model, submission, notebook |
+| TODO(you) | TODO(you) | Physics benchmarks, routing gap, partial shut-in fix |
+| TODO(you) | TODO(you) | UI, pitch, competitor research |
 
-## 9. Call to action (0:10)
-
-*Template: ask for something specific. It also shows you mean to make it real.*
-
-- **Ask (draft):** "A 3-month pilot on TODO(you) N gas-lift wells: read access
-  to the sensor data, one server inside SOCAR's network, and one production
-  engineer as our counterpart."
-- **Roadmap in one line:** prototype (today) → pilot (live data feed, company
-  login) → field rollout.
-
----
-
-## Q&A backup (3 min)
+## 11. Q&A backup (3 min)
 
 | Likely question | Short answer |
 |---|---|
-| Why not a random train/test split? | It leaks each well's rate level; any model scores ~4%. We validate time-forward. |
-| 85 labels and 136 features: isn't that overfitting? | That's why physics wins here. Few parameters, strong regularisation. |
-| Does it work on a new well? | Not out of the box. With 10 wells there isn't enough between-well data, so a new well needs a few tests to calibrate. Say it honestly. |
-| Why PTA on daily rates? | The brief asks for it. We use per-minute pressure with the predicted rate before the shut-in. |
-| Is single-phase valid? | Yes. Downhole pressure stays above bubble point on every well. |
-| GL-02 and GL-06 build-ups are short. | 5.7 h and 8 h; radial flow may not develop. We flag those results as uncertain. |
-| Gauge depth vs datum? | Corrected hydrostatically (150–420 ft) before Horner. |
-| What about the 2025-08-09 outage? | All 10 wells dropped at once; it's flagged and we don't fill it in from other wells. |
-| Deployment and security? | On-premises server, browser access, company login; the data never leaves SOCAR. |
-| Test-mode pressure bias? | TODO(peers): the correction you chose and its effect. |
+| Why not a random train/test split? | It leaks each well's rate level; any model scores ~4%. We validate time-forward only. |
+| 85 labels: isn't that overfitting? | That's why physics wins. Few parameters, and ML was no better than copying the last test. |
+| Does it work on a new well? | Not reliably (~70% error). The app flags unseen wells instead of guessing quietly; a new well needs a few tests to calibrate. |
+| Is the data synthetic? Then the choke law is built in. | Possibly. We present it as a physics-consistency check, not proof that physics always wins. |
+| What about well-test vs normal-day conditions? | Measured at 2.5% by four independent methods. TODO(peers): whether it is corrected in the submission. |
+| Why PTA on daily rates? | The brief asks for it. A 2.6% rate error moves skin by only ~0.013; permeability inherits the error one-to-one. |
+| Is single-phase valid? | Yes: pressure stays above bubble point on every well. |
+| GL-02 and GL-06 build-ups are short. | 5.7 h and 8 h; radial flow may not develop, so we flag them. |
+| KAPPA already does this. | KAPPA-Automate gets rates from a reservoir model. Ours come from choke physics calibrated on well tests, for gas lift, and can feed KAPPA. Complementary. |
+| Deployment and security? | On-premises server, browser access; the data never leaves SOCAR. |
+| Where does the $26M come from? | SOCAR Annual Report 2024: 52.4% of oil is gas-lifted (3.92 Mt ≈ 78,800 bbl/d). 1% of that at Brent $92 is ≈ $26M a year gross. 1% is the top-quartile deferment benchmark (PDO, SPE-214005). |
+| SOCAR wells make ~26 bbl/d, yours ~1,450. | True; the hackathon wells aren't typical. Value scales with total volume, and software costs almost nothing per extra well. |
+
+## 12. Open before 13:00 tomorrow
+
+- [ ] TODO(peers): Horner results and plots; whether the routing correction is applied
+- [ ] TODO(you): product name, language, speakers, team rows, pilot size, SOCAR user details
+- [ ] TODO(us): UI end to end on raw CSVs
+- [ ] TODO(us): hook figure, physics-vs-ML chart, deck, QR code
+- [ ] TODO(us): backup video
+- [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
+- [ ] Rehearse twice with a stopwatch; cut the speech if it runs past 6:20
 
 ## Slide rules
 
 - One idea per slide, with the number big.
-- Slide titles use the rubric's own words: "VFM methodology", "PTA results".
+- Slide titles use the rubric's own words ("VFM methodology", "PTA results").
 - No product mention before the Solution slide.
-- Every number on a slide matches the final results. Re-check the ⚠ items
-  after the model is final.
+- Every number on a slide matches the final results files.

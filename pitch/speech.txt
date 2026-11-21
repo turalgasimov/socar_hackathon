@@ -1,0 +1,182 @@
+    SOCAR HACKATHON 2026 - PITCH SCRIPT (7:00, live demo included)
+===============================================================
+[NAME] = product name, TODO.  [SPEAKER ?] = who says it, TODO.
+[CLICK] = next slide.  [DEMO] = action in the app.  (pause) = stop for a beat.
+Pace: about 140 words per minute. Do not read it word for word; know it.
+Placeholders in <angle brackets> wait on the PTA results.
+
+
+--- 0:00-0:45 | HOOK + PROBLEM | slides 1-2 | [SPEAKER ?] -------------------
+
+How much oil did well GL-04 produce yesterday?
+
+(pause)
+
+Nobody knows. Not us, and not the engineer responsible for it.
+
+In nine months, the ten wells in this field logged almost four million
+sensor readings. But only eighty-five measured production rates. That is
+about one test per well per month. In Canada, the regulator requires at
+least three a month for wells this size.
+
+[CLICK]
+
+So between tests, engineers estimate, across separate tools and
+spreadsheets. And what you can't see, you lose.
+
+More than half of SOCAR's oil comes from gas-lifted wells. If just one
+percent of it slips away unnoticed, that is about twenty-six million
+dollars a year.
+
+The hardware fix, a multiphase meter on every well, costs a hundred to
+two hundred and fifty thousand dollars each.
+
+
+--- 0:45-1:05 | SOLUTION | slide 3 ------------------------------------------
+
+[CLICK]
+
+[NAME] turns the sensors SOCAR already has into a daily rate for every well,
+and turns every shut-in into a reservoir diagnosis.
+
+One browser app, running on SOCAR's own server. No new hardware.
+
+
+--- 1:05-3:35 | LIVE DEMO | slide 4 (app) -----------------------------------
+
+[CLICK]
+
+Let me show you, on the test data you gave us.
+
+[DEMO] Open the app on the second laptop, or show the QR code.
+
+This runs on a central server. I'm only a browser.
+
+[DEMO] Upload the raw CSVs. Press Run.
+
+These are the raw files, exactly as recorded. It takes about a minute, so
+here is what it checks for, because in the field data we were given,
+nothing was what it seemed.
+
+That file said it had zero missing values. In fact, more than seven thousand
+readings are a code: minus nine-nine-nine point two five.
+
+One well reported its gas in cubic metres under a thousand-cubic-feet
+header. Off by twenty-eight times.
+
+Two and a half thousand duplicate rows, sign flips, and one night when all
+ten wells went silent at the same time. That's a data-system failure, not
+ten broken sensors.
+
+And one trap we're proud we caught: during a well test, the flow goes to the
+test separator, so wellhead pressure reads twenty to thirty psi lower than
+on a normal day. We measured that effect four independent ways. They agree:
+two and a half percent.
+
+[DEMO] Results appear. Open the VFM view.
+
+Done. Every well, every day: oil, water and gas. The dots are the real well
+tests; the line is our model, filling the days in between.
+
+[DEMO] Open the PTA view.
+
+Now the reservoir. Every shut-in is found automatically: <N> wells closed
+in this data. Here is <WELL>.
+
+[DEMO] Horner plot.
+
+Horner plot, straight line, and the answer: permeability <k> millidarcy,
+skin <s>, and <dP> psi lost to skin damage.
+
+[DEMO] Interpretation panel.
+
+Skin <s> means this well is <damaged / stimulated>. It is losing about <N>
+barrels a day. That makes it a stimulation candidate.
+
+[DEMO] Export.
+
+One click: Excel and a report, for both parts.
+
+(If the test data contains a well the model has never seen, say:
+"This well is new to the model, so the app flags it instead of guessing.")
+
+
+--- 3:35-4:55 | METHODOLOGY + RESULTS | slides 5-6 | [SPEAKER ?] ------------
+
+[CLICK]
+
+Why trust it? Because we gave machine learning a fair chance, and it lost.
+
+With only eighty-five measured rates, a regression model on fifty-eight
+features scored five percent error. That is statistically no better than
+copying last month's test.
+
+Our physics model: about two and a half percent. Twice as accurate, and the
+gap is statistically solid.
+
+Every score is time-forward: each prediction made only from the past.
+
+And our favourite part: we never told the model any physics. It fitted
+choke size to the power two point zero six, and pressure drop to the power
+zero point four seven. The textbook says two, and one half. The model
+rediscovered the choke-flow law from the data.
+
+[CLICK]
+
+Final scores: oil two point six percent error, water three point eight, gas
+five point seven. R-squared above zero point nine nine on all three.
+
+Researchers in Norway found the same thing: with only well tests, physics
+beats machine learning.
+
+And we're honest about the limits: on a well it has never seen, accuracy
+collapses, so the app flags it instead of guessing.
+
+
+--- 4:55-5:40 | COMPETITION + VALUE | slides 7-8 | [SPEAKER ?] --------------
+
+[CLICK]
+
+Who else does this? We checked about thirty products. Flow-metering
+software gives you rates; well-test software interprets pressure. Separately. Nobody connects the two for
+gas-lifted wells, on the sensors you already have.
+
+And we don't replace anything. SOCAR already runs KAPPA software; our daily
+rates are exactly the input those tools need.
+
+[CLICK]
+
+What does that buy? A rate for every well every day, instead of once a
+month. And every shut-in becomes a skin number, and skin is money: when
+PETRONAS screened its wells for skin, twenty-eight jobs added sixty-five
+hundred barrels a day.
+
+It all runs on one server inside SOCAR's network. The data never leaves.
+
+
+--- 5:40-6:20 | TEAM + ASK + CLOSE | slide 9 | [SPEAKER ?] ------------------
+
+[CLICK]
+
+We are <TEAM: name, and what connects each of you to oil and gas, one line
+each>.
+
+Our ask: a three-month pilot on <N> gas-lift wells. Read access to the
+sensor data, one server inside SOCAR's network, and one production engineer
+to work with us.
+
+In three months you will know, every day, what every well produced, and
+which ones are losing oil to skin.
+
+So: how much oil did GL-04 produce yesterday?
+
+(pause)
+
+Now you know. Thank you.
+
+
+--- 6:20-7:00 | BUFFER ------------------------------------------------------
+
+Forty seconds of slack for the live demo. If the upload is slow, keep
+talking from the data-quality list. If the app fails, switch to the backup
+video and keep the same script.

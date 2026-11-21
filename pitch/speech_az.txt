@@ -1,0 +1,191 @@
+SOCAR HAKATON 2026 - PİTÇ MƏTNİ (7:00, canlı demo daxil)
+===============================================================
+[NAME] = məhsulun adı, TODO.  [SPEAKER ?] = kim danışır, TODO.
+[CLICK] = növbəti slayd.  [DEMO] = tətbiqdə hərəkət.  (fasilə) = bir anlıq dayan.
+Sözbəsöz oxumayın; mətni bilin. Azərbaycanca versiyanı məşq edərək
+yenidən vaxtını ölçün (ingiliscə versiya ~6:20 çəkir).
+<Bucaq mötərizəsindəki> yerlər PTA nəticələrini gözləyir.
+Texniki terminlər (VFM, PTA, Horner, skin, time-forward və s.) komanda
+qaydasına uyğun olaraq ingiliscə saxlanılıb.
+
+
+--- 0:00-0:45 | GİRİŞ + PROBLEM | slayd 1-2 | [SPEAKER ?] --------------------
+
+GL-04 quyusu dünən nə qədər neft hasil edib?
+
+(fasilə)
+
+Heç kim bilmir. Nə biz, nə də o quyuya cavabdeh olan mühəndis.
+
+Doqquz ayda bu yatağın on quyusu təxminən dörd milyon sensor ölçüsü qeydə
+alıb. Amma cəmi səksən beş ölçülmüş hasilat debiti. Bu, hər quyu üçün ayda
+təxminən bir test deməkdir. Kanadada tənzimləyici orqan bu ölçüdə quyular
+üçün ayda ən azı üç test tələb edir.
+
+[CLICK]
+
+Yəni testlər arasında mühəndislər ayrı-ayrı alətlər və cədvəllər üzərində
+təxmin edir. Görünməyən itki isə real puldur.
+
+SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir. Bunun cəmi bir
+faizi xəbərsiz itsə, bu, ildə təxminən iyirmi altı milyon dollar deməkdir.
+
+Avadanlıq həlli, yəni hər quyuya çoxfazalı sərfölçən qoymaq, hər biri üçün
+yüz mindən iki yüz əlli min dollaradək başa gəlir.
+
+
+--- 0:45-1:05 | HƏLL | slayd 3 ----------------------------------------------
+
+[CLICK]
+
+[NAME] SOCAR-ın artıq mövcud olan sensorlarını hər quyu üçün gündəlik
+debitə, quyunun hər bağlanmasını isə lay diaqnozuna çevirir.
+
+Bir brauzer tətbiqi, SOCAR-ın öz serverində işləyir. Yeni avadanlıq lazım
+deyil.
+
+
+--- 1:05-3:35 | CANLI DEMO | slayd 4 (tətbiq) ------------------------------
+
+[CLICK]
+
+Gəlin göstərim, bizə verdiyiniz test datası üzərində.
+
+[DEMO] Tətbiqi ikinci noutbukda açın və ya QR kodu göstərin.
+
+Tətbiq mərkəzi serverdə işləyir, mən sadəcə brauzerdən qoşuluram.
+
+[DEMO] Xam CSV fayllarını yükləyin. Run düyməsini basın.
+
+Bunlar xam fayllardır, necə qeydə alınıbsa elə. Proses təxminən bir dəqiqə
+çəkir, ona görə deyim ki, sistem nəyi yoxlayır. Çünki bizə verilən yataq
+datasında heç nə göründüyü kimi deyildi.
+
+O fayl guya heç bir boş dəyəri olmadığını göstərirdi. Əslində yeddi mindən
+çox ölçü sadəcə bir koddur: mənfi doqquz-doqquz-doqquz nöqtə iki beş.
+
+Bir quyu qaz debitini min kub fut başlığı altında kub metrlə yazıb. İyirmi
+səkkiz dəfə səhv.
+
+İki min yarım təkrarlanan sətir, işarəsi tərsinə dönmüş dəyərlər və bir
+gecə ki, on quyunun hamısı eyni anda susub. Bu, data sisteminin
+nasazlığıdır, on sensorun birdən xarab olması yox.
+
+Və tutduğumuz bir tələ ilə fəxr edirik: quyu testi zamanı axın test
+separatoruna yönəlir, ona görə quyuağzı təzyiq adi gündən iyirmi-otuz psi
+aşağı göstərir. Bu effekti dörd müstəqil üsulla ölçdük. Nəticələr üst-üstə
+düşür: iki yarım faiz.
+
+[DEMO] Nəticələr görünür. VFM bölməsini açın.
+
+Hazırdır. Hər quyu, hər gün: neft, su və qaz. Nöqtələr real quyu
+testləridir; xətt isə aradakı günləri dolduran modelimizdir.
+
+[DEMO] PTA bölməsini açın.
+
+İndi lay. Quyunun hər bağlanması avtomatik tapılır: bu datada <N> quyu
+bağlanıb. Budur, <WELL>.
+
+[DEMO] Horner qrafiki.
+
+Horner qrafiki, düz xətt və cavab: keçiricilik <k> millidarsi, skin <s>,
+skin zədələnməsinə görə itirilən təzyiq isə <dP> psi.
+
+[DEMO] İnterpretasiya paneli.
+
+Skin <s> o deməkdir ki, bu quyu <zədələnib / stimulyasiya olunub>. Gündə
+təxminən <N> barrel itirir. Deməli, stimulyasiya üçün namizəddir.
+
+[DEMO] Eksport.
+
+Bir klik: hər iki hissə üçün Excel və hesabat.
+
+(Test datasında modelin heç görmədiyi quyu olarsa, deyin:
+"Bu quyu model üçün yenidir, ona görə tətbiq təxmin etmək əvəzinə onu
+işarələyir.")
+
+
+--- 3:35-4:55 | METODOLOGİYA + NƏTİCƏLƏR | slayd 5-6 | [SPEAKER ?] ----------
+
+[CLICK]
+
+Niyə buna inanmaq olar? Çünki maşın öyrənməsinə ədalətli şans verdik, və o
+uduzdu.
+
+Cəmi səksən beş ölçülmüş debitlə, əlli səkkiz əlamətli reqressiya modeli
+beş faiz xəta verdi. Statistik baxımdan bu, keçən ayın testini sadəcə
+təkrarlamaqdan yaxşı deyil.
+
+Bizim fiziki modelimiz: təxminən iki yarım faiz. İki dəfə dəqiq, və bu fərq
+statistik cəhətdən etibarlıdır.
+
+Bütün nəticələr time-forward üsulu ilə alınıb: hər proqnoz yalnız keçmiş
+məlumatla verilir.
+
+Ən çox sevdiyimiz hissə isə budur: modelə heç bir fizika öyrətməmişik. O,
+ştuserin ölçüsü üçün iki tam yüzdə altı, təzyiq düşküsü üçün isə sıfır tam
+yüzdə qırx yeddi dərəcəsini özü tapdı. Dərslikdə bu rəqəmlər iki və yarımdır.
+Model ştuserdən axın qanununu datadan yenidən kəşf etdi.
+
+[CLICK]
+
+Yekun nəticələr: neftdə xəta iki tam onda altı faiz, suda üç tam onda
+səkkiz, qazda beş tam onda yeddi. Hər üçündə R-kvadrat sıfır tam yüzdə
+doxsan doqquzdan yuxarıdır.
+
+Norveçdə tədqiqatçılar da eyni nəticəyə gəliblər: əlində yalnız quyu
+testləri olanda fiziki model maşın öyrənməsini üstələyir.
+
+Məhdudiyyətlər barədə də açıq danışırıq: model heç görmədiyi quyuda
+dəqiqliyini itirir, ona görə tətbiq təxmin etmək əvəzinə həmin quyunu
+işarələyir.
+
+
+--- 4:55-5:40 | RƏQABƏT + DƏYƏR | slayd 7-8 | [SPEAKER ?] -------------------
+
+[CLICK]
+
+Bunu başqa kim edir? Təxminən otuz məhsulu yoxladıq. Sərf ölçmə proqramları
+debit verir, quyu testi proqramları təzyiqi interpretasiya edir. Ayrı-
+ayrılıqda. Heç kim bu ikisini qazlift quyuları üçün, sizdə artıq olan
+sensorlar üzərində birləşdirmir.
+
+Və biz heç nəyi əvəz etmirik. SOCAR artıq KAPPA proqramlarından istifadə
+edir; bizim gündəlik debitlərimiz məhz bu alətlərin ehtiyac duyduğu giriş
+datasıdır.
+
+[CLICK]
+
+Bu nə qazandırır? Ayda bir dəfə yox, hər gün, hər quyu üçün debit. Quyunun
+hər bağlanması skin rəqəminə çevrilir, skin isə puldur: PETRONAS quyularını
+skin üzrə yoxlayanda iyirmi səkkiz əməliyyat gündə altı min beş yüz barrel
+əlavə hasilat verdi.
+
+Hamısı SOCAR şəbəkəsinin içində bir serverdə işləyir. Data heç yerə getmir.
+
+
+--- 5:40-6:20 | KOMANDA + XAHİŞ + YEKUN | slayd 9 | [SPEAKER ?] -------------
+
+[CLICK]
+
+Biz <KOMANDA: adlar və hər birinizi neft-qazla bağlayan bir cümlə>.
+
+Xahişimiz: <N> qazlift quyusunda üç aylıq pilot layihə. Sensor datasına
+oxuma icazəsi, SOCAR şəbəkəsində bir server və bizimlə işləyəcək bir hasilat
+mühəndisi.
+
+Üç aydan sonra hər gün biləcəksiniz ki, hər quyu nə qədər hasil edib, və
+hansı quyular skin üzündən neft itirir.
+
+Beləliklə: GL-04 quyusu dünən nə qədər neft hasil edib?
+
+(fasilə)
+
+İndi bilirsiniz. Təşəkkür edirik.
+
+
+--- 6:20-7:00 | EHTİYAT VAXT ------------------------------------------------
+
+Canlı demo üçün qırx saniyə ehtiyat. Yükləmə ləngisə, data keyfiyyəti
+siyahısından danışmağa davam edin. Tətbiq işləməsə, ehtiyat videoya keçin və
+eyni mətni davam etdirin.
