@@ -11,11 +11,12 @@ Read first, in this order:
 | | |
 |---|---|
 | Challenge brief | `docs/README.md` |
+| Deliverables spec | `docs/Deliverables.pdf` |
 | Data dictionary | `docs/DATA_DICTIONARY.md` |
-| Data audit + VFM/PTA findings | `docs/DATA_REPORT_TASK1_TASK2.md` |
-| Physics and formulas | `docs/PHYSICS_TASK1_TASK2.md` |
 | EDA findings | `ml/outputs/eda_summary.md` |
 | Feature validation | `ml/outputs/feature_report.md` |
+| VFM model scores | `ml/outputs/vfm_fit_report.md` |
+| Pitch | `pitch/PITCH.md` |
 
 Baselines:
 

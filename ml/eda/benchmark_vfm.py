@@ -1,5 +1,6 @@
 """
-VFM benchmark — reproduces the model-comparison table in docs/DATA_REPORT_TASK1_TASK2.md (§2.2).
+VFM benchmark — physics vs ML model comparison. Results are recorded in
+agent/PROJECT_STATE.md; the shipped model is ml/src/vfm.py.
 
 Uses ONLY well_tests.csv (+ choke_events, completion, pvt). High-frequency data is not needed here,
 because the sensor columns in well_tests are exactly the HF means over each test window (verified,

@@ -205,11 +205,11 @@ decides the first item.
 
   It reaches the choke model through `dPc`: 129.6 psi on test windows vs 119.2
   on normal days. Through `dPc^0.47` that alone biases predictions **−3.8%**.
-  Against the honest time-forward errors that is ~1.9× the liquid error (2.04%)
-  and ~1.2× the oil error (3.07%) — comparable to the model's accuracy, not
-  dwarfed by it, and *systematic*, so unlike random error it does not average
-  out over 2,729 well-days. Independently confirmed in
-  `docs/DATA_REPORT_TASK1_TASK2.md` §1.5, which estimates test rates 1–4% high.
+  Directly measured at **−2.62%** (see the VFM model section above), which is
+  comparable to the shipped model's own 2.56% oil error — and *systematic*, so
+  unlike random error it does not average out over 2,729 well-days. Rovshan
+  reached the same conclusion independently, estimating test rates 1–4% high,
+  in the data report since removed from `docs/`.
 
   **This is a correction to apply, not a reason to discard the model.** Decide
   before submitting: de-bias the daily predictions, or restrict to the
