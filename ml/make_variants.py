@@ -54,26 +54,33 @@ def main() -> None:
     print(f"S0 (shipped, submitted -> 20.211/30): {len(base):,} rows, "
           f"{base.oil_rate_stbd.sum():,.0f} stb/d total oil\n")
 
+    # S1 is the confirmed best (leaderboard 20.9463 at lambda=1.0, the vertex
+    # of the V). Everything from here builds ON TOP of it, so each probe
+    # changes one thing against the current champion rather than against the
+    # uncorrected model -- otherwise a submission would test gas and undo
+    # routing simultaneously and isolate neither.
+    s1 = scaled(base, ROUTING_FACTORS)
+    gas_only = {w: GAS_GOR_FACTOR for w in base.well_name.unique()}
     variants = {
-        "S1_routing": (scaled(base, ROUTING_FACTORS),
-                       "per-well routing factor on all phases"),
+        "S1_routing": (s1, "per-well routing factor [CONFIRMED BEST, 20.9463]"),
         "S2_testlevel": (scaled(base, CHOKE_UPLIFT),
-                         "scaled to test-separator level"),
-        "S3_gas_gor": (scaled(base, {w: GAS_GOR_FACTOR for w in base.well_name.unique()},
-                              cols=["gas_rate_mscfd"]),
-                       "global GOR factor, gas only"),
+                         "scaled to test level [REJECTED, over-scaled]"),
+        "S3_gas_gor": (scaled(s1, gas_only, cols=["gas_rate_mscfd"]),
+                       "S1 + global GOR factor on gas only"),
     }
     for name, (df, note) in variants.items():
         path = OUT / f"vfm_{name}.csv"
         df.to_csv(path, index=False)
-        d_oil = 100 * (df.oil_rate_stbd.sum() / base.oil_rate_stbd.sum() - 1)
-        d_gas = 100 * (df.gas_rate_mscfd.sum() / base.gas_rate_mscfd.sum() - 1)
         assert list(df.columns) == list(base.columns) and len(df) == len(base)
-        print(f"  {path.name:22s} {note:40s} oil {d_oil:+5.2f}%  gas {d_gas:+5.2f}%")
+        print(f"  {path.name:20s} {note}")
+        for ref, lab in ((base, "vs S0"), (s1, "vs S1")):
+            d_o = 100 * (df.oil_rate_stbd.sum() / ref.oil_rate_stbd.sum() - 1)
+            d_g = 100 * (df.gas_rate_mscfd.sum() / ref.gas_rate_mscfd.sum() - 1)
+            print(f"      {lab}:  oil {d_o:+6.2f}%   gas {d_g:+6.2f}%")
 
-    print("\nSubmit S1 next. If the gap to a perfect score is the routing offset it")
-    print("will move materially; if the point mapping is simply strict it will not.")
-    print("That single result decides whether to adopt the correction or drop it.")
+    print("\nS3 now differs from S1 in gas ALONE, so its score isolates the gas")
+    print("change. Time-forward says WAPE 4.61 -> 4.19 with MAPE and R2 also")
+    print("improving, so this is a tested change rather than a leaderboard search.")
 
 
 if __name__ == "__main__":
