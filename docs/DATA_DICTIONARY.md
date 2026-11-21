@@ -159,5 +159,7 @@ Two things worth knowing:
   rate.** It is static and known before the test period, so it is a
   leakage-free capacity proxy — the single most useful static feature.
 - **The gauge sits 150–420 ft shallower than `datum_tvd_ft` on every well.**
-  Correct gauge pressure to datum with a hydrostatic gradient before Horner
-  analysis, or permeability and skin will be biased.
+  The hydrostatic offset is constant through a build-up, so it cancels in every
+  pressure difference: k, skin, Horner slope and ΔP_skin do not depend on it
+  (asserted per event in `ml/make_pta.py`). Correct only reported absolute
+  pressures (p*, p̄) to datum.

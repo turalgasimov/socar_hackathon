@@ -15,7 +15,7 @@ change before you start.
 | ~~1~~ | ~~Settle the test-mode correction~~ | Faig | — | **done — λ=0.80, 21.0200** |
 | ~~2~~ | ~~Fit + persist the VFM model~~ | Faig | — | **done** |
 | ~~3~~ | ~~Excel: daily rate predictions~~ | Faig | — | **done** |
-| 4 | PTA: Horner deliverables on 6 build-ups | Rovshan | 5 | 3–4 h |  **<- active**
+| ~~4~~ | ~~PTA: deliverables on 6 build-ups~~ | Rovshan | — | **done — model match, 8.3840 / 20** |
 | 5 | Streamlit UI | — | — | 4–6 h |  **<- unclaimed, 10 pts**
 | 6 | Presentation | — | — | 2 h |
 | ~~7~~ | ~~Export the model as `.pkl`~~ | Faig | — | **done** |
@@ -124,7 +124,17 @@ water **3.82%**, gas **5.65%**.
 Still open from this block: whether to apply the routing correction (task 1).
 The model does **not** apply one — `routing_factor` defaults to 1.0.
 
-## 4. PTA — Horner on the six build-ups
+## 4. PTA — Horner on the six build-ups — **done, 8.3840 / 20**
+
+**Shipped: exact model match** — WBS + skin + radial + boundary, Laplace +
+Stehfest, fitted to every point. `python ml/make_pta.py` writes the result file
+and refuses to drift from the scored one; `python ml/eda/pta_explore.py`
+writes the plot folder. Leaderboard, numbers and the Horner comparison are in
+`PROJECT_STATE.md` and `ml/outputs/figures/pta/README.md`.
+
+Still open: **PTA results in a notebook.** Deliverable 3 wants a notebook
+showing the best results, and only `VFM_Phase1.ipynb` exists. The plan below
+is kept as the record of how the work was done.
 
 Only `GL-01, GL-02, GL-04, GL-06, GL-08, GL-10` have a shut-in. `GL-03, GL-05,
 GL-07, GL-09` have none, so the UI must say "no build-up available" rather than
@@ -132,8 +142,11 @@ render an empty chart.
 
 Order of work:
 
-1. **Correct gauge pressure to datum first** — the gauge is 150–420 ft shallower
-   than datum on every well. Skipping this biases k and skin.
+1. **Gauge vs datum** — the gauge is 150–420 ft shallower than datum on every
+   well. A constant hydrostatic offset is added to p_wf and p_ws alike, so it
+   cancels in m and in (P1hr − p_wf): **k, S and ΔP_skin do not depend on it**
+   (asserted for every event in `ml/make_pta.py`, relative change < 1e-6).
+   Only reported pressures move: give p* at gauge and datum.
    `features.static_table()` carries `datum_minus_gauge_ft`.
 2. Horner plot: `p_ws` vs `log((tp + Δt)/Δt)`, with `tp` from the producing
    period before shut-in and `q` the predicted daily oil rate.

@@ -46,9 +46,10 @@ agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs; high_freq_data.csv (257 MB) via Git LFS
 data/processed/  derived parquet — GITIGNORED, regenerate with the pipeline
 docs/            brief, data dictionary, data report, physics report
-ml/src/          config · clean · features · vfm · daily_predict · viz
+ml/src/          config · clean · features · vfm · daily_predict · viz ·
+                 pta_model (diffusivity equation, Laplace + Stehfest)
                  (label_transfer.py is built but NOT shipped — see rejected)
-ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py
+ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py · make_pta.py
 ml/eda/          run_eda · validate_features · benchmark_vfm ·
                  timeforward_vfm · routing_checks · pta_explore
 ml/models/       vfm.pkl (required format) + vfm.joblib
@@ -86,6 +87,12 @@ PY="C:/Users/Faiq/AppData/Local/Programs/Python/Python313/python.exe"
 
 # 6. the demo path: raw CSVs in, predictions out, nothing from data/processed/
 "$PY" ml/predict_from_raw.py --data <dir> --out <file.csv>
+
+# 7. PTA (needs step 1). Figures -> ml/outputs/figures/pta/ (~60 s), then the
+#    result file -> ml/outputs/pta_submission.csv + pta_results.xlsx (~25 s).
+#    make_pta.py refuses to write unless the output is identical to the scored file.
+"$PY" ml/eda/pta_explore.py
+"$PY" ml/make_pta.py
 ```
 
 The raw→parquet cache makes reloads near-instant. Delete
@@ -112,7 +119,12 @@ The raw→parquet cache makes reloads near-instant. Delete
   and they are the only PTA build-ups.
 - **`choke_events.csv` is an event log, not a series** — forward-fill it.
 - **The gauge sits 150–420 ft shallower than the pressure datum** on every well.
-  Correct to datum before Horner or k and skin will be biased.
+  The offset is constant through a build-up, so it cancels in k, S, m and
+  ΔP_skin (asserted per event in `ml/make_pta.py`). Correct only reported
+  absolute pressures (p*, p̄) to datum.
+- **PTA `horner_slope` must be ≥ 0** — the platform rejects a negative slope,
+  so report m as a positive psi/cycle. And use the **oil** rate: k from the
+  total liquid rate scored 4.8375 against 8.3840.
 
 ## 6. Modelling rules
 

@@ -1,16 +1,18 @@
-"""PTA exploration: theory atlas, the six build-ups, and two Horner window choices.
+"""PTA figures and reference tables: theory atlas, the six build-ups, Horner windows
+A/B and the exact model match that is submitted (ml/make_pta.py).
 
-This is the exploratory / hand-calculation reference for Phase 2. It is not the
-deliverable pipeline: it writes figures and reference tables to
-ml/outputs/figures/pta/ (described in that folder's README.md).
+Writes figures and reference tables to ml/outputs/figures/pta/ (described in that
+folder's README.md). The submission itself is written by ml/make_pta.py, which reuses
+the functions here.
 
 Inputs
   pressure  data/processed/high_freq_clean.parquet  (gauge depth; the cleaning step
             leaves every build-up window untouched, verified minute by minute)
   shut-ins  data/choke_events.csv                    (choke = 0)
-  rate      ml/outputs/vfm_S1_routing.csv            (leaderboard champion, oil)
-            ml/outputs/vfm_submission.csv            (S0, rate-sensitivity only)
+  rate      ml/outputs/submitted/lam0.80_21.0200_SHIPPED.csv  (the shipped Task 1 file, oil);
+            falls back to ml/outputs/vfm_submission.csv if that file is renamed or absent
   rock/PVT  data/reservoir_pvt.csv, data/well_completion.csv
+  model     ml/src/pta_model.py (diffusivity equation, Laplace + Stehfest, least squares)
 
 Conventions
   q      VFM oil rate of the last FULL flowing day before the shut-in
@@ -39,6 +41,7 @@ import pandas as pd
 from scipy.special import ive, kve
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+import pta_model as PM  # noqa: E402
 import viz  # noqa: E402
 from config import F_CHOKE, F_COMPLETION, F_HF_CLEAN, F_PVT, FIGS, OUT  # noqa: E402
 
@@ -201,8 +204,11 @@ HF = pd.read_parquet(F_HF_CLEAN, columns=["timestamp", "well_name", "dh_pressure
 CHOKE = pd.read_csv(F_CHOKE, parse_dates=["timestamp"])
 PVT = pd.read_csv(F_PVT).set_index("well_name")
 COMP = pd.read_csv(F_COMPLETION).set_index("well_name")
-PRED = {name: pd.read_csv(OUT / f, parse_dates=["timestamp"])
-        for name, f in [("S1", "vfm_S1_routing.csv"), ("S0", "vfm_submission.csv")]}
+RATE_FILE = OUT / "submitted" / "lam0.80_21.0200_SHIPPED.csv"
+if not RATE_FILE.exists():
+    print(f"[pta] {RATE_FILE.name} not found - using ml/outputs/vfm_submission.csv as the rate source")
+    RATE_FILE = OUT / "vfm_submission.csv"
+PRED = {"T1": pd.read_csv(RATE_FILE, parse_dates=["timestamp"])}
 TESTS = pd.read_csv(Path(F_PVT).parent / "well_tests.csv")
 
 
@@ -217,7 +223,7 @@ def shut_in_events() -> pd.DataFrame:
     return pd.DataFrame(ev)
 
 
-def rate_and_np(w, start, pred="S1"):
+def rate_and_np(w, start, pred="T1"):
     d = PRED[pred][PRED[pred].well_name == w].set_index("timestamp").oil_rate_stbd
     day = start.normalize()
     q = float(d.loc[day - pd.Timedelta("1D")])
@@ -290,14 +296,21 @@ def window_B(t, der, s, tol=0.10, cycles=0.3):
     if not developed:
         return t0, t1, False, True
     start = max(t0, t1 / 10 ** cycles)
-    boundary_after = t1 < t[-1] * 0.999 and np.nanmin(s[t > t1]) < -tol if (t > t1).any() else False
+    later = s[(t > t1) & np.isfinite(s)]
+    boundary_after = bool(t1 < t[-1] * 0.999 and later.size and later.min() < -tol)
     return start, t1, bool(boundary_after), False
 
 
-def interpret(ev, pred="S1", window="A"):
+def interpret(ev, pred="T1", window="A", offset_psi=None):
+    """Horner interpretation of one shut-in.
+    offset_psi=None  gauge readings exactly as stored (float32) -- how the submitted numbers were made.
+    offset_psi=x     readings cast to float64 and shifted by x psi (e.g. the gauge->datum hydrostatic
+                     offset); comparing x = 0 with x = offset shows m, k, S do not depend on the datum."""
     P = PVT.loc[ev.well]
     g = HF[(HF.well_name == ev.well) & (HF.timestamp >= ev.start - pd.Timedelta("2h")) &
            (HF.timestamp <= ev.end)].set_index("timestamp").dh_pressure_psia
+    if offset_psi is not None:
+        g = g.astype("float64") + offset_psi
     pwf = g.loc[:ev.start].dropna().iloc[-1]
     b = g.loc[ev.start + pd.Timedelta("1min"): ev.end - pd.Timedelta("1min")].dropna()
     dt = (b.index - ev.start).total_seconds().to_numpy() / 3600
@@ -338,11 +351,43 @@ def interpret(ev, pred="S1", window="A"):
                p_star_datum_psia=round(c0 + G * dz, 2), m_from_derivative=round(2.303 * np.nanmedian(der[(tg >= t0) & (tg <= t1)]), 3),
                storage_bbl_per_psi=round(C, 4), flow_efficiency=round((c0 - pwf - dps) / (c0 - pwf), 3),
                r_inv_ft=round(0.0325 * np.sqrt(k * dt.max() / (phi * mu * ct))))
-    plot = dict(dt=dt, p=p, tg=tg, dpg=pg - pwf, der=der, hx=hx, win=win, c0=c0, c1=c1)
+    plot = dict(dt=dt, p=p, tg=tg, dpg=pg - pwf, der=der, hx=hx, win=win, c0=c0, c1=c1,
+                exact=dict(m=m, k=k, S=S, dP_skin=dps, p_star=c0, datum_offset=G * dz))
     return res, plot
 
 
-def event_figure(ev, rA, pA, rB):
+def rock(w):
+    P = PVT.loc[w]
+    return dict(h=P.net_pay_thickness_ft, phi=P.porosity_frac, ct=P.total_compressibility_1_psi,
+                rw=P.wellbore_radius_ft, B=P.oil_fvf_rb_stb, mu=P.oil_viscosity_cp)
+
+
+def model_match(ev, pred="T1", offset_psi=None):
+    """Exact model match (ml/src/pta_model.py) on the log-grid build-up -- the submitted answer.
+    Same q, t_p and data points as the Horner window-B interpretation; its k, S and C seed the fit."""
+    rB, plot = interpret(ev, pred, "B", offset_psi)
+    re0 = np.sqrt(PVT.loc[ev.well, "estimated_drainage_area_acres"] * 43560 / np.pi)
+    rk = rock(ev.well)
+    best, inf, clo = PM.fit_best(plot["tg"], plot["dpg"], rB["tp_h"], rB["qo_stbd"], rk,
+                                 rB["permeability_md"], rB["skin"], rB["storage_bbl_per_psi"], re0)
+    tg, tp = plot["tg"], rB["tp_h"]
+    mdp = PM.buildup_dp(best["theta"], tg, tp, rB["qo_stbd"], rk, best["boundary"])
+    # measured derivative inside Horner window B relative to the IARF level the model converges to:
+    # > 1 means the derivative is still settling from the storage hump, so the Horner line is too steep
+    wB = (tg >= rB["window_start_h"]) & (tg <= rB["window_end_h"])
+    der_ratio = float(np.nanmedian(plot["der"][wB]) / (best["m"] / 2.303))
+    res = dict(well_name=ev.well, shut_in_start=ev.start, shut_in_end=ev.end, duration_h=rB["duration_h"],
+               rate_source=pred, qo_stbd=rB["qo_stbd"], tp_h=rB["tp_h"], pwf_gauge_psia=rB["pwf_gauge_psia"],
+               boundary=best["boundary"], permeability_md=best["k"], skin=best["S"], delta_p_skin_psi=best["dP_skin"],
+               horner_slope_psi_per_cycle=best["m"], storage_bbl_per_psi=best["C"], r_e_ft=best["re"],
+               fit_rms_psi=best["rms_psi"], fit_max_abs_psi=best["max_abs_psi"],
+               rms_infinite_psi=inf["rms_psi"], rms_closed_psi=clo["rms_psi"],
+               k_horner_B=rB["permeability_md"], skin_horner_B=rB["skin"], m_horner_B=rB["horner_slope_psi_per_cycle"],
+               der_B_over_iarf=der_ratio)
+    return res, dict(dp=mdp, der=bourdet(np.log(tp * tg / (tp + tg)), mdp), tg=tg)
+
+
+def event_figure(ev, rA, pA, rB, rM, cM):
     fig, ax = plt.subplots(2, 3, figsize=(15.5, 8.8))
     w = ev.well
     g = HF[(HF.well_name == w) & (HF.timestamp >= ev.start - pd.Timedelta("24h")) &
@@ -351,10 +396,12 @@ def event_figure(ev, rA, pA, rB):
     a.plot(g.timestamp, g.dh_pressure_psia, color=viz.BLUE, lw=1.2)
     a.axvspan(ev.start, ev.end, color=viz.GRID, alpha=0.8, lw=0)
     a.set_title("A. Pressure history (gauge depth)"); a.set_ylabel("p, psia"); a.tick_params(axis="x", labelrotation=25)
-    a.text(0.02, 0.96, f"shaded = shut-in ({rA['duration_h']:.1f} h)\nq before shut-in (VFM S1) = {rA['qo_stbd']:.0f} stb/d",
+    a.text(0.02, 0.96, f"shaded = shut-in ({rA['duration_h']:.1f} h)\nq before shut-in (VFM best Task 1) = {rA['qo_stbd']:.0f} stb/d",
            transform=a.transAxes, va="top", fontsize=8, color=viz.INK_2)
     a = ax[0, 1]
-    a.plot(pA["dt"], pA["p"], color=viz.BLUE, lw=1.4)
+    a.plot(pA["dt"], pA["p"], color=viz.BLUE, lw=1.4, label="measured")
+    a.plot(cM["tg"], rM["pwf_gauge_psia"] + cM["dp"], color=viz.AQUA, lw=1.2, ls="--", label="model match")
+    a.legend(loc="lower right")
     a.axhline(rA["p_star_gauge_psia"], color=viz.INK_MUTED, ls="--", lw=0.9)
     a.text(pA["dt"].max(), rA["p_star_gauge_psia"], " p* (Horner, window A)", va="bottom", ha="right", fontsize=8, color=viz.INK_2)
     a.set_title("B. Cartesian build-up"); a.set_xlabel("Δt, h"); a.set_ylabel("p_ws, psia")
@@ -362,6 +409,9 @@ def event_figure(ev, rA, pA, rB):
     ok = np.isfinite(pA["der"]) & (pA["der"] > 0)
     a.loglog(pA["tg"], pA["dpg"], "o", ms=3, color=viz.BLUE, label="Δp")
     a.loglog(pA["tg"][ok], pA["der"][ok], "o", ms=3, color=viz.ORANGE, label="Δp′ (Bourdet)")
+    okm = np.isfinite(cM["der"]) & (cM["der"] > 0)
+    a.loglog(cM["tg"], cM["dp"], color=viz.AQUA, lw=1.6, label="model Δp")
+    a.loglog(cM["tg"][okm], cM["der"][okm], color=viz.AQUA, lw=1.6, ls="--", label="model Δp′")
     a.axvspan(rA["window_start_h"], rA["window_end_h"], color=viz.GRID, alpha=0.9, lw=0)
     a.axvspan(rB["window_start_h"], rB["window_end_h"], facecolor="none", edgecolor=viz.INK_2, hatch="///", lw=0.6)
     a.axhline(rA["horner_slope_psi_per_cycle"] / 2.303, color=viz.INK_MUTED, ls="--", lw=0.9)
@@ -391,26 +441,30 @@ def event_figure(ev, rA, pA, rB):
     a.text(0.02, 0.96, f"MDH slope = {m_mdh:.2f} psi/cycle\n(t_p ≫ Δt, so MDH ≈ Horner)", transform=a.transAxes,
            va="top", fontsize=8, color=viz.INK_2)
     a = ax[1, 2]; a.axis("off")
-    rows = [("", "window A", "window B"),
-            ("window, h", f"{rA['window_start_h']:g}–{rA['window_end_h']:g}", f"{rB['window_start_h']:g}–{rB['window_end_h']:g}"),
-            ("Horner slope m, psi/cycle", f"{rA['horner_slope_psi_per_cycle']:.2f}", f"{rB['horner_slope_psi_per_cycle']:.2f}"),
-            ("k, md", f"{rA['permeability_md']:.1f}", f"{rB['permeability_md']:.1f}"),
-            ("skin S", f"{rA['skin']:.2f}", f"{rB['skin']:.2f}"),
-            ("ΔP_skin, psi", f"{rA['delta_p_skin_psi']:.1f}", f"{rB['delta_p_skin_psi']:.1f}"),
-            ("p* gauge, psia", f"{rA['p_star_gauge_psia']:.1f}", f"{rB['p_star_gauge_psia']:.1f}"),
-            ("q_o (VFM S1), stb/d", f"{rA['qo_stbd']:.0f}", ""), ("t_p = 24·N_p/q, h", f"{rA['tp_h']:,.0f}", ""),
-            ("p_wf(Δt=0), psia", f"{rA['pwf_gauge_psia']:.1f}", ""), ("C (unit slope), bbl/psi", f"{rA['storage_bbl_per_psi']:.4f}", "")]
-    a.table(cellText=rows, colWidths=[0.5, 0.25, 0.25], loc="upper left", edges="horizontal")
-    a.set_title("F. Results")
+    re_txt = f"closed, r_e {rM['r_e_ft']:.0f} ft" if rM["boundary"] == "closed" else "infinite"
+    rows = [("", "Horner A", "Horner B", "MODEL (sub.)"),
+            ("window / boundary", f"{rA['window_start_h']:g}–{rA['window_end_h']:g} h",
+             f"{rB['window_start_h']:g}–{rB['window_end_h']:g} h", re_txt),
+            ("slope m, psi/cycle", f"{rA['horner_slope_psi_per_cycle']:.2f}", f"{rB['horner_slope_psi_per_cycle']:.2f}",
+             f"{rM['horner_slope_psi_per_cycle']:.2f}"),
+            ("k, md", f"{rA['permeability_md']:.1f}", f"{rB['permeability_md']:.1f}", f"{rM['permeability_md']:.1f}"),
+            ("skin S", f"{rA['skin']:.2f}", f"{rB['skin']:.2f}", f"{rM['skin']:.2f}"),
+            ("ΔP_skin, psi", f"{rA['delta_p_skin_psi']:.1f}", f"{rB['delta_p_skin_psi']:.1f}", f"{rM['delta_p_skin_psi']:.1f}"),
+            ("C, bbl/psi", f"{rA['storage_bbl_per_psi']:.4f}", "", f"{rM['storage_bbl_per_psi']:.4f}"),
+            ("fit RMS, psi", "", "", f"{rM['fit_rms_psi']:.3f}"),
+            ("q_o (VFM best Task 1), stb/d", f"{rA['qo_stbd']:.0f}", "", ""), ("t_p = 24·N_p/q, h", f"{rA['tp_h']:,.0f}", "", ""),
+            ("p_wf(Δt=0), psia", f"{rA['pwf_gauge_psia']:.1f}", "", "")]
+    a.table(cellText=rows, colWidths=[0.37, 0.19, 0.19, 0.25], loc="upper left", edges="horizontal")
+    a.set_title("F. Results (MODEL = submitted answer)")
     a.text(0.0, 0.02, f"A: {rA['note']}\nB: {rB['note']}", transform=a.transAxes, fontsize=7.5, color=viz.INK_2, va="bottom")
     viz.titled(fig, f"{w} build-up, shut-in {ev.start:%Y-%m-%d %H:%M} ({rA['duration_h']:.1f} h)",
-               f"Window A: m {rA['horner_slope_psi_per_cycle']:.1f} psi/cycle → k {rA['permeability_md']:.0f} md, "
-               f"S {rA['skin']:.2f}.  Window B: m {rB['horner_slope_psi_per_cycle']:.1f} → k {rB['permeability_md']:.0f} md, "
-               f"S {rB['skin']:.2f}.  Rate: VFM S1.")
+               f"Submitted model match ({re_txt}): k {rM['permeability_md']:.1f} md, S {rM['skin']:.2f}, "
+               f"m {rM['horner_slope_psi_per_cycle']:.1f} psi/cycle, ΔP_skin {rM['delta_p_skin_psi']:.0f} psi; "
+               f"fit RMS {rM['fit_rms_psi']:.3f} psi.  Horner B: k {rB['permeability_md']:.1f} md, S {rB['skin']:.2f}.")
     viz.save(fig, PTA_DIR / f"pta_10_{w}_{ev.start:%Y-%m-%d}_buildup_all_plots.png")
 
 
-def overview_figure(ev_tab, plots, resA):
+def overview_figure(ev_tab, plots, resA, resM, curvesM):
     verdict = {"GL-08": "infinite-acting · clean IARF", "GL-02": "short (5.6 h)", "GL-06": "short (8 h)",
                "GL-04": "long storage hump", "GL-01": "closed boundary · Δp′ falls → p̄", "GL-10": "short + boundary"}
     fig, axs = plt.subplots(2, 3, figsize=(14, 8))
@@ -419,16 +473,22 @@ def overview_figure(ev_tab, plots, resA):
         ok = np.isfinite(pp["der"]) & (pp["der"] > 0)
         ax.loglog(pp["tg"], pp["dpg"], "o", ms=2.6, color=viz.BLUE, label="Δp")
         ax.loglog(pp["tg"][ok], pp["der"][ok], "o", ms=2.6, color=viz.ORANGE, label="Δp′")
+        cm, rm = curvesM[w], resM[w]
+        okm = np.isfinite(cm["der"]) & (cm["der"] > 0)
+        ax.loglog(cm["tg"], cm["dp"], color=viz.AQUA, lw=1.5, label="model")
+        ax.loglog(cm["tg"][okm], cm["der"][okm], color=viz.AQUA, lw=1.5, ls="--")
         ax.axvspan(rr["window_start_h"], rr["window_end_h"], color=viz.GRID, alpha=0.8, lw=0)
-        ax.axhline(rr["horner_slope_psi_per_cycle"] / 2.303, color=viz.INK_MUTED, ls="--", lw=0.8)
         ax.set_xlim(1e-2, 1e2); ax.set_ylim(0.5, 2e3)
         ax.set_title(f"{w}: {verdict[w]}"); ax.set_xlabel("Δt, h"); ax.set_ylabel("Δp, Δp′ (psi)")
-        ax.text(0.98, 0.96, f"m {rr['horner_slope_psi_per_cycle']:.1f} · k {rr['permeability_md']:.0f} md · S {rr['skin']:.2f}",
-                transform=ax.transAxes, ha="right", va="top", fontsize=8, color=viz.INK_2)
+        ax.text(0.03, 0.04, f"model: k {rm['permeability_md']:.0f} md · S {rm['skin']:.2f} · m {rm['horner_slope_psi_per_cycle']:.1f}"
+                            f"\nfit RMS {rm['fit_rms_psi']:.3f} psi ({rm['boundary']})",
+                transform=ax.transAxes, ha="left", va="bottom", fontsize=8, color=viz.INK_2)
         if w == "GL-08":
-            ax.legend(loc="lower left")
-    viz.titled(fig, "Six build-ups, one diagnostic: which flow regimes each shut-in reaches",
-               "Shaded: window A (IARF plateau) used for the Horner line. Dashed: IARF derivative level m/2.303. Rate = VFM S1.")
+            ax.legend(loc="lower right")
+    worst = max(r["fit_rms_psi"] for r in resM.values())
+    viz.titled(fig, f"Six build-ups, one diagnostic: the exact model matches all six, fit RMS ≤ {worst:.2f} psi",
+               "Dots: measured Δp (blue) and Bourdet derivative (orange). Lines: model match (WBS + skin + radial + boundary). "
+               "Shaded: Horner window A. Rate = VFM best Task 1.")
     viz.save(fig, PTA_DIR / "pta_02_overview_six_buildups_loglog.png")
 
 
@@ -436,25 +496,26 @@ def main():
     viz.apply_style()
     theory_figures()
     ev = shut_in_events()
-    A, B, A0, plots, resA = [], [], [], {}, {}
+    A, B, M, plots, resA, resM, curvesM = [], [], [], {}, {}, {}, {}
     for e in ev.itertuples():
-        rA, pA = interpret(e, "S1", "A")
-        rB, _ = interpret(e, "S1", "B")
-        r0, _ = interpret(e, "S0", "A")
-        event_figure(e, rA, pA, rB)
-        A.append(rA); B.append(rB); A0.append(r0); plots[e.well] = pA; resA[e.well] = rA
-    overview_figure(ev, plots, resA)
-    tA, tB, t0 = pd.DataFrame(A), pd.DataFrame(B), pd.DataFrame(A0)
+        rA, pA = interpret(e, "T1", "A")
+        rB, _ = interpret(e, "T1", "B")
+        rM, cM = model_match(e, "T1")
+        event_figure(e, rA, pA, rB, rM, cM)
+        A.append(rA); B.append(rB); M.append(rM)
+        plots[e.well] = pA; resA[e.well] = rA; resM[e.well] = rM; curvesM[e.well] = cM
+    overview_figure(ev, plots, resA, resM, curvesM)
+    tA, tB, tM = pd.DataFrame(A), pd.DataFrame(B), pd.DataFrame(M)
     tA.to_csv(PTA_DIR / "pta_reference_window_A.csv", index=False)
     tB.to_csv(PTA_DIR / "pta_reference_window_B.csv", index=False)
+    tM.to_csv(PTA_DIR / "pta_reference_model_match.csv", index=False)
+    print("\nModel match (submitted), rate = best Task 1:\n" + tM[["well_name", "boundary", "permeability_md", "skin",
+          "delta_p_skin_psi", "horner_slope_psi_per_cycle", "r_e_ft", "fit_rms_psi"]].round(4).to_string(index=False))
     show = ["well_name", "window_start_h", "window_end_h", "horner_slope_psi_per_cycle", "permeability_md", "skin",
             "delta_p_skin_psi", "p_star_gauge_psia", "note"]
     pd.set_option("display.width", 220)
-    print("\nWindow A (IARF plateau), rate S1:\n" + tA[show].to_string(index=False))
-    print("\nWindow B (late IARF points), rate S1:\n" + tB[show].to_string(index=False))
-    sens = pd.DataFrame({"well": tA.well_name, "k_S1": tA.permeability_md, "k_S0": t0.permeability_md,
-                         "dk_pct": (tA.permeability_md / t0.permeability_md - 1) * 100, "dS": tA.skin - t0.skin})
-    print("\nRate sensitivity, window A (S1 vs S0):\n" + sens.round(3).to_string(index=False))
+    print("\nWindow A (IARF plateau), rate = best Task 1:\n" + tA[show].to_string(index=False))
+    print("\nWindow B (late IARF points), rate = best Task 1:\n" + tB[show].to_string(index=False))
 
 
 if __name__ == "__main__":

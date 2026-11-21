@@ -194,6 +194,30 @@ a correction whose value lives on normal-production days scores identically
 in time-forward and only shows on the leaderboard. That is why the probes are
 worth their submissions.
 
+## PTA leaderboard (Phase 2 parameters, out of 20)
+
+| submission | rate | score |
+|---|---|--:|
+| Horner, window A (IARF plateau) | S1 (λ = 1.0) | 7.2458 |
+| Horner, window B (late IARF points) | S1 (λ = 1.0) | 7.3809 |
+| **exact model match** — shipped | **λ = 0.80** | **8.3840** |
+| negative-slope probe (same values, sign flipped) | λ = 0.80 | rejected: the platform requires `horner_slope` ≥ 0 |
+| Horner B, k from total liquid rate (k·q_L/q_o) | λ = 0.80 | 4.8375 |
+
+**The model match is shipped: +1.0 over Horner B.**
+
+- **The gain is mostly the method — inferred, not isolated.** Two things
+  changed at once, and no single-change probe separated them:
+  - the rate moves k by only 0.4–1.1% on these wells (k ∝ q; the ratio of the
+    λ = 1.0 and 0.80 factors in `_ROUTING_FACTORS_RAW`);
+  - the method moves k by up to 4.4% and skin by up to 0.29.
+- **The reference uses the oil rate.** The liquid-rate probe scored 4.8375.
+- **`horner_slope` is a positive m.** The platform rejects negative values.
+
+Only the shipped file is kept
+(`ml/outputs/submitted/pta_model_match_8.3840_SHIPPED.csv`). The A/B files
+were built on the S1 rate, which is itself no longer kept.
+
 ## Deliverables checklist
 
 From `docs/Deliverables.pdf` — the authoritative list, stricter than the brief
@@ -201,10 +225,10 @@ in `docs/README.md`. Read it before assuming a deliverable is done.
 
 | # | Required | State |
 |---|---|---|
-| 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | VFM done (`ml/outputs/vfm_submission.csv`, template-exact); PTA pending |
+| 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | **done** — VFM `ml/outputs/vfm_submission.csv`; PTA `ml/outputs/pta_submission.csv` + `pta_results.xlsx` (exact model match, **8.3840 / 20**, identical to the scored file). Both template-exact |
 | 2 | Trained model file(s) **in `.pkl` format** | **done** — `ml/models/vfm.pkl` (+ `.joblib`) |
-| 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` |
-| 4 | A folder containing all necessary PTA plots | pending with PTA |
+| 3 | **A notebook** with all cells run, outputs showing best results | **done** — `notebooks/VFM_Phase1.ipynb` (VFM only; PTA results are not in a notebook yet) |
+| 4 | A folder containing all necessary PTA plots | **done** — `ml/outputs/figures/pta/`: 9 figures (2 theory, 1 overview, 6 build-ups × 6 panels, model overlay on each) + README |
 
 > "During the evaluation, we will ask you to run and demonstrate your
 > application (in which your model is already placed) using the provided
@@ -234,8 +258,8 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | 1 | Excel: daily oil/water/gas predictions | **done** (2,730 rows, template-exact) |
 | 1 | **Leaderboard tuning** | **closed** — 14 submissions, best **21.0200** |
 | 2 | Build-up detection | **done** (6 events identified) |
-| 2 | Horner analysis → k, skin, ΔP_skin | **exploratory reference done** (`ml/eda/pta_explore.py`, windows A/B); deliverable Excel not started |
-| 2 | PTA plots per shut-in event | **done as exploration** (`ml/outputs/figures/pta/`, 9 figures + README) |
+| 2 | PTA parameters → m, k, skin, ΔP_skin | **done** — exact model match, **8.3840 / 20** (`python ml/make_pta.py`) |
+| 2 | PTA plots per shut-in event | **done** (`ml/outputs/figures/pta/`, 9 figures + README) |
 | 3 | Streamlit UI | not started |
 | — | Presentation | not started |
 
@@ -252,20 +276,62 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 **EDA** (`ml/eda/run_eda.py`) — 7 figures + `ml/outputs/eda_summary.md`.
 
-**PTA exploration** (`ml/eda/pta_explore.py`, ~40 s) — theory atlas, all six
+**PTA deliverable** (`python ml/make_pta.py`, ~25 s) — **exact model match,
+8.3840 / 20**, the best PTA score. The radial diffusivity equation with
+wellbore storage, skin and an outer boundary (infinite or closed circle) is
+solved in Laplace space, inverted with Stehfest (N = 12, `ml/src/pta_model.py`)
+and fitted by least squares to every build-up point. k and S come from the
+fit; `horner_slope` = m = 162.6·q·B·μ/(k·h) (positive, psi/cycle) and
+ΔP_skin = 0.869·m·S. Writes `ml/outputs/pta_submission.csv` (template:
+`docs/pta_submission_template.csv`) and `ml/outputs/pta_results.xlsx`
+(submission | results with a per-row description | horner_comparison | method).
+
+| well | model | k, md | S | ΔP_skin, psi | m, psi/cycle | fit RMS, psi |
+|---|---|--:|--:|--:|--:|--:|
+| GL-01 | closed circle, r_e 1367 ft | 105.25 | 5.741 | 116.78 | 23.410 | 0.038 |
+| GL-02 | infinite | 61.34 | −0.264 | −11.49 | 50.141 | 0.076 |
+| GL-04 | infinite | 57.35 | −0.904 | −108.13 | 137.570 | 0.044 |
+| GL-06 | infinite | 295.48 | 2.307 | 29.04 | 14.483 | 0.065 |
+| GL-08 | infinite | 43.07 | −1.589 | −127.44 | 92.274 | 0.053 |
+| GL-10 | closed circle, r_e 1048 ft | 176.40 | 2.195 | 54.41 | 28.520 | 0.026 |
+
+The script refuses to write unless:
+
+- the columns match the template;
+- `horner_slope` ≥ 0;
+- every fit is under 0.2 psi RMS;
+- k, S, m and ΔP_skin are unchanged (< 1e-6) when every pressure is shifted by
+  the gauge→datum offset;
+- the output is **identical to the scored file**
+  `ml/outputs/submitted/pta_model_match_8.3840_SHIPPED.csv`.
+
+Two results worth knowing:
+
+- **Numerical precision.** k and S are correlated, so the misfit valley is
+  flat. Running on float64 instead of the stored float32 readings moves k by
+  ≤ 0.042% and skin by ≤ 0.0034 (GL-06).
+- **Against Horner window B.** On GL-08 (72 h, clean IARF) the two agree
+  within 0.32% on k. On GL-02/04/06 the window-B derivative is still 3.4–5.0%
+  above the IARF level, coming down from the storage hump, so the straight
+  line is too steep. There the model's k is 3.0–4.4% higher and its skin
+  0.26–0.29 higher.
+
+**PTA exploration** (`ml/eda/pta_explore.py`, ~60 s) — theory atlas, all six
 build-ups with every classic plot (history, Cartesian, log-log + Bourdet
-derivative, Horner, MDH), and reference results for two Horner windows in
-`ml/outputs/figures/pta/` (see its README). Rate = VFM S1 oil of the last full
+derivative, Horner, MDH) and the model match overlaid, plus reference tables
+for the model and two Horner windows in `ml/outputs/figures/pta/` (see its
+README). Rate = VFM oil of the shipped Task 1 file (λ = 0.80) on the last full
 day before each shut-in, t_p = 24·N_p/q.
 - Window A (IARF plateau) vs window B (last 0.3 cycle of the plateau) agree
-  within ~1.3% on k and ~0.1 on skin on GL-02/04/06/08.
+  within 1.3% on k and 0.11 on skin on GL-02/04/06/08.
 - GL-01 and GL-10 never reach a 0.3-cycle IARF plateau (boundary); flagged,
-  B = A.
-- Example: GL-08 m 93.47 psi/cycle, k 42.7 md, S −1.67, ΔP_skin −135 psi.
-- A constant gauge→datum offset cancels in m and in (P1hr − p_wf), so k, S and
-  ΔP_skin are datum-independent; only reported pressures (p*) move.
-- k scales 1:1 with the VFM rate: S0 → S1 raises k by 1.8–5.7%, while skin
-  moves by ≤ 0.03.
+  B = A. The closed-circle model fits them to 0.038 / 0.026 psi RMS, against
+  1.89 / 0.42 psi for the infinite one.
+- Example: GL-08 window A m 93.47 psi/cycle, k 42.52 md, S −1.66, ΔP_skin −135 psi.
+- A constant gauge→datum offset cancels in every pressure difference, so k, S,
+  m and ΔP_skin are datum-independent; only reported pressures (p*) move.
+- k ∝ q exactly (k = 162.6·q·B·μ/(m·h)), so VFM rate error passes 1:1 into k;
+  skin moves only through log10 k.
 
 **Features** (`ml/src/features.py`) — window aggregation, per-well robust
 z-scores, static capacity properties, physics interactions. Validated in
@@ -400,8 +466,10 @@ Artefacts (regenerate — `data/processed/` is gitignored):
 **The plan, with owners and estimates, lives in [`NEXT_STEPS.md`](NEXT_STEPS.md).**
 This file records what *is*; that file records what is *planned*.
 
-**Phase 1 is closed at 21.0200.** What remains: PTA deliverables (30 pts),
-Streamlit UI (10 pts), presentation (10 pts).
+**Phase 1 is closed at 21.0200; PTA parameters at 8.3840 / 20** (result file
+and plot folder both done). What remains: Streamlit UI (10 pts), presentation
+(10 pts), and the PTA results in a notebook — deliverable 3 asks for a notebook
+showing the best results, and only the VFM one exists.
 
 Two questions never answered, both still worth asking the organisers:
 
@@ -444,10 +512,18 @@ leaderboard; shape and variance questions are what time-forward is for.
   | GL-08 | 2025-08-19 09:00 | 72.0 h | +522 psi |
   | GL-10 | 2025-05-27 21:04 | 9.0 h | +228 psi |
 
-- **Gauge is 150–420 ft shallower than the pressure datum on every well.** Correct
-  gauge readings to datum with a hydrostatic gradient before Horner analysis or
-  permeability and skin will be biased. `datum_minus_gauge_ft` is in
+- **Gauge is 150–420 ft shallower than the pressure datum on every well.** The
+  hydrostatic offset (56.9–123.1 psi) is constant through a build-up, so it
+  cancels in every pressure difference: **k, S, m and ΔP_skin do not depend on
+  it** (asserted per event in `ml/make_pta.py`). Only reported absolute
+  pressures (p*, p̄) need the datum correction. `datum_minus_gauge_ft` is in
   `features.static_table()`.
+- **PTA is settled: exact model match, 8.3840 / 20.** It uses the oil rate of
+  the shipped Task 1 file and reports `horner_slope` as a positive m.
+  `ml/make_pta.py` refuses to write anything that differs from the scored file.
+  A deliberate change (new rate, new method) must therefore replace
+  `pta_model_match_8.3840_SHIPPED.csv` once the new file has been scored.
+  k ∝ q, so any change to the Task 1 rate moves k by the same factor.
 - **Single-phase oil PTA is justified** — every well's minimum downhole pressure
   sits well above its bubble point (e.g. GL-04: 2,269 vs 1,265 psia).
 - **A random-split CV score is meaningless here** and will be ~4% MAPE regardless.
