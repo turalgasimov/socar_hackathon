@@ -26,7 +26,8 @@ as oil despite being the hardest phase.
 | S0 | shipped model, uncorrected | ×1.000 | 20.2110 |
 | S1 | per-well routing factor, all phases | ×1.028 | **20.9463** |
 | λ=2.5 | routing over-scaled | ×1.071 | 18.3400 |
-| **λ=0.9** | **routing scaled to 90%** | **×1.026** | **20.9960** |
+| λ=0.9 | routing scaled to 90% | ×1.026 | 20.9960 |
+| **λ=0.8** | **routing scaled to 80%** | **×1.023** | **21.0200** |
 | S3 | S1 + global GOR factor, gas only | gas ×0.982 | 20.9100 |
 
 **S3 rejected.** −0.036 against S1, on Rovshan's own pre-set condition
@@ -83,14 +84,23 @@ regime worse. **Treat time-forward as a guard against obvious regressions,
 not as evidence a change will score.** Only the leaderboard decides, so
 changes should go up one at a time.
 
-**λ=0.9 is the champion at 20.9960.** Rovshan was right that λ=1.0 was never
-established, and the probe proved it: scaling the routing correction to 90%
-gains +0.05 over S1. We had been over-correcting slightly.
+**λ=0.8 is the champion at 21.0200.** Rovshan was right that λ=1.0 was never
+established. Walking down from it has gained +0.074 over S1 so far, and the
+optimum has not been bracketed yet — 0.8 still beats 0.9.
 
-Fitting the two arms on *disjoint* pairs — (0.0, 0.9) and (1.0, 2.5), so they
-share no point by construction — puts the intersection at **λ ≈ 0.948**. That
-estimate still leans on λ=2.5, where R² curvature steepens the right arm, so
-treat it as indicative. Probes at 0.85 and 0.95 are built.
+| λ | score |
+|---:|--:|
+| 0.0 | 20.2110 |
+| **0.8** | **21.0200** |
+| 0.9 | 20.9960 |
+| 1.0 | 20.9463 |
+| 2.5 | 18.3400 |
+
+**Stop estimating the vertex and probe it.** Three successive estimates have
+all been too high: 1.000 (circular), then 0.948 (0.8 beat 0.9), now 0.82.
+Rovshan's symmetric-V put it at 0.71. The gradient near the peak is shallow
+on the left (−0.024 per 0.1) and steeper on the right (−0.050 per 0.1), so
+erring low costs less than erring high. Probes at 0.6, 0.7 and 0.75 are built.
 
 Superseded, kept as a record of the error:
 My earlier claim that "the arms intersect at λ = 1.000" was circular, as
