@@ -18,6 +18,12 @@ change before you start.
 | 4 | PTA: Horner on 6 build-ups | — | 5 | 3–4 h |  **<- next**
 | 5 | Streamlit UI | — | — | 4–6 h |
 | 6 | Presentation | — | — | 2 h |
+| 7 | Export the model as `.pkl` (spec requires it) | — | — | 10 min |
+| 8 | Notebook with all cells run (required deliverable) | — | — | 1–2 h |
+| 9 | Unseen-well fallback so the live demo cannot crash | — | 5 | 30 min |
+
+Tasks 7–9 come from `docs/Deliverables.pdf`, which is stricter than the brief
+and was only read after tasks 2–3 were built. None is hard; all are required.
 
 ---
 
@@ -104,6 +110,40 @@ Order of work:
 
 Done when: an Excel of `Horner slope, k (md), skin, ΔP_skin (psi)` per event,
 plus the plots saved under `ml/outputs/figures/pta/`.
+
+## 7. Export the model as `.pkl`
+
+`docs/Deliverables.pdf` item 2 says "trained model file(s) in .pkl format".
+We ship `ml/models/vfm.joblib`. Emit both from `fit_vfm.py` — same object,
+`pickle.dump` alongside the joblib — and keep them in step so they cannot
+drift. Ten minutes, and it is a stated requirement, so do not skip it.
+
+## 8. Notebook with all cells run
+
+`docs/Deliverables.pdf` item 3, and we have none. It wants the code with
+outputs already visible, showing the best results. Narrate the actual path:
+the data defects and their repairs, why physics beats ML at n=85, the
+time-forward protocol and why a random split is meaningless here, the fitted
+choke exponents landing on the textbook law, then the PTA. Import from
+`ml/src/`, do not re-implement — the notebook is the narrative, the modules
+stay the source of truth.
+
+## 9. Unseen-well fallback — do this before the demo
+
+`VFMModel.predict` raises `ValueError` on any well outside the fitted ten,
+because the choke law carries a per-well intercept. The organisers will hand
+us **test data we have not seen** and watch us run it. If it names a new well,
+we crash live.
+
+Fall back to a pooled intercept (the mean across the ten), return the
+prediction, and surface a clear warning in the UI that this well was not in
+training and the estimate is unreliable. Leave-one-well-out is ~70% MAPE, so
+the number will be poor — but a flagged poor number is recoverable in a demo
+and a traceback is not.
+
+Equally: the app must run **from raw CSVs**, not from `data/processed/`.
+Nothing has been exercised that way end to end. Test it before the demo with
+a fresh copy of the raw files.
 
 ## 5. Streamlit UI
 

@@ -12,6 +12,35 @@ parameters 20) · UI 10 · Presentation 10.
 > the next session to redo finished work. The plan and task ownership live in
 > [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
+## Deliverables checklist
+
+From `docs/Deliverables.pdf` — the authoritative list, stricter than the brief
+in `docs/README.md`. Read it before assuming a deliverable is done.
+
+| # | Required | State |
+|---|---|---|
+| 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | VFM done; PTA pending |
+| 2 | Trained model file(s) **in `.pkl` format** | ✗ we ship `.joblib` — must also emit `.pkl` |
+| 3 | **A notebook** with all cells run, outputs showing best results | ✗ **not started** |
+| 4 | A folder containing all necessary PTA plots | pending with PTA |
+
+> "During the evaluation, we will ask you to run and demonstrate your
+> application (in which your model is already placed) using the provided
+> **test data**."
+
+That sentence is the one to design against. The app must ingest *raw, unseen*
+data live, run cleaning → features → predict → PTA, and not fall over. Two
+consequences we are not yet ready for:
+
+- **The model raises on an unknown well.** `VFMModel.predict` throws
+  `ValueError` for any `well_name` outside the fitted ten, because the choke
+  law carries a per-well intercept. If the organisers' test data names a new
+  well, the demo crashes in front of the judges. Needs a graceful fallback —
+  a pooled intercept plus a visible warning. The prediction will be poor
+  (leave-one-well-out is ~70% MAPE) but a flagged number beats a traceback.
+- **The whole chain must run from raw CSVs**, not from `data/processed/`.
+  Nothing has been exercised that way end to end yet.
+
 ## Status
 
 | Phase | Deliverable | State |
