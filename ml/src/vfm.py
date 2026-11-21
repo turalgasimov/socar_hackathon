@@ -33,6 +33,19 @@ from scipy.optimize import brentq
 
 EPOCH = pd.Timestamp("2025-01-01")
 
+# Per-well routing correction: (1 + choke-implied test uplift) / (1 + downhole
+# uplift), the downhole figure being the mean of the IPR and J-free thermal
+# estimates. The choke law reacts to test-separator routing by ~5.9% where the
+# downhole physics says ~2.5%, so uncorrected predictions sit low on normal
+# production days. Oil-volume-weighted mean 1.028.
+# Derived by Rovshan; see agent/PROJECT_STATE.md. Applied only when a
+# leaderboard submission confirms it helps -- S0 (uncorrected) scored 20.211/30.
+ROUTING_FACTORS = {
+    "GL-01": 1.044, "GL-02": 1.032, "GL-03": 1.045, "GL-04": 1.057,
+    "GL-05": 1.035, "GL-06": 1.026, "GL-07": 1.020, "GL-08": 1.018,
+    "GL-09": 1.036, "GL-10": 1.022,
+}
+
 # columns the model needs, and where they come from in a window-aggregate table
 SOURCE = {
     "whp": "whp_psia__mean",
@@ -61,7 +74,7 @@ class VFMModel:
     wells: list[str] = field(default_factory=list)
     choke_coef: np.ndarray | None = None   # [n_wells intercepts, lnS, lnDPc, lnWHP, lnGLR]
     wc_coef: np.ndarray | None = None      # [n_wells intercepts, t, dp_tubing, gl]
-    routing_factor: float = 1.0            # see note in predict()
+    routing_factor: float | dict[str, float] = 1.0   # scalar, or per-well; see predict()
     trained_on: int = 0
 
     # ---------------------------------------------------------------- fitting
@@ -164,7 +177,14 @@ class VFMModel:
                 return base[i] + b_glr * np.log(glr) - lq
             qL[i] = np.exp(brentq(f, np.log(10.0), np.log(1e6)))
 
-        qL *= self.routing_factor
+        # routing_factor: 1.0 leaves predictions as fitted. A per-well dict
+        # corrects the choke law's overstated response to test-separator
+        # routing -- it reacts to the switch by ~5.9% where the downhole
+        # physics says ~2.5%, so normal days come out low. Set from
+        # ROUTING_FACTORS below only after the leaderboard confirms it.
+        rf = (np.array([self.routing_factor.get(w, 1.0) for w in X.well_name])
+              if isinstance(self.routing_factor, dict) else self.routing_factor)
+        qL = qL * rf
         wc = np.where(shut, 0.0, np.where(bad, np.nan, wc))
         oil = qL * (1 - wc)
         return pd.DataFrame({

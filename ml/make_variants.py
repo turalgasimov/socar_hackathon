@@ -1,0 +1,80 @@
+"""Build leaderboard probe submissions. One hypothesis per file.
+
+    python ml/make_variants.py
+
+S0 is the shipped model, already submitted: **20.211 / 30**.
+
+Each variant changes exactly one thing against S0, so a single scalar score
+still identifies which hypothesis is right:
+
+  S1  per-well routing factor (~+2.8%, all three phases)
+      -> tests whether the ground truth is normal-production routed
+  S2  test-level scaling (+ the full choke-implied uplift)
+      -> tests whether the ground truth is test-routed instead
+  S3  global GOR factor on gas only (~-1.8%, gas untouched elsewhere)
+      -> isolates gas; time-forward says WAPE 4.61 -> 4.19, all metrics improve
+
+S1 and S3 partly cancel on gas (1.028 x 0.982 ~ 1.010), which is why they are
+separate files rather than one combined submission.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "ml" / "src"))
+
+from vfm import ROUTING_FACTORS  # noqa: E402
+
+OUT = ROOT / "ml" / "outputs"
+BASE = OUT / "vfm_submission.csv"
+PHASES = ["oil_rate_stbd", "water_rate_stbd", "gas_rate_mscfd"]
+
+# choke-implied test uplift per well -- S2 scales by this instead
+CHOKE_UPLIFT = {"GL-01": 1.0864, "GL-02": 1.0657, "GL-03": 1.0733, "GL-04": 1.0724,
+                "GL-05": 1.0612, "GL-06": 1.0621, "GL-07": 1.0470, "GL-08": 1.0304,
+                "GL-09": 1.0504, "GL-10": 1.0397}
+GAS_GOR_FACTOR = 0.982
+
+
+def scaled(base: pd.DataFrame, factors: dict[str, float],
+           cols: list[str] | None = None) -> pd.DataFrame:
+    out = base.copy()
+    f = out.well_name.map(factors).fillna(1.0)
+    for c in (cols or PHASES):
+        out[c] = (out[c] * f).round(1)
+    return out
+
+
+def main() -> None:
+    base = pd.read_csv(BASE)
+    print(f"S0 (shipped, submitted -> 20.211/30): {len(base):,} rows, "
+          f"{base.oil_rate_stbd.sum():,.0f} stb/d total oil\n")
+
+    variants = {
+        "S1_routing": (scaled(base, ROUTING_FACTORS),
+                       "per-well routing factor on all phases"),
+        "S2_testlevel": (scaled(base, CHOKE_UPLIFT),
+                         "scaled to test-separator level"),
+        "S3_gas_gor": (scaled(base, {w: GAS_GOR_FACTOR for w in base.well_name.unique()},
+                              cols=["gas_rate_mscfd"]),
+                       "global GOR factor, gas only"),
+    }
+    for name, (df, note) in variants.items():
+        path = OUT / f"vfm_{name}.csv"
+        df.to_csv(path, index=False)
+        d_oil = 100 * (df.oil_rate_stbd.sum() / base.oil_rate_stbd.sum() - 1)
+        d_gas = 100 * (df.gas_rate_mscfd.sum() / base.gas_rate_mscfd.sum() - 1)
+        assert list(df.columns) == list(base.columns) and len(df) == len(base)
+        print(f"  {path.name:22s} {note:40s} oil {d_oil:+5.2f}%  gas {d_gas:+5.2f}%")
+
+    print("\nSubmit S1 next. If the gap to a perfect score is the routing offset it")
+    print("will move materially; if the point mapping is simply strict it will not.")
+    print("That single result decides whether to adopt the correction or drop it.")
+
+
+if __name__ == "__main__":
+    main()

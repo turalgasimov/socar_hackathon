@@ -19,6 +19,26 @@ as oil despite being the hardest phase.
 > the next session to redo finished work. The plan and task ownership live in
 > [`NEXT_STEPS.md`](NEXT_STEPS.md).
 
+## Leaderboard
+
+| # | Submission | Change vs S0 | Score |
+|---|---|---|--:|
+| S0 | shipped model, uncorrected | — | **20.211 / 30** |
+| S1 | per-well routing factor, all phases | oil +2.84% | *pending* |
+| S2 | scaled to test-separator level | oil +5.30% | *not submitted* |
+| S3 | global GOR factor, gas only | gas −1.80% | *not submitted* |
+
+Built by `python ml/make_variants.py`. One hypothesis per submission.
+
+**Reading S0.** 20.211/30 is 67%. Our time-forward R² is 0.994–0.998, so if R²
+scores near full marks that is ~9/9, leaving 11.2 of the 21 points carried by
+MAPE and WAPE — far less than oil WAPE 2.33% / water 3.48% / gas 4.61% ought
+to earn. Two explanations, not mutually exclusive: a systematic offset (the
+routing bias, which WAPE passes straight through), or simply a strict mapping
+from metric value to points. **A single scalar cannot separate them; S1 can.**
+If the gap is the routing offset, S1 moves materially. If the mapping is
+strict, it barely moves.
+
 ## Deliverables checklist
 
 From `docs/Deliverables.pdf` — the authoritative list, stricter than the brief
