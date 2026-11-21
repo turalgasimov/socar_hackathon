@@ -78,8 +78,11 @@ Worth noting: LOO (1.82%) is only mildly optimistic here, 2.04% time-forward.
 A constrained physical form cannot memorise a well's level the way a free ML
 model can — the same comparison on the Ridge feature stack degrades 3.99% →
 6.44%. **LOO is still the wrong number to report**, but the choke model is not
-leaning on leakage. Gas carries a +2.31% bias from the `gas = oil × Rs` split;
-worth revisiting if gas accuracy matters to scoring.
+leaning on leakage. Gas carries a +2.31% bias from the `gas = oil × Rs` split.
+Replacing the static `Rs` with the well's own GOR history was tried and loses
+on MAPE (5.90% → 6.11–8.84% depending on estimator) — the bias is real but
+costs less than the variance of any estimator built from 3–8 noisy past GOR
+readings. The bias stays; see `NEXT_STEPS.md` → tried and rejected.
 
 **Physics variants vs ML, time-forward** (`python ml/eda/benchmark_vfm.py --tf-only`,
 ~15 s, needs `train_table.parquet`). Same 55 folds as `validate_features.time_forward()`,

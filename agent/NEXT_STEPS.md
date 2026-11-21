@@ -63,13 +63,9 @@ the water-cut trend (`benchmark_vfm.py` already has all three).
   by nested TF). `timeforward_vfm.py` gives the simpler choke × WC-trend at
   3.07% oil / 2.04% liquid, with per-phase water 3.99% and gas 5.90%. **2.67%
   is the number to beat and to quote.**
-- **Fix the gas bias — cheapest accuracy left.** Gas is currently
-  `oil × Rs / 1000`, where `Rs` is the *static* solution GOR from the
-  completion table. But measured GOR drifts 7–32% within a well over the nine
-  months, and the mean gap between static `Rs` and actual GOR is **2.1%** —
-  which is the +2.31% gas bias, almost exactly. Fix: extrapolate a per-well
-  GOR trend from past tests, the same way the water-cut trend already works.
-  Should take gas from 5.90% to near the oil error and remove the bias.
+- **Gas keeps its +2.31% bias on purpose.** See "tried and rejected" — the
+  obvious fix was measured and loses. Gas is `oil × Rs / 1000` with a static
+  `Rs`, and that stays.
 - Fit on all 85 tests once the scheme is settled, then **persist the fitted
   object** (`ml/models/vfm.joblib`) so the UI loads it instead of refitting.
 - Write a thin `predict(features_df) -> DataFrame` wrapper — the UI and the
@@ -143,6 +139,29 @@ the binding constraint. Saying so is worth more than pretending otherwise.
 ---
 
 ## Tried and rejected — do not redo these
+
+- **Replacing the static `Rs` in the gas split with the well's own GOR
+  history.** The diagnosis was right — static `Rs` sits ~2.1% above each
+  well's actual producing GOR, which is where the +2.31% gas bias comes from —
+  but the fix is a net loss. Every history-based estimator costs more variance
+  than the bias it removes, because measured GOR is noisy test to test and
+  3–8 past points cannot track it. Time-forward gas MAPE:
+
+  | GOR estimator | MAPE | bias |
+  |---|--:|--:|
+  | **static Rs (shipped)** | **5.90%** | +2.31% |
+  | mean of past tests | 6.11% | +1.62% |
+  | mean of last 3 tests | 6.66% | +1.18% |
+  | half mean + half trend | 7.01% | +0.93% |
+  | trend clipped to ±10% | 7.96% | +0.71% |
+  | last test only | 8.67% | +1.20% |
+  | linear trend from history | 8.84% | +0.25% |
+
+  Note the pattern: every estimator that reduces the bias increases the error.
+  Shrinking a per-well calibration toward `Rs` (λ=0.25) reaches 5.78%, but
+  that λ was tuned on the same 55 points it is scored on, so the 0.12 pp is
+  not real. Keep the static `Rs` and the bias with it. The oil error (3.07%)
+  is the floor gas inherits regardless.
 
 - **ML residual correction on top of the physics model.** Fitted Ridge and a
   regularised HistGradientBoosting to the choke model's log-residuals, using

@@ -39,12 +39,26 @@ def _feats(df: pd.DataFrame, q: np.ndarray, wc: np.ndarray) -> np.ndarray:
     return np.c_[np.log(df.S), np.log(df.dpc), np.log(df.whp_psia), np.log(glr)]
 
 
-def _wc_from_past(t: pd.DataFrame, i: int) -> float:
-    """Water cut at test i, extrapolated from that well's earlier tests only."""
+def _trend_from_past(t: pd.DataFrame, i: int, col: str) -> float:
+    """Value of `col` at test i, extrapolated from that well's earlier tests only."""
     past = t[(t.well_name == t.well_name[i]) & (t.mid < t.mid[i])]
     if len(past) >= 2:
-        return float(np.polyval(np.polyfit(past.t_days, past.wc, 1), t.t_days[i]))
-    return float(past.wc.mean())
+        return float(np.polyval(np.polyfit(past.t_days, past[col], 1), t.t_days[i]))
+    return float(past[col].mean())
+
+
+def _wc_from_past(t: pd.DataFrame, i: int) -> float:
+    return _trend_from_past(t, i, "wc")
+
+
+def _gor_from_past(t: pd.DataFrame, i: int) -> float:
+    """Producing GOR at test i, extrapolated from that well's history.
+
+    NOT used for the shipped gas prediction -- kept so the comparison printed
+    by main() stays reproducible. See the note there: this loses to the static
+    Rs it was meant to replace.
+    """
+    return _trend_from_past(t, i, "gor_scf_stb")
 
 
 def time_forward(t: pd.DataFrame) -> pd.DataFrame:
@@ -75,11 +89,13 @@ def time_forward(t: pd.DataFrame) -> pd.DataFrame:
                      "real_liquid": y[i], "pred_liquid": q, "wc_hat": wc_hat,
                      "real_oil": t.oil_rate_stbd[i], "real_water": t.water_rate_stbd[i],
                      "real_gas": t.gas_rate_mscfd[i],
-                     "rs": t.solution_gor_at_pb_scf_stb[i]})
+                     "rs": t.solution_gor_at_pb_scf_stb[i],
+                     "gor_hat": _gor_from_past(t, i)})
     r = pd.DataFrame(rows)
     r["pred_oil"] = r.pred_liquid * (1 - r.wc_hat)
     r["pred_water"] = r.pred_liquid * r.wc_hat
-    r["pred_gas"] = r.pred_oil * r.rs / 1000
+    r["pred_gas"] = r.pred_oil * r.rs / 1000                # static Rs -- the best option, see main()
+    r["pred_gas_gor_trend"] = r.pred_oil * r.gor_hat / 1000  # history trend, kept for comparison
     return r
 
 
@@ -95,6 +111,21 @@ def main() -> None:
     for name in ["liquid", "oil", "water", "gas"]:
         a, p = r[f"real_{name}"].values, r[f"pred_{name}"].values
         print(f"{name:8s} {mape(a,p):7.2f}% {bias(a,p):+7.2f}%")
+
+    # Gas carries a +2.3% bias because the static Rs from the completion table
+    # sits ~2.1% above each well's actual producing GOR. Replacing it with an
+    # estimate from the well's own history removes the bias but costs more in
+    # variance than it saves: measured GOR is noisy test to test, and 3-8 past
+    # points are not enough to track it. Static Rs wins on MAPE. Do not retry.
+    a, oil = r.real_gas.values, r.pred_oil.values
+    print("\ngas split -- GOR estimator comparison (why the bias is left in place):")
+    print(f"  {'estimator':30s} {'MAPE':>8s} {'bias':>8s}")
+    cands = {"static Rs (shipped)": r.rs.values,
+             "linear trend from history": r.gor_hat.values}
+    for lab, g in cands.items():
+        p = oil * g / 1000
+        print(f"  {lab:30s} {mape(a,p):7.2f}% {bias(a,p):+7.2f}%")
+    print(f"  {'(floor: the oil error itself)':30s} {mape(r.real_oil.values, oil):7.2f}%")
 
     print("\nFor comparison, leave-one-test-out on the same model: liquid 1.82%")
     print("(LOO lets the model see later tests from the same well.)")
