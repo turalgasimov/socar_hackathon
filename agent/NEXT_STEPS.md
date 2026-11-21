@@ -61,9 +61,13 @@ the water-cut trend (`benchmark_vfm.py` already has all three).
 - Score **time-forward**, not LOO — `ml/eda/timeforward_vfm.py` already does
   this for the choke model (liquid 2.04%, oil 3.07%, water 3.99%, gas 5.90%).
   Those are the numbers to beat and to quote.
-- **Gas has a +2.31% bias** from the `gas = oil × Rs` split, while oil and
-  water are unbiased. If gas is scored equally, a better gas path than
-  multiplying by solution GOR is the cheapest accuracy left on the table.
+- **Fix the gas bias — cheapest accuracy left.** Gas is currently
+  `oil × Rs / 1000`, where `Rs` is the *static* solution GOR from the
+  completion table. But measured GOR drifts 7–32% within a well over the nine
+  months, and the mean gap between static `Rs` and actual GOR is **2.1%** —
+  which is the +2.31% gas bias, almost exactly. Fix: extrapolate a per-well
+  GOR trend from past tests, the same way the water-cut trend already works.
+  Should take gas from 5.90% to near the oil error and remove the bias.
 - Fit on all 85 tests once the scheme is settled, then **persist the fitted
   object** (`ml/models/vfm.joblib`) so the UI loads it instead of refitting.
 - Write a thin `predict(features_df) -> DataFrame` wrapper — the UI and the
@@ -135,6 +139,26 @@ Be honest about the limits: unseen-well generalisation fails, and 85 labels is
 the binding constraint. Saying so is worth more than pretending otherwise.
 
 ---
+
+## Tried and rejected — do not redo these
+
+- **ML residual correction on top of the physics model.** Fitted Ridge and a
+  regularised HistGradientBoosting to the choke model's log-residuals, using
+  30 extra features (per-well z-scores, slopes, within-window std), scored
+  time-forward. Result: 2.04% → 2.04% (ridge) and 2.01% (GBM). Noise. The
+  physics form has already taken the available signal; there is no structure
+  left in the residuals at n=85.
+- **Pure ML on raw features.** RF 5.19%, GBM 3.80%, Ridge 2.93% LOO, against
+  1.82% for the choke model. Keep these in the benchmark as evidence for the
+  methodology score — showing the comparison is worth more than quietly
+  picking the winner.
+- **Sub-window augmentation** (splitting each test window into quarters to get
+  340 rows). Sub-windows differ by 0.08–2.1%, so they are near-duplicates: no
+  new information, and a leakage trap if they land in different CV folds.
+- **Per-minute dynamics features** (slugging, FFT band power, direction
+  reversals, roughness). Within-well correlation with oil rate: −0.07 to
+  +0.26. The wells run at steady state; minute-level variation is instrument
+  noise, not flow physics.
 
 ## Known traps, so nobody rediscovers them
 
