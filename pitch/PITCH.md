@@ -128,10 +128,15 @@ weights by volume, so GL-07 (34% of field oil) dominates.
 - **Horner results (m, k, skin, ΔP skin) and plots:** TODO(peers). The demo,
   the value slide and the speech all need them.
 
-### UI: not started (us)
-- Streamlit calling `predict_from_raw.run()`, then Horner on top.
-- 6-step flow: upload → explore → VFM → PTA → interpret → export.
-- Embedded in the deck as the demo slide. TODO(us).
+### UI: built (us), in `ui/`
+- **Run:** `pip install -r ui/requirements.txt`, then `cd ui && streamlit run app.py`
+  (add `--server.address 0.0.0.0` to serve other PCs). Check before a demo:
+  `python ui/check_pipeline.py <folder with the raw CSVs>`.
+- **Flow:** upload the raw files (CSV or Excel) → Run analysis (~30 s) → tabs: 1 Field data,
+  2 Production rates (VFM), 3 Well tests (PTA) with interpretation, 4 Export, plus a CSV/Excel
+  converter. Exports: VFM and PTA as CSV and Excel, one combined workbook, an HTML report.
+- Uses the ML team's code unchanged (`ml/src`, `ml/predict_from_raw.py`, `ml/models/vfm.pkl`); the
+  PTA mirrors `ml/eda/pta_explore.py` and matches its reference to within 1% on k.
 
 ### Research: done (`research/`)
 - **Nobody combines gas-lift VFM and PTA.** About 30 products checked.

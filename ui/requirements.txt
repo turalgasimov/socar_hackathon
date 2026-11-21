@@ -1,0 +1,7 @@
+# RizzML app. pandas stays below 3: the ML pipeline was built and checked on pandas 2.3.
+pandas>=2.2,<3
+numpy
+scipy
+streamlit>=1.50
+plotly
+openpyxl
