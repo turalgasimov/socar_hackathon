@@ -317,6 +317,195 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 ## Done
 
+**VFM notebook: the routing correction is now in it, and it caught a live bug.**
+`notebooks/VFM_Phase1.ipynb` was generated before the correction existed, so the
+one change that ever gained points (+0.81) was missing from the document the
+judges read for the 20 methodology points. It never mentioned lambda, 21.0200
+or the leaderboard, and its section 5 still called the correction "an open
+question, not a silent assumption" -- which six leaderboard probes had closed.
+
+`ml/build_notebook.py` now has a section 5, "The test-separator routing
+correction": the measured skew (downstream pressure 17-29 psi higher on normal
+days than in tests, on 10/10 wells, with **two wells whose tested and predicted
+ranges do not overlap at all**), the four independent downhole estimates of
+~2.5% against the choke law's 5.89%, the full lambda ladder ending at 21.0200,
+the defence that lambda is one physics-derived parameter rather than ten
+per-well fits, and the two submissions that time-forward validation cost us.
+
+**The bug it caught.** The old notebook ran `model.save(ROOT/"ml"/"models"/"vfm.pkl")`
+on a `VFMModel()` constructed inside the notebook. `routing_factor` defaults to
+`1.0` and is only attached by `ml/fit_vfm.py`, so **every notebook build
+silently overwrote the shipped `.pkl` with an uncorrected model** -- 1.4-4.6%
+low per well -- and left it inconsistent with `vfm.joblib`, which the docs claim
+cannot drift. Found because the new section asserts the notebook's rates equal
+`ml/outputs/vfm_submission.csv`; the assert failed on GL-10 at exactly its
+routing factor of 1.0176. The notebook now only **loads** the shipped model and
+asserts it carries a per-well `routing_factor` dict. 2,719 of 2,729 well-days
+match the submitted file exactly; the 10 that differ are the partial shut-in
+days that `fit_vfm.py` time-integrates at 10 minutes, and GL-06's 24 June row is
+absent here because a 36 h outage leaves it out of `daily_table`.
+
+> **Never call `model.save()` from a notebook or an app.** Only `ml/fit_vfm.py`
+> writes `ml/models/`, because only it attaches `ROUTING_FACTORS`.
+
+**PTA independent checks (Faig's agent).** The shipped PTA was verified against a
+second solver and three hold-out tests. Nothing here changes a shipped number;
+all of it is evidence for the methodology score.
+
+`python ml/verify_pta_sim.py` — **independent solver, 6/6 verified.**
+`ml/src/pta_sim.py` solves the same diffusivity equation in the time domain
+(implicit variable-step BDF2, log radial grid, geometrically growing time steps)
+and shares no code with `pta_model.py`. Agreement with the Laplace model:
+
+| well | skin | Δp max | FD vs Laplace | inversion err (N=12) | formulation gap |
+|---|--:|--:|--:|--:|--:|
+| GL-01 | 5.741 | 285.3 | 0.0087 | 0.0231 | 0.0104 |
+| GL-02 | −0.264 | 280.7 | 0.0025 | 0.0084 | 0.0281 |
+| GL-04 | −0.904 | 837.3 | 0.0172 | 0.0306 | 0.0802 |
+| GL-06 | 2.307 | 119.3 | 0.0034 | 0.0068 | 0.0100 |
+| GL-08 | −1.589 | 521.7 | 0.0057 | 0.0057 | **0.8868** |
+| GL-10 | 2.195 | 231.9 | 0.0078 | 0.0127 | 0.0221 |
+
+**The quotable claim: two independent solvers agree within ~0.02–0.03 psi, and
+the inversion error is ≤ 0.03 psi.** Confirmed by Rovshan's agent against a
+converged fixed-Talbot inversion (Abate–Valko, M=32 vs M=48 agreeing to ~1e-6):
+their N=12 error is 0.006–0.032 psi against our |N=12 − N=16| of 0.006–0.031.
+
+Two caveats that must travel with the number:
+
+- **The `rw·exp(−S)` formulation is not the shipped one.** `pta_sim.py` puts skin
+  in the geometry because an explicit skin resistance gives a *negative*
+  conductance on a grid fine enough to resolve storage, and three of six wells
+  have S < 0. The two formulations differ by 0.01–0.89 psi **analytically** (no
+  finite differences involved); GL-08 is the 0.89. Rovshan's agent confirmed this
+  does not move the answer: a Talbot refit with the effective radius moves k
+  ≤ 0.08% and S ≤ 0.006, and on GL-08 the data prefer explicit skin
+  (RMS 0.0537 vs 0.0662 psi). The shipped choice is correct.
+- **Do not quote 0.10–0.51 psi as the Stehfest error.** An earlier version of
+  the script printed that and called it the inversion's uncertainty. It is the
+  spread over N = 8…18, which N=8 dominates — the error of the *worst* order
+  tried, ~15× the shipped N=12. Caught by Rovshan's agent. The script now
+  reports |N=12 − N=16| and carries the correction in its docstring.
+
+**It caught a real bug in `pta_sim.py` itself.** The first clean run sat a flat
+0.027% from the Laplace curve on *every* well — the same **relative** offset
+across wells with very different k, S, C and h, which is a constant's signature,
+not discretisation's. `ALPHA = 0.00708`, the usual rounding of 2π×1.127e-3, is
+inconsistent with the same code's `141.2` by 0.030%. `ALPHA` is now derived as
+`1/SKIN_C` and the residual fell ~10×. Worth keeping as a worked example of
+reading an error's *structure* rather than its size.
+
+`python ml/holdout_pta.py` — **three hold-out tests.**
+
+- **3a early → late.** Fitting an early window and predicting the last third,
+  under three definitions of "early", gives k shifts that span an order of
+  magnitude: thirds of the log span (6–16 points, out to 0.10–0.27 h) → k
+  +0.23…+10.87%; first third of the points (23–38, to 0.40–0.95 h) → −0.03…+4.18%;
+  thirds of linear time, IARF kept (49–94 points) → −0.01…+0.47%, |ΔS| ≤ 0.036.
+  **None of these is the precision of the submitted fit, which uses every point** —
+  the narrow windows remove the IARF and boundary data that determine k. An
+  earlier draft of this work wrongly presented ±11% / ±0.8 as a precision;
+  Rovshan's agent corrected it and independently reproduced all three windows.
+  What *is* robust: **k reads high whenever the window is early, in all three
+  definitions** (6/6, 5/6, 5/6). Constant wellbore storage is not exact in the
+  first minutes of a gas-lifted test. Agreed write-up text:
+
+  > Fitting choices (weights, early minutes, inversion, skin formulation, rate
+  > history, window that keeps IARF) move k ≤ 0.5% and S ≤ 0.03. The rate
+  > dominates: k ∝ q, VFM is ±2–3%, and the independent IPR check differs by
+  > −3…+6% per well.
+
+- **3b reopening drawdown — corroborates k, S, C and the boundary in the
+  opposite flow direction.** Build-up-fitted (k, S, C) predict the drawdown
+  after the choke reopens: opposite flow direction, data never fitted, nothing
+  refitted. Scored over the whole 24 h, GL-02 misses by 34.5% and GL-10 by
+  28.2%. Scored in time bins, the miss is **entirely the first hour**, and it
+  tracks how the choke was reopened:
+
+  | well | reopen choke path | RMS 0–1 h | 1–6 h | 6–24 h | drop err | after 6 h |
+  |---|---|--:|--:|--:|--:|--:|
+  | GL-02 | 51.6 (one step) | 76.53 | 9.10 | 11.33 | 34.5% | **5.0%** |
+  | GL-10 | 35.9 (one step) | 68.70 | 8.00 | 13.50 | 28.2% | **8.4%** |
+  | GL-06 | 29.7 (one step) | 18.26 | 4.22 | 3.28 | 7.2% | **1.3%** |
+  | GL-01 | 21.9→29.7→37.5 | 8.19 | 5.77 | 7.09 | 6.5% | 6.5% |
+  | GL-04 | 20.3→26.6→32.8 | 12.42 | 13.90 | 11.36 | 0.1% | 0.1% |
+  | GL-08 | 26.6→34.4→43.8 | 25.77 | 10.71 | 10.23 | 4.2% | 4.2% |
+
+  All three wells reopened in **one step to full choke** spike early and collapse
+  after an hour; all three reopened in **staged ramps** are flat across every
+  bin. Scoring the drop after 6 h, every well lands within **0.1–8.4%**. The
+  first hour is gas-lift unloading, which the choke law does not describe — a
+  **VFM rate limitation, not a PTA error**. The lead came from Rovshan's agent
+  (staged vs one-step reopening); the time-resolved test confirms it on 3 of 3,
+  including GL-06, which they had flagged as a possible counter-example.
+
+  **What this test cannot do, measured rather than asserted.** k ∝ q, so scaling
+  every rate by L and k with it cancels the prefactor 141.2·q·B·μ/(k·h); only the
+  log-time residual from t_D ∝ k survives. Sensitivity (|% change in predicted
+  drawdown| / |% change in rate level|) is **0.043–0.089**, so a 10% rate-level
+  error moves the prediction 0.4–0.9%. Two consequences: 3b says **nothing about
+  the rate level in either direction**, so it cannot support or attack the
+  IPR-rate question; and the 0.1–8.4% residual is **not** a level error either —
+  explaining 8.4% that way would need a level wrong by ~94%. It is shape, which
+  is exactly where the first-hour unloading bites. **This is corroboration at the
+  level of the rate uncertainty, not a clean validation** — wording agreed with
+  Rovshan's agent, who flagged the earlier overstatement.
+
+  **Order of validation strength, for the methodology section** (agreed):
+  1. build-up forecast plus the rejected alternative boundary — the rate is
+     exactly known there (zero), so it is the strongest;
+  2. opposite-direction drawdown after the unloading hour (these scripts);
+  3. two independent solvers agreeing within 0.02–0.03 psi, which tests the code
+     rather than the physics.
+
+- **3c ~90-day trend — partly invalid, stated as such.** It compares simulated
+  well pressure with observed `dh_pressure`, which *is* pwf — the quantity the
+  lift system holds roughly constant. So read it only as "the model depletes and
+  reality does not": predicted −0.4 to −11.0 psi/day against observed −1.9 to
+  +0.21, GL-06 excepted at ratio 0.92. Consistent with Rovshan's corrected
+  finding that the long-term data are not mass-consistent with the build-up
+  boundary.
+
+`python ml/check_pta_superposition.py` — **rate history does not matter (#5
+closed).** Feeding the real 89-day daily rates instead of a single constant rate
+moves **k ≤ 0.23% and S ≤ 0.011**, against a constant-rate control whose own
+offset is k 0.15% / S 0.009 (the FD-vs-Laplace formulation gap, which must not
+be charged to superposition). Independently reproduces Rovshan's ≤0.22% / ≤0.012.
+It also explains their GL-04/GL-08 split: the effect is **single-signed and
+monotone in dt** (1 sign run in 60 points), concentrated late — +0.375 psi late
+on GL-04, −0.077 psi late on GL-08, so it adds late-time signal of the right
+sign on one and the wrong sign on the other. And it **cannot** be the sign-changing
+residual structure seen on GL-08 (10 sign runs in 41 points): in the early bands
+where that structure lives, rate history is −0.0001/−0.0006/−0.0065 psi, 6–400×
+too small.
+
+`python ml/check_choke_response.py` — **diagnostic, and it contains a retracted
+claim kept on the record.** At exactly matched choke, GL-06's −6.1% VFM move
+between a test day and a normal day decomposes into −4.4% from the choke law's
+`dPc^0.472` term plus the water-cut/GOR split; GL-02 −9.1% and GL-10 −4.3%. The
+dPc term is the channel routing acts through, and it over-responds — which is the
+**already-recorded** defect (choke law 5.89% against the adopted 2.5%, ~2.4×).
+Treat as confirmation, not a new finding.
+
+> **Retracted: critical choke flow is not the explanation.** It was proposed here
+> on the basis of per-well pressure ratios (GL-10 100% below 0.60, GL-06 80.6%)
+> and is **refuted by `ml/eda/routing_checks.py`**, which splits the dPc exponent
+> at ratio 0.60 *against the measured rates* and gets 0.475 above vs 0.478 below,
+> zero mean residual either side, 46 of 85 tests on the low side. Critical flow
+> would drive the low-ratio exponent toward zero; it does not move. Knowing which
+> side of 0.60 a well sits on says nothing about whether its rate responds to
+> dPc. The script's docstring carries this correction.
+
+Files added (all new names; no shipped file touched): `ml/src/pta_sim.py`,
+`ml/verify_pta_sim.py`, `ml/holdout_pta.py`, `ml/check_pta_superposition.py`,
+`ml/check_choke_response.py`, `ml/export_pta_rates.py`, and
+`ml/outputs/{pta_sim_verification,pta_holdout,pta_superposition_check,
+choke_response_check,pta_rate_history}.csv`.
+
+Rovshan's agent suggests moving the four driver scripts to `ml/eda/` where the
+validation scripts live (`pta_sim.py` stays in `ml/src/`). **Tural owns the repo
+structure — his call, not done.**
+
 **Cleaning** (`ml/src/clean.py`) — repairs are logged and verified, not assumed.
 
 - High-frequency: 7,410 `-999.25` sentinels → NaN, 2,513 duplicate keys dropped,
