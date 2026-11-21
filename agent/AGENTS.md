@@ -24,7 +24,7 @@ docs/           challenge brief and rules
 ml/src/         config.py, clean.py, features.py, viz.py
 ml/eda/         run_eda.py, validate_features.py
 ml/outputs/     figures + generated markdown reports
-web/            UI (Phase 3, not started)
+ui/             UI (Phase 3, not started)
 ```
 
 `ml/src` is added to `sys.path` by the scripts; modules import each other by

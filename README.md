@@ -4,8 +4,8 @@ Virtual Flow Metering (VFM) and Pressure Transient Analysis (PTA) for ten
 gas-lifted wells, delivered through a single interactive workflow.
 
 - Challenge brief: [`docs/README.md`](docs/README.md)
-- Current status and next steps: [`PROJECT_STATE.md`](PROJECT_STATE.md)
-- Conventions and gotchas for contributors: [`AGENTS.md`](AGENTS.md)
+- Current status and next steps: [`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md)
+- Conventions and gotchas for contributors: [`agent/AGENTS.md`](agent/AGENTS.md)
 - Findings: [`ml/outputs/eda_summary.md`](ml/outputs/eda_summary.md),
   [`ml/outputs/feature_report.md`](ml/outputs/feature_report.md)
 
@@ -21,7 +21,7 @@ git clone https://github.com/turalgasimov/socar_hackathon
 
 Python 3.13 with pandas, scikit-learn, lightgbm, matplotlib, streamlit,
 pyarrow and openpyxl. On the original machine `python` is not on PATH — see
-`AGENTS.md` for the interpreter path.
+`agent/AGENTS.md` for the interpreter path.
 
 Rebuild everything from the raw CSVs (`data/processed/` is gitignored):
 
@@ -55,11 +55,25 @@ Full defect list and the reasoning behind each repair:
 ## Layout
 
 ```
+agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md — read these first
 data/            raw CSVs (high_freq_data.csv via Git LFS)
 data/processed/  derived parquet, gitignored — regenerate with the commands above
-docs/            challenge brief and rules
+docs/            challenge brief, data dictionary, data & physics reports
 ml/src/          config · clean · features · viz
-ml/eda/          run_eda.py · validate_features.py
+ml/eda/          run_eda.py · validate_features.py · benchmark_vfm.py
 ml/outputs/      figures and generated reports
-web/             Streamlit UI (Phase 3)
+ui/              Streamlit UI (Phase 3)
 ```
+
+## Baselines
+
+```bash
+python ml/eda/benchmark_vfm.py        # physics vs ML, leave-one-test-out
+python ml/eda/validate_features.py    # feature sets x 4 CV schemes, time-forward
+```
+
+Best so far: choke physics at **1.82% MAPE** on liquid rate (oil 2.35%, water
+3.25%, gas 5.33%). Read
+[`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md) before trusting that number —
+it is measured under test-separator routing, which is not the condition the
+daily predictions are made under.

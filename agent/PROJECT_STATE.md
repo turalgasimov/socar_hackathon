@@ -12,7 +12,8 @@ parameters 20) · UI 10 · Presentation 10.
 | 0 | Data cleaning | **done** |
 | 0 | EDA | **done** |
 | 1 | Feature engineering | **done** |
-| 1 | Trained VFM model | not started |
+| 1 | VFM baselines benchmarked | **done** (physics wins, 1.82%) |
+| 1 | Chosen VFM model, fitted and persisted | not started |
 | 1 | Excel: daily oil/water/gas predictions | not started |
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | Horner analysis → k, skin, ΔP_skin | not started |
@@ -38,19 +39,51 @@ z-scores, static capacity properties, physics interactions. Validated in
 `ml/outputs/feature_report.md`: time-forward oil MAPE drops 27.0% → 5.1%.
 Leave-one-out per target: oil 3.99%, water 3.85%, gas 7.41%.
 
+**VFM baselines** (`ml/eda/benchmark_vfm.py`) — physics beats ML on 85 labels,
+which is the expected outcome at this sample size. Liquid rate, leave-one-test-out:
+
+| model | MAPE |
+|---|--:|
+| Choke physics, `q ∝ S²·√ΔPc·√WHP·GLR⁻⁰·⁶` | **1.82%** |
+| IPR per-well (`Pwf`, `t`) | 2.10% |
+| Ridge (raw + well one-hot) | 2.93% |
+| HistGradientBoosting (raw + static) | 3.80% |
+| RandomForest (raw + well one-hot) | 5.19% |
+| *leave-one-WELL-out, HGB* | *69.7%* |
+
+Phase split from the choke model: oil 2.35%, water 3.25%, gas 5.33%. The fitted
+exponents (`S^2.05`, `dPc^0.47`) reproduce the subcritical choke law, so the
+model is recovering real physics rather than curve-fitting.
+
 Artefacts (regenerate — `data/processed/` is gitignored):
 `high_freq_clean.parquet`, `well_tests_clean.parquet`,
 `train_table.parquet` (85 × 147), `daily_table.parquet` (2,729 well-days × 143).
 
 ## Next
 
-1. **VFM model.** Train on `train_table.parquet`, score with the time-forward
-   scheme only. Start from regularised linear / small LightGBM — 85 rows against
-   136 features punishes capacity. Predict onto `daily_table.parquet`, export
-   `date, well_name, oil_rate_stbd, water_rate_stbd, gas_rate_mscfd`.
-2. **PTA.** Horner analysis on the 6 build-ups, using predicted daily Qo as the
-   rate term. Needs the depth correction below.
-3. **UI.** Streamlit: upload → visualise → predict → PTA plots → export.
+Ordered by points at risk. VFM accuracy is 30 points and PTA parameters are 20,
+so 1–3 matter most; the UI is 10 and cannot start until 1 produces a model.
+
+1. **Settle the test-mode correction** (blocks everything downstream). The choke
+   model scores 1.82% under test conditions but carries a ~3.8% systematic bias
+   on normal days. Either de-bias, or refit on routing-invariant sensors and
+   accept a slightly worse LOO for an honest daily score. **Decide and record it
+   in this file** — the two teams must not pick differently.
+2. **Fit and persist the VFM model.** Choke physics + per-well IPR, phase split
+   via the water-cut trend. Score time-forward, not LOO. Persist the fitted
+   object so the UI loads it rather than refitting.
+3. **Predict onto `daily_table.parquet`** → Excel: `date, well_name,
+   oil_rate_stbd, water_rate_stbd, gas_rate_mscfd`. 2,729 well-days; flag the 14
+   low-coverage ones rather than dropping them silently.
+4. **PTA.** Horner on the 6 build-ups with predicted daily Qo as the rate term.
+   Apply the gauge→datum correction first (see below).
+5. **UI.** Streamlit: upload → visualise → predict → PTA plots → export.
+6. **Presentation.** 10 points, and the data-quality story (GL-06 unit error,
+   the `-999.25` sentinel, the test-mode skew) is the strongest material we have.
+
+Open question for the organisers, worth asking early: **is the daily ground
+truth measured under test-separator routing or normal production?** The answer
+decides item 1.
 
 ## Decisions and constraints
 
@@ -77,6 +110,27 @@ Artefacts (regenerate — `data/processed/` is gitignored):
   See `ml/outputs/feature_report.md`.
 
 ## Open risks
+
+- **Train–serve skew on `whp_downstream_psia` — the strongest single feature.**
+  During a well test the well is routed to the test separator (129.7–134.5 psia)
+  rather than the production manifold, so downstream wellhead pressure runs
+  **19–29 psi lower during tests than in normal production, on all ten wells**.
+  That is **−2.6σ** in test-time units; no other sensor shifts more than 0.20σ.
+
+  Concretely, GL-04: its 9 tests all sit between 149.3 and 156.9 psia, while the
+  273 days to predict run 159.4–189.7. **The lowest normal day is above the
+  highest test — zero overlap.** The model has never seen a value like the ones
+  it must predict on.
+
+  It reaches the choke model through `dPc`: 129.6 psi on test windows vs 119.2
+  on normal days. Through `dPc^0.47` that alone biases predictions **−3.8%** —
+  about twice the model's own 1.82% LOO error. Independently confirmed in
+  `docs/DATA_REPORT_TASK1_TASK2.md` §6, which estimates test rates 1–4% high.
+
+  **This is a correction to apply, not a reason to discard the model.** Decide
+  before submitting: de-bias the daily predictions, or restrict to the
+  routing-invariant sensors (`whp`, `dh_pressure`, `annulus`, `gas_lift`,
+  `dh_temperature`, all ≤0.20σ).
 
 - **Unseen-well generalisation fails.** Every feature set scores at or worse than
   predicting the global mean under GroupKFold by well. With 10 wells there is not
