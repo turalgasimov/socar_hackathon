@@ -25,8 +25,23 @@ as oil despite being the hardest phase.
 |---|---|---|--:|
 | S0 | shipped model, uncorrected | ×1.000 | 20.2110 |
 | S1 | per-well routing factor, all phases | ×1.028 | **20.9463** |
-| S2 | scaled to test-separator level | ×1.053 | *next* |
-| S3 | global GOR factor, gas only | gas ×0.982 | *not submitted* |
+| λ=2.5 | routing over-scaled | ×1.071 | 18.3400 |
+| S3 | global GOR factor, gas only | gas ×0.982 | *next* |
+
+**The routing lever is exhausted. λ=1.0 is the optimum.** Three points fix
+the V: ascending slope +0.735/λ below it, −1.738/λ above. The arms intersect
+at **λ = 1.000**, which is exactly where S1 sits. The downhole physics
+estimate of ~2.5% was right, and the leaderboard independently confirms it.
+
+The asymmetry (descent 2.4× steeper than the ascent) is expected: R² degrades
+quadratically with a scale error, so the far point at λ=2.5 is pulled down by
+more than a linear arm predicts. That biases the vertex estimate slightly
+left, so the true optimum is at or just below λ=1 — fine probes at λ=0.85–0.95
+are built in `ml/outputs/ladder/` if worth confirming, but the V says they all
+score below 20.9463.
+
+**Do not fit a parabola to this.** A parabola through (0, 20.211), (1, 20.946),
+(2.5, 18.34) places its maximum near λ=0.86 and misses the kink entirely.
 
 **S1 settled the routing question: the ground truth is normal-production
 routed.** Scaling up by the per-well factor gained **+0.735 points**, about
