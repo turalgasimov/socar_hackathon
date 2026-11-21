@@ -22,15 +22,18 @@ the truth for exactly one pair, because both were submitted:
     shipped water-cut set (t, dp_tubing, gl)        leaderboard 21.0200
     widened set                                     leaderboard 20.5700
 
-**Our own docs disagree on what that widened probe was.** AGENTS.md says
-`whp_downstream` was added to the water-cut split ("moved base oil +5.24% and
-scored 20.57"); PROJECT_STATE.md and ml/evaluate.py both describe the same probe
-as "routing-safe sensors added". Those are opposites -- whp_downstream is THE
-routing-unsafe sensor. Under leave-one-test-out, `+ whp,dh_p,dh_t` scores 23.445
-against evaluate.py's documented 23.441, so the routing-safe reading is the
-likelier one, but several sets sit within 0.04 points and the score cannot
-identify it uniquely. UNRESOLVED -- so both readings are scored below, and the
-conclusion is stated only where it holds for both.
+An earlier version of this file scored two candidate widenings, because
+AGENTS.md and PROJECT_STATE.md disagreed about which one was submitted. Rovshan
+settled it in 9b54131: they were two different variants.
+
+  - the `whp_downstream` variant moved base oil +5.24% offline and was caught
+    BEFORE submission (d0ac161). It was never scored.
+  - the widening that WAS submitted added only routing-safe sensors --
+    `whp, dh_p, dh_t, ann` -- and scored 20.5700 (reverted in 7fefd46).
+
+PROJECT_STATE.md and ml/evaluate.py were right; AGENTS.md was wrong. The set
+below is confirmed numerically as well as documentally: under leave-one-test-out
+it scores 23.4405 against the 23.441 evaluate.py records for that probe.
 
 Changes nothing that ships.
 """
@@ -58,10 +61,9 @@ M0 = {"oil": 12.2, "water": 14.2, "gas": 16.1}
 W0 = {"oil": 10.6, "water": 12.4, "gas": 14.3}
 
 SHIPPED_WC = ["t", "dp_tubing", "gl"]
-WIDENED = {
-    "A: + whp_down (AGENTS.md reading)": SHIPPED_WC + ["whp_down"],
-    "B: + whp,dh_p,dh_t (routing-safe)": SHIPPED_WC + ["whp", "dh_p", "dh_t"],
-}
+# the widening that was actually submitted and scored 20.5700 (see 9b54131)
+WIDENED = {"submitted widening (+ whp,dh_p,dh_t,ann)":
+           SHIPPED_WC + ["whp", "dh_p", "dh_t", "ann"]}
 TRUE_GAP = 21.0200 - 20.5700          # shipped minus widened, in points
 LEAKY = ["kfold_5", "kfold_10", "stratified_by_well", "leave_one_test_out"]
 SCHEMES = LEAKY + ["time_forward", "groupkfold_by_well"]
@@ -180,9 +182,8 @@ def main() -> None:
     print()
     print(f"  Truth: shipped beats widened by {TRUE_GAP:+.3f} points "
           f"(21.0200 vs 20.5700).")
-    print("  Our docs disagree on what the widened probe was, so BOTH "
-          "readings are scored; see the")
-    print("  module docstring. It is unresolved.")
+    print("  The widening is the one that was actually submitted: "
+          "+ whp, dh_p, dh_t, ann (9b54131).")
     print()
     for label, feats in WIDENED.items():
         print(f"  {label}")
@@ -204,15 +205,15 @@ def main() -> None:
     worst = float(np.nanmax(np.abs(sane)))
     print("3. THE REAL RESULT IS THE MAGNITUDE, NOT THE SIGN.")
     print()
-    print(f"  The true effect is {TRUE_GAP:.3f} points. Across both readings "
-          f"and every scheme except")
+    print(f"  The true effect is {TRUE_GAP:.3f} points. Across every scheme "
+          f"except")
     print(f"  unseen-well, the largest gap any of them reports is "
           f"{worst:.3f} points -- {TRUE_GAP/worst:.0f}x too small,")
-    print("  before we even ask about the sign. (Unseen-well on reading B "
-          "gives +4.208, because adding")
-    print("  three features destroys generalisation to an eleventh well, which "
-          "has nothing to do with")
-    print("  the leaderboard.) These schemes do not merely rank wrongly: they "
+    print("  before we even ask about the sign. (Unseen-well is excluded: "
+          "adding four features wrecks")
+    print("  generalisation to an eleventh well for reasons that have nothing "
+          "to do with the")
+    print("  leaderboard.) These schemes do not merely rank wrongly: they "
           "cannot SEE an effect of")
     print("  the right size. It lives on the 2,729 out-of-regime scored days, "
           "and all 85 labels are")
@@ -224,8 +225,7 @@ def main() -> None:
     tot, g = [], []
     for sd in range(10):
         a = run(tr, X, rf, SHIPPED_WC, "kfold_5", sd)["total"]
-        b = run(tr, X, rf, WIDENED["A: + whp_down (AGENTS.md reading)"],
-                "kfold_5", sd)["total"]
+        b = run(tr, X, rf, list(WIDENED.values())[0], "kfold_5", sd)["total"]
         tot.append(a)
         g.append(a - b)
     tot, g = np.array(tot), np.array(g)
