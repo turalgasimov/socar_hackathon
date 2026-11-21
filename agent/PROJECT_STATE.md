@@ -320,6 +320,26 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 ## Done
 
+**VFM notebook prints the organisers' metrics (22 Nov).** Section 4 of
+`notebooks/VFM_Phase1.ipynb` now computes R², MAPE, WAPE and bias per phase,
+time-forward on 55 of 85 tests, with the same functions as `ml/fit_vfm.py`:
+
+| phase | R² | MAPE | WAPE | bias |
+|---|--:|--:|--:|--:|
+| oil | 0.9981 | 2.56% | 2.33% | +0.25% |
+| water | 0.9959 | 3.82% | 3.48% | +0.15% |
+| gas | 0.9940 | 5.65% | 4.61% | +2.04% |
+
+These are identical to `vfm_fit_report.md`. Before this change the notebook
+printed only MAPE, with R² and WAPE in markdown alone.
+
+A note under the table says the numbers are test-routed and that only the
+leaderboard (21.0200) measures the routing correction. The stale "whether that
+gap should be corrected" paragraph is fixed in both the report and its generator
+(`fit_vfm._report`), and a render of `_report` matches the committed report byte
+for byte. The notebook assert against `vfm_submission.csv` still passes, with
+the 10 expected partial shut-in days.
+
 **VFM notebook: the routing correction is now in it, and it caught a live bug.**
 `notebooks/VFM_Phase1.ipynb` was generated before the correction existed, so the
 one change that ever gained points (+0.81) was missing from the document the

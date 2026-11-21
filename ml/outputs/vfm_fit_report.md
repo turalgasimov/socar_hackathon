@@ -18,6 +18,12 @@ large wells dominate and a systematic bias passes straight through.
 Each test is predicted from the other nine wells plus that well's own
 earlier tests. No future information, no same-test leakage.
 
+These are measured in the test-routed regime: all 85 labels were recorded
+while the well flowed to the test separator. The routing correction acts
+only on normal-production days, so it does not change this table (the
+time-forward fits are uncorrected). Only the leaderboard measures it:
+**21.0200 / 30** with it, 20.2110 without.
+
 ## Fitted choke exponents
 
 | term | exponent | textbook |
@@ -46,8 +52,13 @@ The first two land on the subcritical choke law without being told to, which is 
 | GL-09 | 1,254 | 1,260 | -0.5% |
 | GL-10 | 1,891 | 1,956 | -3.3% |
 
-Predicted daily rates sitting a few per cent below tested rates is the
-expected direction: a test runs the well at lower back-pressure than normal
-production, so it flows harder. Whether that gap should be corrected depends
-on how the organisers defined the daily ground truth — see
-`agent/PROJECT_STATE.md`, Open risks.
+Predicted daily rates sit -7.0% to -0.5% against the tested rates. Below
+is the expected direction: a test routes the well to the test separator at
+lower back-pressure than normal production, so it flows harder.
+
+**The routing correction is applied:** λ = 0.80 times the per-well
+factor in `ml/src/vfm.py`, already included in the numbers above. It scored
+**21.0200 / 30** on the leaderboard against 20.2110 uncorrected, the only change
+that ever gained points. It corrects the choke law's over-response to the
+routing switch (~5.9% where the downhole physics says ~2.5%), so the gap
+above is meant to remain. See `agent/PROJECT_STATE.md` → Leaderboard.

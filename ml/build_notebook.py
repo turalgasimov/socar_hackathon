@@ -28,7 +28,8 @@ CELLS = [
 Estimating daily oil, water and gas rates for ten gas-lifted wells from
 pressure, temperature and choke sensors alone.
 
-**Result:** time-forward MAPE of **2.56% on oil**, 3.82% water, 5.65% gas.
+**Result:** time-forward WAPE of **2.33% on oil**, 3.48% water, 4.61% gas
+(MAPE 2.56 / 3.82 / 5.65%, R² 0.9981 / 0.9959 / 0.9940). Leaderboard: **21.0200 / 30**.
 
 The path there was not the obvious one, so this notebook follows the actual
 reasoning: what was wrong with the data, why a physics-constrained model beats
@@ -165,16 +166,28 @@ to noise, and it is what a free-form learner cannot give you."""),
     MD("""## 4. Honest validation
 
 Time-forward: for each test, train on the other nine wells plus this well's
-earlier tests only. Nothing from the future."""),
+earlier tests only. Nothing from the future.
 
-    CODE("""from fit_vfm import time_forward, mape, bias
+Scored with the organisers' three metrics. Each phase is worth 10 points,
+split **R² (3) + MAPE (2) + WAPE (5)**. The metric functions are the ones
+`ml/fit_vfm.py` uses, and this cell reproduces `ml/outputs/vfm_fit_report.md`."""),
+
+    CODE("""from fit_vfm import time_forward, r2, mape, wape, bias
 
 tf = time_forward(tr)
 print(f"{len(tf)} of {len(tr)} tests scored (a well needs 3 prior tests)\\n")
-print(f"{'phase':8s} {'MAPE':>8s} {'bias':>8s}")
-for p in ["oil", "water", "gas"]:
-    a, q = tf[f"real_{p}"].values, tf[f"pred_{p}"].values
-    print(f"{p:8s} {mape(a,q):7.2f}% {bias(a,q):+7.2f}%")"""),
+scores = pd.DataFrame({p: {"R²": r2(a, q), "MAPE %": mape(a, q), "WAPE %": wape(a, q),
+                           "bias %": bias(a, q)}
+                       for p in ["oil", "water", "gas"]
+                       for a, q in [(tf[f"real_{p}"].values, tf[f"pred_{p}"].values)]}).T
+print(scores.to_string(formatters={"R²": "{:.4f}".format, "MAPE %": "{:.2f}".format,
+                                   "WAPE %": "{:.2f}".format, "bias %": "{:+.2f}".format}))"""),
+
+    MD("""**These numbers are measured in the test-routed regime.** Every one of the 85
+labels was recorded while the well flowed to the test separator. The routing
+correction in section 5 acts only on normal-production days, so it does not
+change this table — `time_forward` fits uncorrected models. Only the
+leaderboard measures that correction: **21.0200** with it, 20.2110 without."""),
 
     MD("""### Physics vs machine learning on 85 labels
 
@@ -409,13 +422,15 @@ print(f"\\nwarning: {str(caught[0].message)[:95]}..." if caught else "no warning
 
     MD("""## Summary
 
-| | |
-|---|---|
-| **Oil** | **2.56%** MAPE, +0.25% bias |
-| **Water** | **3.82%** MAPE, +0.15% bias |
-| **Gas** | **5.65%** MAPE, +2.04% bias |
+| phase | R² | MAPE | WAPE | bias |
+|---|--:|--:|--:|--:|
+| **Oil** | 0.9981 | 2.56% | **2.33%** | +0.25% |
+| **Water** | 0.9959 | 3.82% | **3.48%** | +0.15% |
+| **Gas** | 0.9940 | 5.65% | **4.61%** | +2.04% |
 
-Validated time-forward on 55 held-out tests, never a random split.
+Validated time-forward on 55 held-out tests, never a random split. These are
+test-routed numbers; the leaderboard, which scores normal-production days with
+the routing correction applied, gives **21.0200 / 30**.
 
 **What made the difference:** finding the `-999.25` sentinel and GL-06's unit
 error before modelling; recognising that 98.3% between-well variance makes

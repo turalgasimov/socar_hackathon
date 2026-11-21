@@ -22,7 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "ml" / "src"))
 
 from config import OUT, PROC  # noqa: E402
-from vfm import ROUTING_FACTORS, VFMModel, build_inputs  # noqa: E402
+from vfm import ROUTING_FACTORS, ROUTING_LAMBDA, VFMModel, build_inputs  # noqa: E402
 
 MODEL_PATH = ROOT / "ml" / "models" / "vfm.pkl"        # required format, see Deliverables.pdf
 MODEL_PATH_JOBLIB = ROOT / "ml" / "models" / "vfm.joblib"
@@ -215,6 +215,11 @@ def _report(scores, model, out, cmp, n_tf, n_tr) -> None:
     md += [
         "", "Each test is predicted from the other nine wells plus that well's own",
         "earlier tests. No future information, no same-test leakage.", "",
+        "These are measured in the test-routed regime: all 85 labels were recorded",
+        "while the well flowed to the test separator. The routing correction acts",
+        "only on normal-production days, so it does not change this table (the",
+        "time-forward fits are uncorrected). Only the leaderboard measures it:",
+        "**21.0200 / 30** with it, 20.2110 without.", "",
         "## Fitted choke exponents", "",
         "| term | exponent | textbook |", "|---|--:|--:|",
         f"| choke size S | {model.coefficients()['exp_choke_size_S']:+.3f} | +2 (area ~ d²) |",
@@ -230,12 +235,17 @@ def _report(scores, model, out, cmp, n_tf, n_tr) -> None:
     ]
     md += [f"| {w} | {r.pred_oil:,.0f} | {r.test_oil:,.0f} | {r['oil_diff_%']:+.1f}% |"
            for w, r in cmp.iterrows()]
+    lo, hi = cmp["oil_diff_%"].min(), cmp["oil_diff_%"].max()
     md += [
-        "", "Predicted daily rates sitting a few per cent below tested rates is the",
-        "expected direction: a test runs the well at lower back-pressure than normal",
-        "production, so it flows harder. Whether that gap should be corrected depends",
-        "on how the organisers defined the daily ground truth — see",
-        "`agent/PROJECT_STATE.md`, Open risks.",
+        "", f"Predicted daily rates sit {lo:+.1f}% to {hi:+.1f}% against the tested rates. Below",
+        "is the expected direction: a test routes the well to the test separator at",
+        "lower back-pressure than normal production, so it flows harder.", "",
+        f"**The routing correction is applied:** λ = {ROUTING_LAMBDA:.2f} times the per-well",
+        "factor in `ml/src/vfm.py`, already included in the numbers above. It scored",
+        "**21.0200 / 30** on the leaderboard against 20.2110 uncorrected, the only change",
+        "that ever gained points. It corrects the choke law's over-response to the",
+        "routing switch (~5.9% where the downhole physics says ~2.5%), so the gap",
+        "above is meant to remain. See `agent/PROJECT_STATE.md` → Leaderboard.",
     ]
     (OUT / "vfm_fit_report.md").write_text("\n".join(md), encoding="utf-8")
     print(f"report -> ml/outputs/vfm_fit_report.md")
