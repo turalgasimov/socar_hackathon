@@ -93,7 +93,8 @@ optimum has not been bracketed yet — 0.8 still beats 0.9.
 | 0.0 | 20.2110 |
 | 0.5 | 20.9100 |
 | 0.7 | lost to 0.8 |
-| **0.8** | **21.0200** |
+| 0.75 | **21.0200** — tied with 0.8 |
+| **0.8** | **21.0200** — shipped |
 | 0.85 | beat 0.9 and 1.0, lost to 0.8 |
 | 0.9 | 20.9960 |
 | 1.0 | 20.9463 |
@@ -105,9 +106,9 @@ the whole project that has ever paid.
 
 **λ = 0.80 is the shipped value, score 21.0200.** The peak is bracketed in
 **(0.70, 0.85)** — both neighbours were tested and both lost. A final probe
-at 0.75 is in `ml/outputs/submitted/probe_lam0.75.csv`; after it the interval
-is 0.1 wide and any remaining headroom sits below the differences the board
-can resolve, so **λ pruning ends there**.
+**λ pruning is finished.** 0.75 came back at 21.0200 — identical to 0.80 — so
+the peak is flat across (0.75, 0.80) and no further resolution is available.
+0.80 stays shipped; the tie means the choice between them carries no score.
 
 To regenerate a probe after the cleanup, rescale the shipped file per well by
 `(1 + λ_new·(raw−1)) / (1 + 0.80·(raw−1))` using `_ROUTING_FACTORS_RAW`. The
@@ -123,9 +124,9 @@ Kept artefacts, everything else deleted:
 | file | score |
 |---|--:|
 | `ml/outputs/vfm_submission.csv` | the champion, regenerated |
-| `ml/outputs/submitted/rank1_21.0200_lam0.80.csv` | **21.0200** |
-| `ml/outputs/submitted/rank2_lam0.85.csv` | beat 0.90 and 1.00, lost to 0.80 |
-| `ml/outputs/submitted/rank3_lam0.75.csv` | pending |
+| `ml/outputs/submitted/lam0.80_21.0200_SHIPPED.csv` | **21.0200** |
+| `ml/outputs/submitted/lam0.75_21.0200.csv` | **21.0200** — tied |
+| `ml/outputs/submitted/lam0.85.csv` | beat 0.90 and 1.00, lost to 0.80 |
 
 λ=0.90 (20.9960) and λ=1.00 (20.9463) are deleted: 0.85 beat both, so they
 are no longer in the top three.
