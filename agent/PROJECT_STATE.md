@@ -101,7 +101,17 @@ optimum has not been bracketed yet — 0.8 still beats 0.9.
 and +0.81 over the uncorrected model. The routing scale is the only lever in
 the whole project that has ever paid.
 
-**SETTLED at λ = 0.80, score 21.0200.** The search is closed and
+**λ = 0.80 is the shipped value, score 21.0200.** The peak is bracketed in
+**(0.70, 0.85)** — both neighbours were tested and both lost. A final probe
+at 0.75 is in `ml/outputs/submitted/probe_lam0.75.csv`; after it the interval
+is 0.1 wide and any remaining headroom sits below the differences the board
+can resolve, so **λ pruning ends there**.
+
+To regenerate a probe after the cleanup, rescale the shipped file per well by
+`(1 + λ_new·(raw−1)) / (1 + 0.80·(raw−1))` using `_ROUTING_FACTORS_RAW`. The
+old ladder scripts are retired because they assumed an uncorrected base.
+
+The search is closed and
 `ROUTING_LAMBDA = 0.80` is baked into `ml/src/vfm.py`, so
 `python ml/fit_vfm.py` now writes the best-scoring submission directly —
 there is no ladder file to remember.
