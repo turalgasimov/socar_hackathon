@@ -82,9 +82,16 @@ regime worse. **Treat time-forward as a guard against obvious regressions,
 not as evidence a change will score.** Only the leaderboard decides, so
 changes should go up one at a time.
 
-**The routing lever is exhausted. λ=1.0 is the optimum.** Three points fix
-the V: ascending slope +0.735/λ below it, −1.738/λ above. The arms intersect
-at **λ = 1.000**, which is exactly where S1 sits. The downhole physics
+**λ=1.0 is the best of three tried — its optimality is NOT established.**
+My earlier claim that "the arms intersect at λ = 1.000" was circular, as
+Rovshan pointed out: I fitted one line through (P0, P1) and another through
+(P1, P2), and two lines sharing P1 always meet at P1. The answer was just the
+x-coordinate of the middle point. The same artefact produced "gas vertex at
++0.00%".
+
+Through the same three scores, a symmetric V puts the vertex near 0.71 and a
+parabola near 0.86. None of these is evidence. What the data actually shows
+is only that λ=1 beats λ=0 and λ=2.5. Probes at λ=0.8 and 0.9 are built. The downhole physics
 estimate of ~2.5% was right, and the leaderboard independently confirms it.
 
 The asymmetry (descent 2.4× steeper than the ascent) is expected: R² degrades

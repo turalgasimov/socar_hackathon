@@ -80,15 +80,36 @@ def daily_rates(model, hf: pd.DataFrame, pvt: pd.DataFrame, comp: pd.DataFrame,
         pred = model.predict(build_inputs(feats))
     unseen = sorted(set(pred.loc[pred.unseen_well, "well_name"])) if len(pred) else []
 
-    # weight each bin by its own minutes; shut-in and missing minutes contribute 0
+    # Weight each bin by its own minutes. Shut-in minutes contribute zero
+    # rate, which is correct -- the well really produced nothing.
+    #
+    # A bin whose SENSORS are missing is different: predict() returns NaN for
+    # it, and we must not let those minutes sit in the denominator. Doing so
+    # silently scales the day down by the missing fraction -- GL-03 on
+    # 2025-09-02 lost 23.6% of its flowing minutes to gas-lift gaps and came
+    # out 33% low, which first looked like a Jensen effect and was really this
+    # bug. Caught by Rovshan. Fifteen well-days in this dataset hit it; the
+    # shipped partial shut-in days happen not to, but an upload with sensor
+    # gaps would be biased low, so the live demo was exposed.
     flow = flow.reset_index(drop=True)
+    usable = np.isfinite(pred[PHASES].to_numpy()).all(axis=1)
     for p in PHASES:
         flow[p] = pred[p].to_numpy() * flow.n_min.to_numpy()
-    out = (flow.groupby(["well_name", "date"], observed=True)[PHASES].sum()
-               .join(per_day, how="right").reset_index())
-    out[PHASES] = out[PHASES].fillna(0.0)          # a fully shut day produces nothing
+    flow["priced_min"] = np.where(usable, flow.n_min.to_numpy(), 0)
+
+    shut_min = (b.loc[b.shut >= 0.5]
+                 .groupby(["well_name", "date"], observed=True).n_min.sum()
+                 .rename("shut_min"))
+    agg = flow.groupby(["well_name", "date"], observed=True)[PHASES + ["priced_min"]].sum()
+    out = agg.join(per_day, how="right").join(shut_min, how="left").reset_index()
+    out[PHASES + ["priced_min"]] = out[PHASES + ["priced_min"]].fillna(0.0)
+    out["shut_min"] = out.shut_min.fillna(0.0)
+
+    # denominator: minutes we could actually price, plus genuinely shut minutes
+    denom = (out.priced_min + out.shut_min).replace(0, np.nan)
+    out["unpriced_min"] = out.day_minutes - denom.fillna(0)
     for p in PHASES:
-        out[p] = out[p] / out.day_minutes
+        out[p] = out[p] / denom
 
     cov = (hf.groupby(["well_name", "date"], observed=True)
              .agg(shut_minutes=("is_shut_in", "sum"), minutes=("is_shut_in", "size"))
