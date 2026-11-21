@@ -262,6 +262,22 @@ Building the final file:
 - A winning change must then go into `ml/make_pta.py` (and `SHIPPED` be
   replaced) and into `ui/pipeline.py`.
 
+**Column probes — leaderboard only, deliberately NOT in the runbook.** The
+platform scores the four columns separately (Horner slope /5 + permeability /5
++ skin /5 + ΔP_skin /5), so a file that swaps one column measures that column
+exactly.
+
+- The three `pta_col_*` files each take one column from Horner window B (same
+  rate) and keep the other three from the 8.3840 base:
+  - `pta_col_M_B_horner_slope.csv` (GL-02: 50.141 → 52.31);
+  - `pta_col_S_B_skin.csv` (−0.264 → −0.522);
+  - `pta_col_D_B_dPskin.csv` (−11.49 → −23.71).
+- `ml/eda/pta_probes.py` asserts that exactly one column differs.
+- Rovshan uses them only if the main sequence leaves us behind.
+- **None of them enters the delivered method** unless it is a deterministic
+  physical convention. Horner slope reported as the measured straight-line
+  slope would qualify; a sign flip or a column mix would not.
+
 Checked and not probed:
 
 - **Constant-pressure boundary:** fit 7–9x worse.

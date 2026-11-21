@@ -43,6 +43,16 @@ PROBES = {  # file name -> (rate variant, abs skin)
     "pta_P2_down_IPR_rate_x-0.5.csv": ("ipr_down", False),
     "pta_P3_IPR_rate_at_shutin_minute.csv": ("ipr_minute", False),
 }
+# Column probes: the platform scores each column separately (Horner slope /5 + permeability /5 + skin /5
+# + dP_skin /5), so a file that swaps ONE column measures that column's score exactly. Each takes one
+# column from Horner window B (same rate) and keeps the other three from the base. These are leaderboard
+# probes, NOT the delivered method, and are kept out of the runbook on purpose: use only if behind.
+HORNER_B = OUT / "figures" / "pta" / "pta_reference_window_B.csv"
+COLUMN_PROBES = {  # file name -> (submission column, column in the Horner-B table, decimals)
+    "pta_col_M_B_horner_slope.csv": ("horner_slope", "horner_slope_psi_per_cycle", 3),
+    "pta_col_S_B_skin.csv": ("skin", "skin", 3),
+    "pta_col_D_B_dPskin.csv": ("delta_p_skin_psi", "delta_p_skin_psi", 2),
+}
 
 
 def ipr_ratios() -> pd.DataFrame:
@@ -121,6 +131,14 @@ def main() -> None:
     for name, (rate, abs_skin) in PROBES.items():
         build(rate, abs_skin, R).to_csv(OUT / "candidates" / name, index=False, lineterminator="\n")
     print("\nwrote", ", ".join(PROBES), "to ml/outputs/candidates/")
+    base, hb = pd.read_csv(BASE), pd.read_csv(HORNER_B).set_index("well_name")
+    for name, (col, src, nd) in COLUMN_PROBES.items():
+        df = base.copy()
+        df[col] = [round(float(hb.loc[w, src]), nd) for w in df.well_name]
+        assert df.columns.tolist() == base.columns.tolist() and (df.horner_slope >= 0).all()
+        assert (df.drop(columns=col) == base.drop(columns=col)).all().all()       # exactly one column differs
+        df.to_csv(OUT / "candidates" / name, index=False, lineterminator="\n")
+    print("wrote column probes (leaderboard only, not in the runbook):", ", ".join(COLUMN_PROBES))
     print("""
 Decision table (base = shipped 8.3840; one change per probe):
   P0  pta_P0_skin_sign_abs.csv           keep if > 8.3840; either way go to P1
