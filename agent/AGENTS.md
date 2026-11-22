@@ -47,17 +47,21 @@ data/            raw CSVs; high_freq_data.csv (257 MB) via Git LFS
 data/processed/  derived parquet — GITIGNORED, regenerate with the pipeline
 docs/            brief, data dictionary, data report, physics report
 ml/src/          config · clean · features · vfm · daily_predict · viz ·
+                 history (what an upload of later months takes from Jan–Sep) ·
+                 rolling (monthly refit on uploaded tests, in memory only) ·
                  pta_model (diffusivity equation, Laplace + Stehfest) ·
                  pta_rate (oil rate at a shut-in from the well tests via the IPR; unscored)
                  (label_transfer.py is built but NOT shipped — see rejected)
 ml/              fit_vfm.py · predict_from_raw.py · build_notebook.py · make_pta.py ·
                  build_pta_notebook.py
 ml/eda/          run_eda · validate_features · benchmark_vfm ·
-                 timeforward_vfm · routing_checks · pta_explore · pta_probes
-ml/models/       vfm.pkl (required format) + vfm.joblib
+                 timeforward_vfm · routing_checks · pta_explore · pta_probes ·
+                 history_handoff · rolling_refit · self_training · lambda_split · vfm_probes
+ml/models/       vfm.pkl (required format) + vfm.joblib · history/ (Jan–Sep
+                 rates + per-well state for uploads of later months, ml/src/history.py)
 ml/outputs/      figures/ · submitted/ · reports · vfm_submission.csv
 notebooks/       VFM_Phase1.ipynb · PTA_Phase2.ipynb (all cells executed)
-ui/              Streamlit app (Phase 3, not started)
+ui/              Streamlit app (Tural): app.py · pipeline.py (back end) · check_pipeline.py
 ```
 
 `ml/src` is pushed onto `sys.path` by each script; modules import each other by
@@ -88,7 +92,12 @@ PY="C:/Users/Faiq/AppData/Local/Programs/Python/Python313/python.exe"
 "$PY" ml/fit_vfm.py
 
 # 6. the demo path: raw CSVs in, predictions out, nothing from data/processed/
+#    The test data are only the NEXT three months; ml/models/history/ supplies the
+#    opening choke setting and the PTA producing time from Jan-Sep. Rebuild it only
+#    if the scored rates change; rehearse the hand-off with history_handoff.py.
 "$PY" ml/predict_from_raw.py --data <dir> --out <file.csv>
+"$PY" ml/build_history.py          # -> ml/models/history/ (from the lam0.80 record)
+"$PY" ml/eda/history_handoff.py    # history to 31 Jul + Aug-Sep upload, ~2 min
 
 # 7. PTA (needs step 1). Figures -> ml/outputs/figures/pta/ (~60 s), then the
 #    result file -> ml/outputs/pta_submission.csv + pta_results.xlsx (~25 s).
@@ -159,6 +168,15 @@ The raw→parquet cache makes reloads near-instant. Delete
   wrong regime. Two changes that improved every time-forward metric *lost*
   points. Use it as a regression guard; let the leaderboard settle level and
   bias. See `PROJECT_STATE.md` → the methodological lesson.
+- **The test data are the next three months of the same wells, with measured
+  well tests.** The demo path refits the model at the start of each month on
+  the tests that ended before it (`ml/src/rolling.py`): in memory only, routing
+  factors unchanged, and the shipped model untouched when an upload has no test
+  after the training period. Refitting on our own predictions does nothing
+  (`ml/eda/self_training.py`); do not retry it.
+- **A well-test rate is compared without the routing correction.** Tests are
+  test-separator rates; with the correction the check reads +2.8% high on oil.
+  `rolling.unrouted()` is the one place that switches it off.
 - **The routing correction is settled at λ=0.80** (`ROUTING_LAMBDA` in
   `ml/src/vfm.py`), worth +0.81 and the only change that ever gained points.
   Do not re-tune it; 0.75 and 0.80 tie and both neighbours lose.

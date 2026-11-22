@@ -69,7 +69,10 @@ def _despike(s: pd.Series, floor: float, n_sigma: float = 6.0,
 
 
 def clean_high_freq(use_cache: bool = True, verbose: bool = True,
-                    data_dir: Path | None = None) -> tuple[pd.DataFrame, dict]:
+                    data_dir: Path | None = None,
+                    hist: dict | None = None) -> tuple[pd.DataFrame, dict]:
+    """`hist` (ml/src/history.py) supplies each well's last known choke setting when an upload
+    of later months has no opening choke row for it. Without it, behaviour is unchanged."""
     hf = load_high_freq(use_cache, data_dir)
     rep: dict = {"rows_in": len(hf)}
 
@@ -122,13 +125,18 @@ def clean_high_freq(use_cache: bool = True, verbose: bool = True,
     choke_path = (Path(data_dir) / "choke_events.csv") if data_dir else F_CHOKE
     ck = pd.read_csv(choke_path, parse_dates=["timestamp"]).sort_values("timestamp")
     hf["well_name"] = hf.well_name.astype(str)  # and matching key dtypes
+    # a well with no event at or before its first minute would have no choke until its first
+    # change; an upload of later months may lack the opening rows, so take the last known setting
+    import history
+    ck, ck_rep = history.complete_choke(ck, hf.groupby("well_name").timestamp.min(), hist)
+    rep.update(ck_rep)
     hf = pd.merge_asof(
         hf.sort_values("timestamp"),
         ck.rename(columns={"choke_opening_pct": "choke_pct"}),
         on="timestamp", by="well_name", direction="backward",
     ).sort_values(["well_name", "timestamp"], ignore_index=True)
     hf["well_name"] = hf.well_name.astype("category")
-    rep["choke_events"] = len(ck)
+    rep["choke_events"] = len(ck) - len(rep["choke_initial_from_history"])
 
     # 7. shut-in flag -- choke fully closed. These are the PTA build-up windows.
     hf["is_shut_in"] = hf.choke_pct.eq(0.0)

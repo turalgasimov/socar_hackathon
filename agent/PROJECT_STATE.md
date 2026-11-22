@@ -314,8 +314,12 @@ data live, run cleaning → features → predict → PTA, and not fall over.
   MAPE), which is why they are flagged rather than quietly returned.
   `strict=True` restores the old raise, for batch pipelines where silence is
   worse than failure.
-- **The whole chain must run from raw CSVs**, not from `data/processed/`.
-  Nothing has been exercised that way end to end yet.
+- **The test data are the next three months of the same ten wells** (organisers):
+  `high_freq_data.csv`, `choke_events.csv` and `well_tests.csv` for those months
+  only; PVT and completion are unchanged. Time-forward is the right analogue.
+- **The chain runs from raw CSVs and survives an upload of later months only.**
+  `python ui/check_pipeline.py data` passes from raw. `python ml/eda/history_handoff.py`
+  rehearses the hand-off; see Done → *Training-period history*.
 
 ## Status
 
@@ -331,10 +335,182 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | 2 | Build-up detection | **done** (6 events identified) |
 | 2 | PTA parameters → m, k, skin, ΔP_skin | **done** — exact model match, **8.3840 / 20** (`python ml/make_pta.py`) |
 | 2 | PTA plots per shut-in event | **done** (`ml/outputs/figures/pta/`, 9 figures + README) |
-| 3 | Streamlit UI | not started |
-| — | Presentation | not started |
+| 3 | Streamlit UI | **built** (`ui/`, Tural) — `python ui/check_pipeline.py data` passes; runs on an upload of later months alone and refits monthly on new tests (`python ml/eda/history_handoff.py`) |
+| — | Presentation | deck, notes and speech in `pitch/`; open TODOs in `pitch/PITCH.md` |
 
 ## Done
+
+**Monthly refit on uploaded well tests: built into the demo path (22 Nov).** The
+test data carry measured well tests for the new months (Faig, corrected the same
+day). Faig's decision: time-forward, month by month.
+
+- **What it does** (`ml/src/rolling.py`, used by `ml/predict_from_raw.py` and
+  `ui/pipeline.py`):
+  - The first month of an upload uses the shipped model.
+  - Each later month uses a refit on the 85 training tests
+    (`ml/models/history/train_tests.csv`) plus every uploaded test that ended
+    before that month.
+  - The refit is in memory only. The routing factors are carried over unchanged.
+  - `refit=False` / `--frozen` switches it off.
+- **Guards.**
+  - `build_history.py` asserts the stored training rows reproduce `vfm.pkl`
+    (coefficients within 1e-6).
+  - A new test whose measured liquid is more than 1.5× away from what the model
+    predicts for its own sensors is left out and reported.
+  - A failed refit falls back to the shipped model for that month.
+- **The accuracy check on uploaded tests is now honest.**
+  - Each test is scored by the model of its month, which has not seen it.
+  - It is scored without the routing correction (`rolling.unrouted()`), because
+    a test is a test-separator rate. On our own 85 tests the check now reads oil
+    WAPE 1.65% / MAPE 1.85%, in-sample; with the correction it read 2.58% /
+    3.09%, a +2.76% bias.
+- **Rehearsal** (`python ml/eda/history_handoff.py`, part B). A model fitted on
+  the tests that ended before 1 Aug stands in for the shipped one; the upload is
+  Aug–Sep.
+
+  | run | refits | oil / water / gas WAPE on the 18 tests | same schemes from `train_table.parquet` |
+  |---|---|---|---|
+  | frozen | none | 1.58 / 3.27 / 4.67% | 1.58 / 3.27 / 4.67% |
+  | refit | September, +9 August tests | 1.83 / 3.32 / 4.45% | 1.83 / 3.32 / 4.45% |
+
+  - The app path and the independent computation agree, so the refit does what
+    it says.
+  - August daily rates are identical in both runs. September moves +0.74% on
+    average, −1.96% to +6.06% per well-day.
+- **The refit is not a guaranteed gain.** On this split it loses on oil (1.58 →
+  1.83%). Pooled over four cut-offs it gains (−0.44 [−0.67, −0.07], entry
+  below). Expect a small help in months 2–3 and none in month 1.
+- **Full-data behaviour is unchanged.** Our own Jan–Sep upload has no test after
+  the training period, so nothing is refitted: `predict_from_raw.py --data data`
+  still equals `vfm_submission.csv` exactly, `check_pipeline` is OK, and
+  `vfm.pkl` is untouched.
+- **Also fixed on the way:**
+  - the Data Quality table now takes text values;
+  - `ui/i18n.py` reads the app as UTF-8, so it passes on Windows (159 strings);
+  - the in-app guide (az / en / ru) and `ui/README.md` describe the refit and
+    the history.
+
+**Refitting on our own predictions (self-training) does nothing (22 Nov).** The
+test months come with inputs only, so Faig proposed refitting on our own
+predictions as synthetic labels. `python ml/eda/self_training.py` (~5 s) trains
+on the 67 tests of Jan–Jul and scores the 18 real tests of Aug–Sep.
+
+| scheme | rows added | oil WAPE | oil bias | change vs frozen |
+|---|--:|--:|--:|--:|
+| frozen | 0 | 1.58% | +0.08% | — |
+| synthetic, the held-out test windows | 18 | 1.58% | +0.08% | 0.000000 stb/d |
+| synthetic, month by month | 9 | 1.58% | +0.08% | 0.000000 stb/d |
+| synthetic, every flowing day | 608 | 1.58% | +0.08% | 0.000000 stb/d |
+| synthetic, daily × routing factors | 608 | 2.54% | +1.83% | up to 39 stb/d |
+| real August labels, then September | 9 | 1.83% | +0.18% | up to 29 stb/d |
+
+- **A synthetic row is the model's own prediction, so it has zero residual and
+  the least-squares refit returns the same coefficients.** The predictions are
+  identical to six decimals in all three forms.
+- **A synthetic row only moves the fit if its label differs from the model's own
+  prediction.** Scaling the labels by the routing factors does that, and it
+  pulls the model toward the factor: oil WAPE 1.58 → 2.54% on the real tests.
+- **At this cut-off even the real August labels did not help** (September oil
+  WAPE 1.06 → 1.57%, 9 tests). It is one split with 9 tests, against the pooled
+  −0.44 [−0.67, −0.07] of `rolling_refit.py`; the entry below keeps that caveat.
+- **Decision: the frozen model is what runs on the test months.** Closed; see
+  `NEXT_STEPS.md` → tried and rejected.
+
+**Frozen model vs refitting as new tests arrive (22 Nov): refitting wins on oil
+and gas; not built, and moot without labels.** `python ml/eda/rolling_refit.py` (~10 s). For a cut-off
+date and the three months after it, three schemes, none seeing the future:
+
+- **frozen:** one model, fitted on tests that ended before the cut-off;
+- **monthly:** refitted at each month start (Faig's proposal);
+- **per-test:** refitted before each scored test.
+
+Cut-off 1 July (fit on Jan–Jun, 28 tests of Jul–Sep scored):
+
+| scheme | oil WAPE | water WAPE | gas WAPE | oil bias |
+|---|--:|--:|--:|--:|
+| frozen | 2.76% | 3.07% | 5.29% | +0.46% |
+| monthly | 2.30% | 2.94% | 4.63% | +0.33% |
+| per-test | 2.24% | 3.04% | 4.57% | +0.22% |
+
+- **The gap is real for oil and gas, absent for water.** WAPE(per-test) −
+  WAPE(frozen), well-cluster bootstrap 95%: oil −0.52 [−1.02, −0.11], gas
+  −0.72 [−1.29, −0.23], water −0.03 [−0.74, +0.42].
+- **It grows with lead time.** Pooled over cut-offs 1 Apr – 1 Jul, the frozen
+  oil WAPE drifts 2.72 → 3.26 → 3.46% over months 1–3 (bias +0.31 → +0.79%).
+  The refitted model stays flat at 2.77 → 2.74 → 2.55%. Month 1 gains nothing.
+- **It does not shrink with a longer training period:** −0.36, −0.47, −0.43,
+  −0.52 points for cut-offs April to July.
+- **Monthly and per-test are tied** (oil gap −0.02 [−0.15, +0.21]). Monthly is
+  simpler and gives a daily series with fewer jumps.
+- **Limits.**
+  - The labels are test-routed and the fits carry no routing correction, so
+    this compares schemes and does not predict a score.
+  - It does not touch the λ drift: new tests are still test-routed.
+  - It needs measured rates for the test months. Faig reports the test data
+    carry inputs only, so this cannot run on them.
+  - At a 1 Aug cut-off (2 months, 18 tests, `self_training.py`) the refit with
+    real labels did not help: oil WAPE 1.58 → 1.83%.
+
+**The demo path now time-integrates shut-in days, like the scored file (22 Nov).**
+
+- **Before:** `ml/predict_from_raw.py` and `ui/pipeline.py` predicted partial
+  shut-in days from the daily mean. Only `fit_vfm.py` time-integrated them
+  (`ml/src/daily_predict.py`), so on those days the app was 30% off on average
+  and up to 68%.
+- **Why it mattered:** the test months will contain shut-ins, since PTA needs
+  them.
+- **The fix:** both paths now call
+  `daily_predict.integrate_shut_in_days()`, the same swap `fit_vfm.py` makes;
+  `fit_vfm.py` itself is untouched.
+- **Result:** `predict_from_raw.py --data data` reproduces
+  `ml/outputs/vfm_submission.csv` **exactly** (2,730 rows, max diff 0.0; 15
+  days integrated). In the rehearsal, GL-08's shut-in days match the scored
+  file to 0.1 stb/d.
+- **App check:** `check_pipeline` is OK and lost oil is unchanged.
+
+**Training-period history for uploads of later months (22 Nov).** The test data
+hold only the next three months, so the app and `ml/predict_from_raw.py` now
+carry what Jan–Sep can still give them.
+
+- **What is stored:** `ml/models/history/` (100 KB), built by
+  `python ml/build_history.py` from the scored Task 1 file (the rates PTA uses).
+  - `daily_rates.csv`: every well-day from 1 Jan to 30 Sep;
+  - `well_state.csv`: per well as of 1 Oct, the cumulative oil, last choke
+    setting, last daily rates, fluid averages of the last three tests, and the
+    last training test date.
+- **What it fixes,** through `ml/src/history.py`. Uploaded days always win.
+  - **Opening choke.** Without opening rows in the upload, a well had no choke
+    until its first change. Every such day was wrong or missing, and a well with
+    no change in the upload had none at all. `clean.clean_high_freq(hist=...)` now
+    places the last known setting, but only if the upload starts after the
+    history ends.
+  - **PTA producing time.** N_p no longer drops Jan–Sep oil, which is 2.5–10.3%
+    of cumulative.
+  - **Shut-in on the upload's first day.** The pre-shut-in rate now comes from
+    the history.
+  - **Datum correction.** Fluid properties fall back to the history if the
+    upload has no tests for a well.
+  - **Self-check label.** The accuracy check on uploaded tests is now labelled
+    `held-out` / `in-sample` / `mixed` (CLI, and the app's oil-error help text).
+- **Rehearsal** (`python ml/eda/history_handoff.py`, ~2 min). History is cut at
+  31 Jul. The upload is Aug–Sep, with choke events from 1 Aug only, so no well
+  has an opening row.
+
+  | | with history | no history |
+  |---|---|---|
+  | 1 Aug, 10 wells within 0.5% of the scored file | **10/10** | 0/10 |
+  | flowing well-days vs scored file, p99 / max | **0.017% / 0.02%** | 58.3% / 63.2% |
+  | GL-08 N_p | 5.33 M stb | 5.02 M stb (−5.8%) |
+  | GL-08 k, skin vs submission | 43.07, −1.589: exact | exact |
+
+  The choke fallback is the fix that matters. N_p barely moves k and skin,
+  because Δt ≪ t_p (72 h against ~88,000 h). It still makes the reported N_p
+  and t_p right.
+- **Full-data behaviour is unchanged:**
+  - `python ui/check_pipeline.py data` is OK, 6 build-ups, PTA matches the
+    submission;
+  - `predict_from_raw.py --data data` writes 2,730 rows and labels its
+    self-check in-sample.
 
 **λ overfitting check (22 Nov): negligible, unless the hidden split is by well.**
 `python ml/eda/lambda_split.py` (~1 min) tests whether tuning λ on the
@@ -836,8 +1012,9 @@ Artefacts (regenerate — `data/processed/` is gitignored):
 This file records what *is*; that file records what is *planned*.
 
 **Phase 1 is closed at 21.0200; PTA parameters at 8.3840 / 20** (result file,
-plot folder and notebook all done). What remains: Streamlit UI (10 pts) and the
-presentation (10 pts). The app runs the same PTA on uploaded data
+plot folder and notebook all done). The app and the deck exist. What remains:
+the final leaderboard round, the pitch TODOs, and rehearsing the demo on an
+upload of later months. The app runs the same PTA on uploaded data
 (`ui/pipeline.py`), and `python ui/check_pipeline.py data` confirms it matches
 `ml/outputs/pta_submission.csv` (k within 0.5%, skin within 0.02). **Any change
 to the submitted PTA must be mirrored in `ui/pipeline.py`**, or the app and the
@@ -911,6 +1088,21 @@ leaderboard; shape and variance questions are what time-forward is for.
     overwrite the deliverable.
   - Full procedure: RUNBOOK → *After a VFM win*.
 
+- **`ml/models/history/` is built from `lam0.80_21.0200_SHIPPED.csv`**, the same
+  rates PTA uses. Rebuild it with `python ml/build_history.py` only if those rates
+  or the raw training data change. Never hand-edit it, and never build it from an
+  upload. **Re-run it after any `fit_vfm.py` run**: it asserts that
+  `train_tests.csv` still reproduces `vfm.pkl`.
+
+- **The demo path refits monthly on uploaded tests, in memory only** (Faig,
+  22 Nov). This is the one exception to "never train in the app".
+  - Nothing but `fit_vfm.py` writes `ml/models/vfm.*`.
+  - The routing factors and λ are never refitted.
+  - Monthly was chosen over after-every-test because the two are tied on our
+    data (oil WAPE gap −0.02 [−0.15, +0.21]) and monthly is simpler.
+  - Do not replace real labels with our own predictions; that refit is a no-op
+    (`ml/eda/self_training.py`).
+
 - **Only 6 of 10 wells admit PTA.** GL-03, GL-05, GL-07, GL-09 never close their
   choke. GL-02 (5.7 h) and GL-06 (8.0 h) are short — radial flow may not develop,
   so expect an uncertain Horner slope there.
@@ -942,6 +1134,23 @@ leaderboard; shape and variance questions are what time-forward is for.
   See `ml/outputs/feature_report.md`.
 
 ## Open risks
+
+- **What is scored on the test data: daily rates, or the well-test rates?** The
+  test `well_tests.csv` carries measured rates (Faig).
+  - The app's daily rates carry the routing correction, which is right for
+    normal-production days.
+  - Its accuracy check on test windows is computed without the correction.
+  - The export has daily rates only. If the judges compare our daily rate **on a
+    test day** with that day's test rate, the correction shows as a +1.4–4.6% offset
+    per well. A second export of test-window rates without the correction would
+    cover that case (not built). Ask the organisers.
+- **The monthly refit can move a well's rates by several percent** (September in
+  the rehearsal: −2.0% to +6.1% per well-day). It lost on the one split where it
+  could be scored against a frozen model end to end (oil WAPE 1.58 → 1.83%, 18
+  tests) and won pooled over four cut-offs. `--frozen` / `refit=False` is the
+  fallback if the demo data behave badly.
+- `python ui/i18n.py` fails on Windows unless `PYTHONUTF8=1` (it reads the app
+  in cp1251). With UTF-8 it passes, 159 strings. Pre-existing; the owner is Tural.
 
 - **`ml/outputs/vfm_submission.csv` is not the file that scored 21.0200.**
   - It differs from `submitted/lam0.80_21.0200_SHIPPED.csv` by ±0.1 on 1,637 of

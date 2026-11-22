@@ -33,7 +33,7 @@ hesablayır (virtual axın ölçmə, **VFM**) və hər bağlanmanı təzyiqin b�
 | `choke_events` | bəli | Ştuser dəyişiklikləri: `timestamp`, `well_name`, `choke_opening_pct` (0% = quyu bağlıdır) |
 | `reservoir_pvt` | bəli | Hər quyuya bir sətir: lay qalınlığı, məsaməlik, sıxılma, quyu radiusu, neftin həcm əmsalı və özlülüyü, doyma təzyiqi, datum, drenaj sahəsi |
 | `well_completion` | bəli | Hər quyuya bir sətir: manometrin dərinliyi, qazlift klapanı, NKB ölçüsü, kollektor, həll olmuş qaz amili, toplanmış neft |
-| `well_tests` | xeyr | Ölçülmüş sınaq debitləri. Onlara qarşı dəqiqlik yoxlaması əlavə edir |
+| `well_tests` | xeyr | Ölçülmüş sınaq debitləri. Onlara qarşı dəqiqlik yoxlaması əlavə edir, modelin öyrədilmə dövründən sonrakı sınaqlar isə modeli ayba-ay yeniləyir |
 
 - Fayl adına görə tanınır: adında `high`, `choke`, `pvt`, `completion` və ya `test` olması kifayətdir.
 - Excel faylları birinci vərəqdən oxunur. Hər fayl 1 GB-a qədər.
@@ -52,6 +52,12 @@ hesablayır (virtual axın ölçmə, **VFM**) və hər bağlanmanı təzyiqin b�
 - Bu məlumatda maşın öyrənməsini üstələdi. Cəmi 85 ölçülmüş debit olduqda fizika daha yaxşı ümumiləşir.
 - Quyu sınaqları adi hasilat günlərinə nisbətən təxminən 2,5% yüksək göstərir (sınaq separatoru daha
   aşağı təzyiqdə işləyir), gündəlik debitlər buna görə düzəldilir.
+- Yeni məlumat modeli aktual saxlayır. Yüklənən məlumatda modelin öyrədilmə dövründən sonrakı quyu
+  sınaqları olduqda, model hər ayın əvvəlində həmin aydan əvvəl bitmiş bütün sınaqlarla yenidən
+  qurulur. Heç bir gün öz ayının və ya sonrakı ayların sınağı ilə hesablanmır, model faylının özü isə
+  dəyişmir. Məlumat keyfiyyəti hansı ayların yenidən qurulduğunu göstərir.
+- Öyrədilmə dövründən sonra başlayan məlumat da həmin dövrdən istifadə edir: son məlum ştuser
+  vəziyyəti və indiyədək hasil edilmiş neft saxlanılan öyrətmə tarixçəsindən götürülür.
 
 **Quyu sınaqları (PTA).** Bağlanmalar ştuserin 0% olduğu yerdə tapılır. Hər bərpa əyrisi üçün:
 

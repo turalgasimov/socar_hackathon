@@ -284,7 +284,9 @@ Press R to reset it before you start. Slide 1 is blank on purpose (stand there w
 2. **Upload** the organisers' raw CSVs and press Run. About 60 s; narrate the
    data-quality story meanwhile.
 3. **VFM:** daily oil, water and gas per well, with the test dots on top.
-   Download the CSV.
+   Download the CSV. On the test data, "Oil error vs tests" is a true forecast
+   check: every test is scored by a model that had not seen it. Data Quality
+   lists the months the model was refitted on the new tests.
 4. **PTA:** list of shut-ins → Horner plot → k, skin, ΔP skin →
    interpretation. Show GL-01: k 105 md, skin +5.7, ΔP skin 117 psi, flow
    efficiency 57%, up to ~750 stb/d recoverable (upper bound).
@@ -393,7 +395,8 @@ already uses three KAPPA products** (Report.az, 26 Nov 2025), so we position as
 - [x] Deck in `pitch/deck/` (hook chart, physics-vs-ML bars, 2D field map, month calendar, well cross-section); single file and PDF in `pitch/`
 - [ ] TODO(us): QR code for the demo (PTA and lost-oil lines are on slides 7 and 9)
 - [ ] TODO(us): backup video
-- [ ] Ask the organisers: is the test data new days or new wells? Is the daily truth test-routed?
+- [x] Test data: the next three months of the same ten wells, with measured well tests (organisers). The app runs on that upload alone and refits monthly on the new tests (`python ml/eda/history_handoff.py`)
+- [ ] Ask the organisers: on the test data, are daily rates scored or the well-test rates? Is the daily truth test-routed?
 - [ ] Rehearse twice with a stopwatch; the speech runs about 6:50 by word count, so drop the optional demo line if it runs over
 
 ## Slide rules
