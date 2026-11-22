@@ -1,6 +1,6 @@
-data.zip
 data/processed/
 __pycache__/
 *.pyc
 .claude/
 .vscode/
+*.zip
