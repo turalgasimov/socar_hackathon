@@ -78,6 +78,7 @@ From the repository root:
 ui/.venv/bin/python ui/check_pipeline.py data   # full run on the raw CSVs: rates, PTA vs the submitted file, exports
 ui/.venv/bin/python ui/i18n.py                  # every screen text has an Azerbaijani and a Russian version
 ui/.venv/bin/python ui/store.py                 # sign-in, per-user history and stored files
+ui/.venv/bin/python ui/check_app.py             # the screens: sample run, every result page, 3 languages (~2 min)
 ui/.venv/bin/python ml/eda/history_handoff.py   # an upload of later months only: history, monthly refit (~3 min)
 ```
 
@@ -110,6 +111,7 @@ Each prints a line starting with `OK` when it passes.
 | `store.py` | Sign-in, per-user history, stored files |
 | `style.css` | Tiles, sidebar and sign-in styling (SOCAR colours) |
 | `check_pipeline.py` | End-to-end check against the submitted results |
+| `check_app.py` | Headless check that every result page draws, in all three languages |
 | `.streamlit/config.toml` | Light and dark themes, upload limit |
 
 ## Known limits

@@ -91,6 +91,15 @@ Rebuild and submit with one command:
 python ml/fit_vfm.py        # writes ml/outputs/vfm_submission.csv
 ```
 
+Load the trained model (`ml/models/vfm.pkl`). The pickle holds a `VFMModel`,
+whose class lives in `ml/src/vfm.py`, so that folder must be on the path first:
+
+```python
+import sys; sys.path.insert(0, "ml/src")
+from vfm import VFMModel, build_inputs
+model = VFMModel.load("ml/models/vfm.pkl")      # predict with model.predict(build_inputs(table))
+```
+
 The evaluation data are the next three months of the same wells. The demo path
 (`ml/predict_from_raw.py`, the app) runs on such an upload alone: the stored
 training history supplies the opening choke setting and the PTA producing time,

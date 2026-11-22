@@ -340,6 +340,48 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 ## Done
 
+**Deliverables audit against `docs/Deliverables.pdf` (22 Nov): everything is
+present.**
+
+| # | Required | Checked |
+|---|---|---|
+| 1 | Result files, Phase 1 and 2 | `vfm_submission.csv` (2,730 × 5, template columns, no NaN, no negatives) + `vfm_daily_predictions.xlsx`; `pta_submission.csv` (6 × 6, template columns) + `pta_results.xlsx` (4 sheets) |
+| 2 | Model in `.pkl` | `ml/models/vfm.pkl` loads: 85 tests, per-well routing factors. It needs `ml/src` on the path (the class is `vfm.VFMModel`); the README now shows the three lines |
+| 3 | Notebook, all cells run | `VFM_Phase1.ipynb`: 45 cells, 19 code, 0 not run, 0 errors. `PTA_Phase2.ipynb`: 25 cells, 12 code, 0 not run, 0 errors |
+| 4 | Folder of PTA plots | `ml/outputs/figures/pta/`: 9 PNG + README + 3 reference tables |
+
+- **App requirements, all seven:** upload (Load Data), field measurements (Field
+  Data), VFM rates (Production Rates), well-test plots (Horner, log-log,
+  history), reservoir properties (k, skin, ΔP skin, slope), interpretation
+  (plain-language reading per build-up), export (CSV and Excel for VFM and PTA,
+  one workbook, HTML report).
+- **The screens are now checked headlessly:** `python ui/check_app.py` (~2 min)
+  runs the sample data through the Load page (93 s here) and draws seven result
+  pages in English, Azerbaijani and Russian with no exception.
+- **Not requirements, but visible to a judge:**
+  - `VFM_Phase1.ipynb` has text outputs only, no figures (the PTA notebook has
+    figures in 3 cells);
+  - the VFM result file is not byte-identical to the scored one (Open risks).
+
+**VFM notebook: section 8, "The three test months" (22 Nov).** The notebook said
+nothing about how the model behaves past the end of training. `ml/build_notebook.py`
+now adds four computed parts, all from modules in the repo:
+
+- **Frozen vs monthly refit by month ahead** (`rolling_refit.run()`): frozen oil
+  WAPE 2.72 → 3.26 → 3.46%, refit 2.72 → 2.76 → 2.52%. Gap over three months:
+  oil −0.46 [−0.73, −0.09], water −0.24 [−0.53, +0.24], gas −0.46 [−0.80, +0.03].
+- **The refit rehearsed in the notebook** through `rolling.monthly_refit()`: one
+  refit for September on the 9 August tests; oil / water / gas WAPE 1.58 / 3.27 /
+  4.67% frozen against 1.83 / 3.32 / 4.45% refitted. The text says plainly that
+  this one split does not favour the refit on oil.
+- **Self-training is a no-op:** largest coefficient change 2.0e-12 after adding
+  18 self-labelled tests.
+- **The history store:** what it holds and the rehearsal result.
+
+The notebook's check against `vfm_submission.csv` still passes, with the same 10
+partial shut-in days differing. The monthly-vs-frozen gap quoted here (−0.46)
+is the shipped scheme; the −0.44 in the entry below is per-test vs frozen.
+
 **Monthly refit on uploaded well tests: built into the demo path (22 Nov).** The
 test data carry measured well tests for the new months (Faig, corrected the same
 day). Faig's decision: time-forward, month by month.
@@ -472,7 +514,7 @@ Cut-off 1 July (fit on Jan–Jun, 28 tests of Jul–Sep scored):
 hold only the next three months, so the app and `ml/predict_from_raw.py` now
 carry what Jan–Sep can still give them.
 
-- **What is stored:** `ml/models/history/` (100 KB), built by
+- **What is stored:** `ml/models/history/` (125 KB with the training tests), built by
   `python ml/build_history.py` from the scored Task 1 file (the rates PTA uses).
   - `daily_rates.csv`: every well-day from 1 Jan to 30 Sep;
   - `well_state.csv`: per well as of 1 Oct, the cumulative oil, last choke

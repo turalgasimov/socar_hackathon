@@ -420,6 +420,158 @@ with warnings.catch_warnings(record=True) as caught:
 print(r[["well_name", "oil_rate_stbd", "unseen_well"]].round(1).to_string(index=False))
 print(f"\\nwarning: {str(caught[0].message)[:95]}..." if caught else "no warning")"""),
 
+    MD("""## 8. The three test months
+
+The evaluation data are the **next three months of the same ten wells**:
+per-minute sensors, choke events and measured well tests. Section 4 asked
+whether the model can predict a test it has not seen. The question here is how
+it holds up month after month past the end of training, and whether it should
+stay as it is.
+
+### A frozen model drifts; a monthly refit does not
+
+For a cut-off date and the three months after it, two schemes, neither of which
+sees the future:
+
+- **frozen**: one model, fitted on every test that ended before the cut-off;
+- **monthly refit**: refitted at the start of each month on every test that
+  ended before that month.
+
+Four cut-offs, 1 April to 1 July, give each month ahead about 36 scored tests."""),
+
+    CODE("""import rolling_refit as RR
+
+rr = RR.run()
+by_lead = []
+for lead, g in rr.groupby("lead"):
+    a = g.real_oil.values
+    by_lead.append({"month ahead": lead, "tests": len(g),
+                    "frozen WAPE %": wape(a, g.frozen_oil.values),
+                    "frozen bias %": bias(a, g.frozen_oil.values),
+                    "refit WAPE %": wape(a, g.monthly_oil.values),
+                    "refit bias %": bias(a, g.monthly_oil.values)})
+print("oil rate, by month after the cut-off")
+print(pd.DataFrame(by_lead).to_string(index=False, formatters={
+    "frozen WAPE %": "{:.2f}".format, "refit WAPE %": "{:.2f}".format,
+    "frozen bias %": "{:+.2f}".format, "refit bias %": "{:+.2f}".format}))
+print("\\nWAPE(monthly refit) - WAPE(frozen) over the three months, in points,")
+print("with a 95% interval from resampling wells:")
+for p in ("oil", "water", "gas"):
+    gap, lo, hi = RR.gap_ci(rr, p, "monthly", "frozen")
+    print(f"  {p:5s} {gap:+.2f} [{lo:+.2f}, {hi:+.2f}]")"""),
+
+    MD("""The frozen model's oil WAPE climbs from 2.72% to 3.46% over three months and
+its bias from +0.31% to +0.79%. The refitted model stays between 2.5% and 2.8%.
+The first month is identical by construction, because no new test has ended yet.
+
+Over the three months the refit is worth about half a point of oil WAPE, and
+that interval excludes zero. Gas gains the same amount and water half of it,
+but those two intervals include zero.
+
+### What the demo path does with it
+
+`ml/src/rolling.py`, used by `ml/predict_from_raw.py` and the app. On an upload
+whose well tests are newer than the training period:
+
+- the first month is predicted by the shipped model, unchanged;
+- each later month is predicted by a model refitted on the 85 training tests
+  plus every uploaded test that ended before that month;
+- the refit is the same two least-squares fits, held in memory. `vfm.pkl` is
+  never written, and the routing factors of section 5 are carried over
+  unchanged: a well test recalibrates the choke law and the water cut, not the
+  routing;
+- a new test whose measured liquid rate is more than 1.5 times away from what
+  the model predicts for its own sensors is left out and reported;
+- an upload with no newer test, such as our own January to September data, gets
+  the shipped model itself, so its output is the submitted file.
+
+The cell below rehearses this on the last split the data allow: a stand-in
+model fitted on the tests that ended before 1 August, with the August and
+September tests as the upload."""),
+
+    CODE("""import rolling
+from build_history import train_rows
+
+rows = train_rows(None)            # the 85 training tests: model inputs + measured oil and water
+cut = pd.Timestamp("2025-08-01")
+old, new = (rows.end < cut).to_numpy(), (rows.start >= cut).to_numpy()
+stand_in = VFMModel(routing_factor=dict(ROUTING_FACTORS)).fit(
+    rows[old], rows.oil_rate_stbd.values[old], rows.water_rate_stbd.values[old])
+hist = {"train": rows[old].reset_index(drop=True),
+        "state": pd.DataFrame({"train_end": [rows.start[old].max()]})}
+Xt = rows[new].reset_index(drop=True)
+upload = pd.DataFrame({"well_name": Xt.well_name, "test_start": Xt.start, "test_end": Xt.end,
+                       "oil_rate_stbd": Xt.oil_rate_stbd, "water_rate_stbd": Xt.water_rate_stbd})
+rolled, rep = rolling.monthly_refit(stand_in, hist, Xt, upload, np.ones(len(Xt), bool),
+                                    pd.date_range(cut, "2025-09-30"))
+print(f"stand-in model: {old.sum()} tests; upload: {new.sum()} tests")
+print("refits:", rolling.describe(rep))
+
+# a test is a test-separator rate, so it is compared without the routing correction
+real = {"oil": Xt.oil_rate_stbd.values, "water": Xt.water_rate_stbd.values,
+        "gas": tr.gas_rate_mscfd.values[new]}
+pred = {name: rolling.unrouted(m).predict(Xt) for name, m in [("frozen", stand_in), ("monthly refit", rolled)]}
+print()
+for name, p in pred.items():
+    print(f"{name:14s} WAPE  oil {wape(real['oil'], p.oil_rate_stbd.values):.2f}%   "
+          f"water {wape(real['water'], p.water_rate_stbd.values):.2f}%   "
+          f"gas {wape(real['gas'], p.gas_rate_mscfd.values):.2f}%")
+aug = (Xt.start < "2025-09-01").to_numpy()
+print("\\nAugust tests predicted by the unchanged model:",
+      bool(np.allclose(pred["frozen"].oil_rate_stbd[aug], pred["monthly refit"].oil_rate_stbd[aug])))"""),
+
+    MD("""One refit, for September, on the nine August tests. August is predicted by
+the unchanged model, so no day is ever predicted with a test from its own month.
+
+On this one split the refit does not help oil (1.58% to 1.83%, 18 tests) and
+helps gas (4.67% to 4.45%). A single split of 18 tests is within noise, which is
+why the pooled table above is the evidence, and why the refit can be switched
+off (`--frozen`). `python ml/eda/history_handoff.py` runs the same rehearsal
+end to end through the app's back end, from raw CSVs, and gets the same numbers.
+
+### Refitting on our own predictions would do nothing
+
+If the new months came without measured rates, the tempting move would be to
+refit on the model's own predictions. It cannot work. A self-labelled row lies
+exactly on the fitted surface, so it has zero residual and the least-squares
+solution does not move."""),
+
+    CODE("""p = rolling.unrouted(stand_in).predict(Xt)
+both = pd.concat([rows[old], Xt], ignore_index=True)
+self_fit = VFMModel().fit(both, np.r_[rows.oil_rate_stbd.values[old], p.oil_rate_stbd.values],
+                          np.r_[rows.water_rate_stbd.values[old], p.water_rate_stbd.values])
+change = max(np.abs(self_fit.choke_coef - stand_in.choke_coef).max(),
+             np.abs(self_fit.wc_coef - stand_in.wc_coef).max())
+print(f"largest coefficient change after adding {len(Xt)} self-labelled tests: {change:.1e}")"""),
+
+    MD("""### What an upload of later months takes from the training period
+
+An upload that starts on 1 October holds no January to September rows, yet
+three things depend on them. `ml/models/history/` (about 125 KB, built by
+`ml/build_history.py`) keeps them:
+
+- **the opening choke setting.** `choke_events.csv` is an event log. A well
+  with no row at the start of the upload would have no choke until its first
+  change, and a well with no change at all would have none;
+- **the oil produced so far,** for the PTA producing time. Without it the
+  cumulative is 2.5% to 10.3% short;
+- **the rate on the last training day,** for a shut-in on the upload's first day.
+
+`python ml/eda/history_handoff.py` rehearses it: history cut at 31 July, an
+August to September upload with no opening choke rows. With the history all ten
+wells are within 0.5% of the scored file on the first day and every flowing day
+is within 0.02%. Without it no well is right on the first day and errors reach
+63%. GL-08's permeability and skin reproduce the submission either way, because
+the build-up lasts 72 hours against a producing time near 88,000 hours."""),
+
+    CODE("""import history
+
+store = history.load()
+print(store["state"][["cum_oil_stb", "last_choke_pct", "last_choke_time",
+                      "last_oil_rate_stbd"]].round(1).to_string())
+print(f"\\ntraining tests stored for the refit: {len(store['train'])}; "
+      f"the last one started {history.train_end(store):%Y-%m-%d}")"""),
+
     MD("""## Summary
 
 | phase | R² | MAPE | WAPE | bias |
@@ -441,7 +593,9 @@ whole relationship.
 **Honest limits.** Gas keeps a +2% bias — every correction we tested cost more
 variance than it removed. The model does not generalise to wells it was not
 fitted on. And all 85 labels were measured under test-separator routing, which
-sits ~2.6% away from normal production conditions.
+sits ~2.6% away from normal production conditions. Past the end of training a
+frozen model drifts (oil WAPE 2.7% to 3.5% over three months); the monthly
+refit holds it near 2.5–2.8%, and it needs the new months' well tests to do so.
 
 Phase 2 (PTA) is in a separate notebook."""),
 ]
