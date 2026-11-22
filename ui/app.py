@@ -339,7 +339,8 @@ def page_load():
     store.log(ss.user, "analysis", t("{source}: {wells} wells, {days} well-days, {shutins} build-ups").format(
         source=name, wells=len(result["wells"]), days=f"{len(result['rates']):,}",
         shutins=sum(plot is not None for _, plot in result["pta"])), data_key=key)
-    ss.result, ss.exports, ss.source, ss.data_key, ss.view = result, exports, source, key, "home"
+    # land on the first result an engineer wants: the daily rates
+    ss.result, ss.exports, ss.source, ss.data_key, ss.view = result, exports, source, key, "rates"
     st.rerun()
 
 
@@ -595,7 +596,7 @@ def plain(text: str) -> str:
 def reopen(key: str, source: str):
     if key in analysed():
         ss.result, ss.exports, ss.source = analysed()[key]
-        ss.data_key, ss.view = key, "home"
+        ss.data_key, ss.view = key, "rates"
     else:                                   # analyse the stored files again
         ss.view, ss.run = "load", (key, source)
 

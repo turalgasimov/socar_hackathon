@@ -8,7 +8,7 @@ well (virtual flow metering, **VFM**), and reads every shut-in as a pressure bui
 2. **Load Data.** Drop in the raw files, CSV or Excel. The checklist under the upload box turns green
    for each file it recognises. Or click **Sample Data** on Home to run the hackathon field.
 3. **Run analysis.** Cleaning, rate prediction and well-test analysis take about 30 seconds for
-   10 wells over 9 months. You land back on Home and the tiles unlock.
+   10 wells over 9 months. The app then opens on **Production Rates**, and every page unlocks.
 4. **Read the results.** Every page has the menu on the left.
    - **Production Rates:** daily oil, water and gas per well. Dots are measured well tests, when the
      upload includes them.

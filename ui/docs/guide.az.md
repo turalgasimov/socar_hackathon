@@ -9,7 +9,8 @@ hesablayır (virtual axın ölçmə, **VFM**) və hər bağlanmanı təzyiqin b�
    tanınan hər fayl yaşıl olur. Və ya Ana səhifədə **Nümunə məlumat** düyməsini basın: hakaton yatağı
    işə düşür.
 3. **Analizi başlat.** Təmizləmə, debitlərin hesablanması və quyu sınaqlarının analizi 10 quyu və
-   9 ay üçün təxminən 30 saniyə çəkir. Sonra Ana səhifəyə qayıdırsınız və plitələr açılır.
+   9 ay üçün təxminən 30 saniyə çəkir. Sonra tətbiq **Hasilat debitləri** səhifəsində açılır və bütün
+   bölmələr aktivləşir.
 4. **Nəticələrə baxın.** Hər səhifənin solunda menyu var.
    - **Hasilat debitləri:** hər quyu üzrə gündəlik neft, su və qaz. Nöqtələr ölçülmüş quyu
      sınaqlarıdır (yüklənibsə).

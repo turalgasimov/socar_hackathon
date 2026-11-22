@@ -74,7 +74,7 @@ test separator, so wellhead pressure reads up to thirty psi lower than
 on a normal day. We measured that effect four independent ways. They agree:
 two and a half percent.
 
-[DEMO] Results appear: the tiles light up. Open Production Rates.
+[DEMO] Results appear: the app opens on Production Rates by itself.
 
 Done. Every well, every day: oil, water and gas. The dots are the real well
 tests; the line is our model, filling the days in between.

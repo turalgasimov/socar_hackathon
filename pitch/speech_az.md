@@ -82,7 +82,7 @@ Bir tələni tutduğumuz üçün isə xüsusilə fəxr edirik. Quyu testi zaman�
 yönəlir və quyuağzı təzyiq adi gündən otuz psi-yə qədər aşağı olur. Bu effekti dörd müstəqil üsulla
 ölçdük və hamısı eyni nəticəni verdi: iki yarım faiz.
 
-> **[DEMO]** Nəticələr görünür və plitələr açılır. "Hasilat debitləri" bölməsini açın.
+> **[DEMO]** Nəticələr görünür: tətbiq özü "Hasilat debitləri" səhifəsində açılır.
 
 Hazırdır. Hər quyu üçün, hər gün neft, su və qaz debiti var. Nöqtələr real quyu testləridir, xətt
 isə aradakı günləri dolduran modelimizdir.

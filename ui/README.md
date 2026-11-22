@@ -76,8 +76,8 @@ Each prints a line starting with `OK` when it passes.
 2. **Load Data:** drop in `high_freq_data`, `choke_events`, `reservoir_pvt` and `well_completion`
    (CSV or Excel; `well_tests` is optional and adds an accuracy check), then **Run analysis**
    (about 30 s). Or click **Sample Data** on Home to run the hackathon field.
-3. The tiles unlock: **Production Rates**, **Well Tests**, **Generate Graph**, **Export**, **Field Data**,
-   **Data Quality**. Every page has the menu on the left; Home is the tile screen.
+3. The app opens on **Production Rates**, and **Well Tests**, **Generate Graph**, **Export**,
+   **Field Data** and **Data Quality** unlock. Every page has the menu on the left; Home is the tile screen.
 4. **History** lists your uploads, analyses and downloaded files, and reopens or re-downloads them.
 5. **Settings** (top right on Home, bottom left elsewhere): dark or light, Azerbaijani, English or Russian.
    Remembered per browser.
