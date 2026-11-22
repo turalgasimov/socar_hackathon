@@ -4,6 +4,7 @@ Virtual Flow Metering (VFM) and Pressure Transient Analysis (PTA) for ten
 gas-lifted wells, delivered through a single interactive workflow.
 
 - Challenge brief: [`docs/README.md`](docs/README.md)
+- **The deliverables, in one folder: [`submission/`](submission/)** (result files, model, notebooks, PTA plots)
 - Current status and next steps: [`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md)
 - Conventions and gotchas for contributors: [`agent/AGENTS.md`](agent/AGENTS.md)
 - Current plan and task ownership: [`agent/NEXT_STEPS.md`](agent/NEXT_STEPS.md)
@@ -68,6 +69,7 @@ ml/outputs/      figures, generated reports, submission files
 notebooks/       VFM_Phase1.ipynb · PTA_Phase2.ipynb
 ui/              Streamlit app (see ui/README.md)
 pitch/           deck, notes and speech
+submission/      copies of every deliverable in docs/Deliverables.pdf (python ml/make_submission.py)
 ```
 
 ## Baselines

@@ -294,6 +294,10 @@ the boundary test is in the notebook.
 From `docs/Deliverables.pdf` — the authoritative list, stricter than the brief
 in `docs/README.md`. Read it before assuming a deliverable is done.
 
+**All four are collected in [`submission/`](../submission/)**, as copies, with a
+README that maps each file to the list. `python ml/make_submission.py` rebuilds
+the folder; `--check` fails when a copy no longer equals its original.
+
 | # | Required | State |
 |---|---|---|
 | 1 | Result files for Phase 1 **and** Phase 2, CSV or Excel | **done** — VFM `ml/outputs/vfm_submission.csv`; PTA `ml/outputs/pta_submission.csv` + `pta_results.xlsx` (exact model match, **8.3840 / 20**, identical to the scored file). Both template-exact |
@@ -339,6 +343,28 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 | — | Presentation | deck, notes and speech in `pitch/`; open TODOs in `pitch/PITCH.md` |
 
 ## Done
+
+**`submission/`: every deliverable in one folder (22 Nov).** Built by
+`python ml/make_submission.py`: 21 files, 4.9 MB.
+
+| folder | files |
+|---|---|
+| `1_results/` | `vfm_submission.csv`, `vfm_daily_predictions.xlsx`, `pta_submission.csv`, `pta_results.xlsx` |
+| `2_model/` | `vfm.pkl` |
+| `3_notebooks/` | `VFM_Phase1.ipynb`, `PTA_Phase2.ipynb` |
+| `4_pta_plots/` | 9 PNG, the plot README, 3 reference tables |
+| (root) | `README.md`: each file against the list, how to load the model, where the app is |
+
+- **They are copies.** The originals stay in `ml/outputs/`, `ml/models/` and
+  `notebooks/`, where the pipeline, the checks and the app read them.
+- **The script checks the originals before copying:** template columns, no NaN
+  or negative rates, one row per well per day, `horner_slope` ≥ 0, the model
+  loads with its routing factors, every notebook cell has run without an error,
+  and every build-up in the PTA file has its plot.
+- **`--check` compares every copy with its original** (line endings aside) and
+  fails on a stale, missing or unexpected file.
+- The README's load snippet was run from the repository root against
+  `submission/2_model/vfm.pkl` and predicts.
 
 **VFM notebook: six figures (22 Nov).** The notebook had tables and printed
 numbers only. `ml/build_notebook.py` now draws, through `ml/src/viz.py`:
