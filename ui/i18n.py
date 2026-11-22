@@ -65,6 +65,7 @@ TEXT = {
     "Run analysis": ("Analizi başlat", "Запустить анализ"),
     "Run on sample data": ("Nümunə məlumatla başlat", "Запустить на демо-данных"),
     "Analysing…": ("Analiz edilir…", "Идёт анализ…"),
+    "Starting the analysis…": ("Analiz başlayır…", "Анализ запускается…"),
     "Preparing downloads": ("Yükləmələr hazırlanır", "Подготовка файлов"),
     "Analysis failed": ("Analiz alınmadı", "Анализ не выполнен"),
     "The data could not be analysed: {e}. Check that each file has the expected columns.":

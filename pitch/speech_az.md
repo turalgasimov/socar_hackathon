@@ -1,6 +1,7 @@
 # SOCAR Hakaton 2026: çıxış mətni
 
-Yeddi dəqiqə, canlı demo daxil. Mətni əzbərləməyin. Fikri bilin və öz sözlərinizlə danışın.
+Yeddi dəqiqə, canlı demo daxil. Bunu əzbərləməyin: hər bölmənin **əsas fikrini** yadda saxlayın və
+öz sözlərinizlə danışın. Mətn sadəcə nümunədir.
 
 | İşarə | Mənası |
 |---|---|
@@ -9,192 +10,183 @@ Yeddi dəqiqə, canlı demo daxil. Mətni əzbərləməyin. Fikri bilin və öz 
 | *(fasilə)* | bir anlıq dayanın |
 | **[SPEAKER ?]** | kimin danışacağı hələ təyin olunmayıb |
 
-Texniki terminlər (VFM, PTA, Horner, skin, time-forward) komanda qaydası ilə ingiliscə qalır.
-Azərbaycanca variantın vaxtını məşqdə ölçün; ingiliscə variant söz sayına görə təxminən 6:50 çəkir.
-
 ## Çıxışdan əvvəl
 
-- Tətbiqi işə salın və daxil olun: `rizzman@socar.az` / `guessme`. Tətbiq birbaşa menyuda açılsın.
-- Təqdimatı açın: `pitch/RizzML_pitch.html` faylını iki dəfə klikləyin. Server lazım deyil.
-- Demo slaydını (5-ci) bir dəfə açın və orada da daxil olun. Giriş bütün çıxış boyu qalır.
-  Sonra 1-ci slayda qayıdın.
+- Tətbiqi işə salın və daxil olun: `rizzman@socar.az` / `guessme`.
+- Təqdimatı açın: `pitch/RizzML_pitch.html` faylını iki dəfə klikləyin.
+- Demo slaydını (5-ci) bir dəfə açın və orada da daxil olun. Sonra 1-ci slayda qayıdın.
 
 ---
 
 ## 0:00–0:50 · Giriş və problem · slayd 2–3 · [SPEAKER ?]
 
+*Əsas fikir: data çoxdur, ölçülmüş debit isə azdır.*
+
 > **[KLİK]** Boş 1-ci slayddan keçin: sual görünür və sayğac işə düşür.
 
-GL-04 quyusu dünən nə qədər neft hasil edib?
+GL-04 quyusu dünən nə qədər neft verib?
 
 *(fasilə)*
 
-Bunu heç kim bilmir. Nə biz bilirik, nə də bu quyuya cavabdeh olan mühəndis.
+Bunu heç kim bilmir. Nə biz, nə də bu quyuya baxan mühəndis.
 
-Doqquz ay ərzində bu yatağın on quyusu təxminən dörd milyon sensor ölçüsü qeydə alıb. Amma
-ölçülmüş hasilat debiti cəmi səksən beşdir. Bu, hər quyu üçün ayda təxminən bir test deməkdir.
+Doqquz ayda on quyu dörd milyon sensor ölçüsü yazıb. Amma ölçülmüş debit cəmi səksən beşdir. Yəni
+hər quyu ayda təxminən bir dəfə ölçülür.
 
-API-nin quyu sınağı təcrübəsinə, yəni MPMS 20.5 standartına görə, iki test arasındakı hər debit
-ölçülmür, sadəcə bölüşdürülür. Tədqiqatlar da göstərir ki, bu xəta ən çox ayda bir testdən iki
-testə keçəndə azalır.
+API standartına görə iki ölçmə arasındakı debit ölçülmür, sadəcə hesabla bölüşdürülür. Tədqiqatlar
+da göstərir ki, ayda bir ölçmədən ikiyə keçəndə xəta ən çox azalır.
 
 > **[KLİK]**
 
-Deməli, testlər arasında mühəndislər debiti ayrı-ayrı proqramlarda və cədvəllərdə təxmin edir.
-Görmədiyiniz şey isə itkiyə çevrilir.
+Yəni ölçmələr arasında mühəndislər debiti cədvəllərdə təxmin edir. Görmədiyin şeyi isə itirirsən.
 
-SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir. Ölçülən hər debit ya bir günə qədər çəkən
-quyu testi, ya da bahalı avadanlıq tələb edir.
+SOCAR neftinin yarıdan çoxu qazlift quyularından gəlir. Hər ölçmə ya bir günə qədər çəkən test, ya
+da bahalı avadanlıq deməkdir.
 
 ## 0:50–1:05 · Həll · slayd 4
 
+*Əsas fikir: mövcud sensorlardan hər gün debit, yeni avadanlıq lazım deyil.*
+
 > **[KLİK]**
 
-RizzML SOCAR-ın artıq quraşdırdığı sensorlardan hər quyu üçün gündəlik debit çıxarır. Quyunun hər
-bağlanmasını isə lay diaqnozuna çevirir.
+RizzML SOCAR-ın artıq qoyduğu sensorlardan hər quyunun gündəlik debitini hesablayır. Quyu
+bağlananda isə layın vəziyyətini göstərir.
 
-Bu, SOCAR-ın öz serverində işləyən bir brauzer tətbiqidir. Heç bir yeni avadanlıq lazım deyil.
+Bu, SOCAR-ın öz serverində işləyən sadə bir brauzer tətbiqidir. Yeni avadanlıq lazım deyil.
 
 ## 1:05–3:30 · Canlı demo · slayd 5 (tətbiq)
 
-> **[KLİK]** Tətbiq slaydın içində açılır. Ehtiyat variant: ikinci noutbuk və ya QR kod.
+*Əsas fikir: xam fayl girir, bir dəqiqəyə nəticə çıxır.*
 
-İndi bunu sizin verdiyiniz test datası üzərində göstərim.
+> **[KLİK]** Tətbiq slaydın içində açılır. Ehtiyat: ikinci noutbuk və ya QR kod.
 
-Tətbiq mərkəzi serverdə işləyir. Mən sadəcə brauzerdən qoşuluram.
+İndi bunu sizin verdiyiniz data üzərində göstərim. Tətbiq serverdə işləyir, mən sadəcə brauzerdən
+qoşuluram.
 
-> **[DEMO]** "Məlumat yüklə": xam CSV fayllarını atın və "Analizi başlat" düyməsini basın.
+> **[DEMO]** "Məlumat yüklə": xam faylları atın və "Analizi başlat" düyməsini basın.
 
-Bunlar xam fayllardır, necə qeydə alınıbsa, eləcə. Analiz bir dəqiqəyə yaxın çəkir. Bu arada
-sistemin nəyi yoxladığını deyim, çünki bizə verilən datada heç nə göründüyü kimi deyildi.
+Bunlar xam fayllardır. Analiz bir dəqiqəyə yaxın çəkir. Bu arada deyim ki, datada heç nə göründüyü
+kimi deyildi.
 
-Bir faylda guya heç bir boş dəyər yox idi. Əslində isə yeddi mindən çox ölçü sadəcə bir koddur:
-mənfi doqquz yüz doxsan doqquz tam yüzdə iyirmi beş.
+Faylda guya boş dəyər yox idi. Amma yeddi mindən çox ölçü əslində "mənfi doqquz yüz doxsan doqquz"
+kodu idi.
 
-Bir quyu qaz debitini "min kub fut" başlığı altında kub metrlə yazmışdı. Bu, iyirmi səkkiz dəfəlik
-xəta deməkdir.
+Bir quyunun qaz debiti səhv vahidlə yazılmışdı və iyirmi səkkiz dəfə böyük görünürdü.
 
-*(İstəyə bağlı, demo ləngisə buraxın:)* Bundan başqa, iki min yarım təkrarlanan sətir, işarəsi tərsinə dönmüş dəyərlər və bir gecə var ki,
-on quyunun hamısı eyni anda susub. Bu, on sensorun birdən xarab olması deyil, data sisteminin
-nasazlığıdır.
+*(İstəyə bağlı, demo ləngisə buraxın:)* Bir gecə isə on quyunun hamısı eyni anda susmuşdu. Bu,
+sensor xətası yox, məlumat sisteminin nasazlığı idi.
 
-Bir tələni tutduğumuz üçün isə xüsusilə fəxr edirik. Quyu testi zamanı axın test separatoruna
-yönəlir və quyuağzı təzyiq adi gündən otuz psi-yə qədər aşağı olur. Bu effekti dörd müstəqil üsulla
-ölçdük və hamısı eyni nəticəni verdi: iki yarım faiz.
+Ən maraqlı tapıntımız isə budur: test vaxtı quyu başqa xəttə qoşulur və təzyiq bir az düşür. Buna
+görə testlər adi günlərdən təxminən iki yarım faiz yüksək göstərir. Bunu dörd ayrı üsulla
+yoxladıq və nəzərə aldıq.
 
 > **[DEMO]** Nəticələr görünür: tətbiq özü "Hasilat debitləri" səhifəsində açılır.
 
-Hazırdır. Hər quyu üçün, hər gün neft, su və qaz debiti var. Nöqtələr real quyu testləridir, xətt
-isə aradakı günləri dolduran modelimizdir.
+Hazırdır. Hər quyu üçün hər gün neft, su və qaz. Nöqtələr real ölçmələrdir, xətt isə aradakı
+günləri dolduran modelimizdir.
 
-> **[DEMO]** Soldakı menyudan "Quyu sınaqları" bölməsinə keçin.
+> **[DEMO]** Soldakı menyudan "Quyu sınaqları".
 
-İndi laya keçək. Quyunun hər bağlanması avtomatik tapılır: bu datada altı quyu bağlanıb. Bu,
-GL-01 quyusudur, aprel ayında üç gün bağlı qalıb.
+İndi quyu bağlanmalarına baxaq. Tətbiq onları özü tapır: bu datada altı quyu bağlanıb. Bu, GL-01
+quyusudur, üç gün bağlı qalıb.
 
-> **[DEMO]** Horner qrafikini göstərin.
-
-Əvvəlcə Horner qrafiki qurulur, sonra quyunun modeli bütün nöqtələrə uyğunlaşdırılır. Nəticə
-belədir: keçiricilik yüz beş millidarsi, skin üstəgəl beş tam onda yeddi, skinə görə itən təzyiq
-isə yüz on yeddi psi.
+Quyu bağlananda təzyiq yavaş-yavaş qalxır. Bu qalxmanın formasından layın keçiriciliyini və quyunun
+zədəli olub-olmadığını oxuyuruq.
 
 > **[DEMO]** "Şərh" bölməsini açın.
 
-Skinin müsbət olması o deməkdir ki, quyu zədələnib və potensialının cəmi əlli yeddi faizi ilə
-işləyir. Zədəni aradan qaldırsaq, quyu gündə yeddi yüz əlli barelə qədər əlavə neft verə bilər.
-Yəni bu quyu stimulyasiya üçün namizəddir.
+GL-01 zədələnib: potensialının cəmi əlli yeddi faizi ilə işləyir. Zədəni təmizləsək, gündə yeddi
+yüz əlli barelə qədər əlavə neft verə bilər. Yəni bu quyu təmir üçün ilk namizəddir.
 
-> **[DEMO]** Soldakı menyudan "İxrac" bölməsinə keçin.
+> **[DEMO]** Soldakı menyudan "İxrac".
 
-Bir kliklə hər iki hissənin nəticələrini Excel faylına və hesabata çıxarmaq olur.
+Bütün nəticələr bir kliklə Excel faylına və hesabata çıxır.
 
-> Test datasında model üçün yeni bir quyu olarsa, belə deyin: "Bu quyu model üçün yenidir, ona görə
-> tətbiq təxmin etmək əvəzinə onu ayrıca qeyd edir."
+> Yeni quyu çıxsa, deyin: "Bu quyu model üçün yenidir, ona görə tətbiq onu təxmin etmir, ayrıca
+> qeyd edir."
 
-## 3:30–5:20 · Metodologiya, nəticələr və quyu sınaqları · slayd 6–8 · [SPEAKER ?]
+## 3:30–5:20 · Metod, nəticələr və quyu sınaqları · slayd 6–8 · [SPEAKER ?]
 
-> **[KLİK]**
-
-Bu nəticələrə niyə inanmaq olar? Çünki maşın öyrənməsinə ədalətli şans verdik və o, uduzdu.
-
-Cəmi səksən beş ölçülmüş debitlə əlli səkkiz əlamətli reqressiya modeli beş faiz xəta verdi.
-Statistik baxımdan bu, keçən ayın testini sadəcə təkrarlamaqdan yaxşı deyil.
-
-Bizim fiziki modelimizin xətası isə təxminən iki yarım faizdir. Yəni o, iki dəfə daha dəqiqdir və
-bu fərq statistik cəhətdən etibarlıdır.
-
-Bütün nəticələr time-forward üsulu ilə alınıb: hər proqnoz yalnız keçmiş məlumata əsaslanır.
-
-Ən çox sevdiyimiz hissə isə budur: modelə heç bir fizika öyrətməmişdik. O, ştuser ölçüsü üçün iki
-tam yüzdə altı, təzyiq düşküsü üçün isə sıfır tam yüzdə qırx yeddi dərəcəsini özü tapdı. Dərslikdə
-bu rəqəmlər iki və yarımdır. Yəni model ştuserdən axın qanununu datadan özü yenidən kəşf etdi.
+*Əsas fikir: fizika maşın öyrənməsini uddu, xəta iki-üç faizdir.*
 
 > **[KLİK]**
 
-Yekun nəticələr belədir: neftdə xəta iki tam onda altı faiz, suda üç tam onda səkkiz faiz, qazda
-isə beş tam onda yeddi faizdir. Hər üç fazada R-kvadrat sıfır tam yüzdə doxsan doqquzdan yüksəkdir.
+Buna niyə inanmaq olar? Çünki maşın öyrənməsini də sınadıq və o, uduzdu.
 
-Məhdudiyyətlərimizi də açıq deyirik: model heç görmədiyi quyuda dəqiqliyini itirir. Ona görə
-tətbiq belə quyunu təxmin etmək əvəzinə ayrıca qeyd edir.
+Cəmi səksən beş ölçmə ilə maşın öyrənməsi modeli beş faiz xəta verdi. Bu, keçən ayın ölçməsini
+sadəcə təkrarlamaqdan yaxşı deyil.
+
+Bizim fiziki modelin xətası təxminən iki yarım faizdir, yəni iki dəfə dəqiqdir. Hər proqnozu da
+yalnız keçmiş məlumatla yoxladıq, gələcəyə baxmadan.
+
+Ən çox sevdiyimiz hissə isə budur: modelin rəqəmlərini biz vermədik, onları datadan özü tapdı. Və
+tapdığı rəqəmlər dərslikdəki ştuser qanunu ilə üst-üstə düşür.
 
 > **[KLİK]**
 
-İndi quyu sınaqlarına baxaq. Bu, datadakı altı bərpa əyrisinin hamısıdır, log-log diaqnostik
-qrafikdə. Nöqtələr ölçülmüş təzyiq və onun törəməsidir, xətlər isə hər quyunun bütün nöqtələrə
-uyğunlaşdırılmış modelidir. Uyğunluq xətası psi-nin onda birindən azdır, bu da ölçmə küyünə yaxındır.
+Yekun nəticə belədir: neftdə xəta iki tam onda altı faiz, suda üç tam onda səkkiz, qazda isə beş
+tam onda yeddi faizdir.
 
-Keçiricilik qırx üç ilə iki yüz doxsan beş millidarsi arasındadır. Üç quyu stimulyasiya olunub,
-üçü zədələnib, GL-01 və GL-10 isə qapalı sərhədə çatır. Modeli görmədiyi data üzərində də
-yoxladıq: GL-01-in ilk gününə uyğunlaşdırılan model sonrakı iki günü ölçmə küyü səviyyəsində
-proqnozlaşdırır.
+Model görmədiyi yeni quyuda zəifdir. Ona görə tətbiq belə quyunu ayrıca qeyd edir.
+
+> **[KLİK]**
+
+Bu isə altı bağlanmanın hamısıdır. Nöqtələr ölçülmüş təzyiqdir, xətlər isə bizim modelimizdir. Hər
+quyuda model ölçmə ilə demək olar ki, üst-üstə düşür.
+
+Üç quyu zədələnib, üçü isə yaxşı vəziyyətdədir. Modeli yoxlamaq üçün bir sınaq da etdik: GL-01-in
+yalnız ilk gününü verdik və model qalan iki günü düzgün proqnozlaşdırdı.
 
 ## 5:20–5:55 · Rəqabət və dəyər · slayd 9–10 · [SPEAKER ?]
 
-> **[KLİK]**
-
-Təxminən otuz məhsulu yoxladıq. Debit və quyu testi proqramları var, amma ayrı-ayrılıqda. Heç kim
-onları qazlift quyuları üçün, sizdə artıq olan sensorlar üzərində birləşdirmir. SOCAR isə artıq
-KAPPA-dan istifadə edir və bizim gündəlik debitlərimiz məhz onun ehtiyac duyduğu məlumatdır.
+*Əsas fikir: hamı yarısını edir, biz ikisini birləşdiririk.*
 
 > **[KLİK]**
 
-Bu, nə qazandırır? Hər gün, hər quyu üçün debit. Quyunun hər bağlanması skin rəqəminə çevrilir:
-PETRONAS bu yolla zədələnmiş quyuların axtarışını iki həftədən bir günə endirib. Burada isə
-zədələnmiş üç quyu gündə min dörd yüz yetmiş barelə qədər əlavə neft verə bilər, bu yuxarı
-həddir. Hamısı SOCAR şəbəkəsinin içində bir kompüterdə işləyir.
+Otuza yaxın məhsula baxdıq. Biri debit verir, digəri təzyiqi oxuyur, amma heç kim ikisini
+birləşdirmir. SOCAR artıq KAPPA işlədir, bizim gündəlik debitlərimiz isə məhz onun ehtiyac
+duyduğu məlumatdır.
+
+> **[KLİK]**
+
+Bu nə qazandırır? Hər gün, hər quyu üçün debit. Hər bağlanma zədəli quyunu göstərir: PETRONAS bu
+yolla axtarışı iki həftədən bir günə endirib. Burada isə üç zədəli quyu gündə min dörd yüz yetmiş
+barelə qədər əlavə neft verə bilər. Hamısı SOCAR-ın içində, bir kompüterdə işləyir.
 
 ## 5:55–6:15 · Komanda · slayd 11 · [SPEAKER ?]
 
+*Əsas fikir: hər birimiz üçün bir cümlə.*
+
 > **[KLİK]**
 
-Biz RizzML komandasıyıq. Rövşən Ağabəyov fizika olimpiadasının qalibidir və "PI-ML and Physical
-Type Curves for Water-Injection Wells" məqaləsinin müəllifidir. Tural Qasımov CanSat qlobal
-finalçısıdır, hərbi səviyyəli simulyasiyalar və proqram təminatı hazırlayıb. Faiq Tayıbov iki dəfə
-ICPC çempionudur, maşın öyrənməsi və kompüter görməsini tədris idarəetmə sistemlərinə (LMS)
+Biz RizzML-ik. Rövşən Ağabəyov fizika olimpiadasının qalibidir və su vurulan quyular haqqında elmi
+məqalənin müəllifidir. Tural Qasımov CanSat qlobal finalçısıdır və hərbi səviyyəli simulyasiyalar
+hazırlayıb. Faiq Tayıbov iki dəfə ICPC çempionudur və süni intellekti tədris sistemlərinə
 inteqrasiya edib.
 
-## 6:15–6:50 · Xərclərin azalması · slayd 12 · [SPEAKER ?]
+## 6:15–6:50 · Xərcin azalması · slayd 12 · [SPEAKER ?]
+
+*Əsas fikir: bir gün əvəzinə saniyədən az, avadanlıqsız.*
 
 > **[KLİK]** Sayğac burada dayanır.
 
-Bu yeddi dəqiqədə SOCAR təxminən bir quyu testi apardı. RizzML isə bir kompüterdə
-[sağdakı rəqəm] gündəlik quyu debiti hesablaya bilərdi.
+Bu yeddi dəqiqədə SOCAR təxminən bir quyu testi apardı. RizzML isə bir kompüterdə [sağdakı rəqəm]
+gündəlik debit hesablaya bilərdi.
 
-Bu gün bir debit üçün bir günə qədər çəkən test lazımdır. Bu, ayda bir dəfə olur, xəta altı faizdir
-və hər quyuya iki yüz əlli min dollara qədər avadanlıq tələb olunur. RizzML ilə debit saniyənin
-yüzdə ikisində hesablanır, hər gün yenilənir, xəta iki tam onda altı faizdir və heç bir avadanlıq
-lazım deyil.
+Bu gün bir ölçmə bir günə qədər çəkir, ayda bir dəfə olur, xəta altı faizdir və hər quyuya iki yüz
+əlli min dollara qədər avadanlıq lazımdır. Bizdə isə saniyədən az vaxt, hər gün, iki tam onda altı
+faiz xəta və heç bir avadanlıq.
 
-Bu, hər quyuda üç yüz min dollara qədər qənaət deməkdir. SOCAR-ın bütün quyularında isə bu qənaət
-bir milyard səkkiz yüz milyon dollara çatır.
+Bu, hər quyuda üç yüz min dollara qədər qənaətdir, bütün SOCAR üzrə isə bir milyard səkkiz yüz
+milyon dollara qədər.
 
-Beləliklə, GL-04 quyusu dünən nə qədər neft hasil edib?
+Beləliklə, GL-04 dünən nə qədər neft verib?
 
 *(fasilə)*
 
-İndi bunu bilirsiniz. Təşəkkür edirik.
+İndi bilirsiniz. Təşəkkür edirik.
 
 ## 6:50–7:00 · Ehtiyat vaxt
 
-Canlı demo üçün on saniyə ehtiyat vaxt var, üstəlik yuxarıdakı istəyə bağlı cümlə. Yükləmə ləngisə, data keyfiyyəti haqqında danışmağa
-davam edin. Tətbiq işləməsə, ehtiyat videoya keçin və eyni mətnlə davam edin.
+On saniyə ehtiyat var. Yükləmə ləngisə, data haqqında danışmağa davam edin. Tətbiq işləməsə,
+ehtiyat videoya keçin və eyni mətnlə davam edin.

@@ -41,13 +41,13 @@ header[data-testid="stHeader"] { background:transparent; pointer-events:none; }
 [class*="st-key-tile_"]:has(button:disabled) button { cursor:not-allowed; }
 @media (prefers-reduced-motion: reduce) { [class*="st-key-tile_"] { transition:none; } [class*="st-key-tile_"]:hover { transform:none; } }
 
-/* page header: the title behind a bar in the colour of the tile that opened it */
-[class*="st-key-head_"] { --bar:var(--blue); margin-bottom:.4rem; }
-.st-key-head_red { --bar:var(--red); }
-.st-key-head_green { --bar:var(--green); }
-[class*="st-key-head_"] p { font-size:1.65rem; font-weight:700; margin:0; line-height:1.2;
-                            border-left:6px solid var(--bar); padding-left:14px; }
-[class*="st-key-head_"] span[role="img"] { font-size:1.9rem; vertical-align:-5px; margin-right:4px; }
+/* page header: the title behind a bar in the colour of the tile that opened it (app.py header()) */
+[data-testid="stMarkdown"]:has(.rz-head) { --bar:var(--blue); margin-bottom:.4rem; }
+[data-testid="stMarkdown"]:has(.rz-red) { --bar:var(--red); }
+[data-testid="stMarkdown"]:has(.rz-green) { --bar:var(--green); }
+[data-testid="stMarkdown"]:has(.rz-head) p { font-size:1.65rem; font-weight:700; margin:0; line-height:1.2;
+                                              border-left:6px solid var(--bar); padding-left:14px; }
+[data-testid="stMarkdown"]:has(.rz-head) span[role="img"] { font-size:1.9rem; vertical-align:-5px; margin-right:4px; }
 
 /* left-hand menu (every page but Home): groups and colours match the tiles */
 .rz-side-brand { display:flex; align-items:center; gap:10px; margin:-.5rem 0 .4rem; }

@@ -211,9 +211,12 @@ def sync_theme(value: str):
 
 
 def header(key: str):
+    """Page title behind a bar in its tile's colour. One element, not a container: Streamlit reuses a container
+    in the same slot with its old children, so Home's account bar used to linger as ghost headings under the
+    title while a page loaded (all ~30 s of an analysis)."""
     icon, title, _, colour, _ = MODULES[key]
-    with st.container(key=f"head_{colour}"):
-        st.markdown(f":material/{icon}: {t(title)}")
+    st.markdown(f":material/{icon}: <span class='rz-head rz-{colour}'>{html.escape(t(title))}</span>",
+                unsafe_allow_html=True)
 
 
 # Left-hand menu on every page except Home: same groups and colours as the tiles.
@@ -311,7 +314,19 @@ def page_load():
     with st.container(horizontal=True):
         run_upload = st.button(t("Run analysis"), type="primary", icon=":material/play_arrow:", disabled=not ready)
         run_sample = st.button(t("Run on sample data"), icon=":material/dataset:", disabled=not sample_ready())
-    job = ss.pop("run", None)          # (data key, source) from the Sample tile or History
+    job = ss.get("run")                # (data key, source) from the Sample tile or History
+    if job and not (run_upload or run_sample) and ss.get("prev_view") != "load":
+        # Started from another page. Streamlit keeps that page's elements on screen (faded) until a run
+        # ends, which would be the whole analysis. Let this run end first, then start a second later.
+        st.info(t("Starting the analysis…"), icon=":material/hourglass_top:")
+
+        @st.fragment(run_every=1)
+        def start_when_drawn():
+            if ss.get("prev_view") == "load":
+                st.rerun()
+        start_when_drawn()
+        return
+    ss.pop("run", None)
     if run_sample:
         job = ("sample", "sample dataset")
     if run_upload:
@@ -369,7 +384,8 @@ def page_quality():
     c[1].metric(t("Missing-value codes masked"), f"{q['Missing-value codes (-999.25) masked']:,}")
     c[2].metric(t("Duplicate rows dropped"), f"{q['Duplicate rows dropped']:,}")
     c[3].metric(t("Low-coverage days"), q["Days with low sensor coverage (<80%)"])
-    st.dataframe(pd.DataFrame({t("Check"): [t(k) for k in q], t("Value"): list(q.values())}), hide_index=True, **WIDE)
+    st.dataframe(pd.DataFrame({t("Check"): [t(k) for k in q],
+                               t("Value"): [f"{v:,}" if isinstance(v, int) else v for v in q.values()]}), hide_index=True, **WIDE)
 
 
 # ---------------------------------------------------------------------------------------- VFM
@@ -665,6 +681,8 @@ if ss.user:
      "history": page_history, "help": page_help, "settings": page_settings}[ss.view]()
 else:
     page_login()
+
+ss.prev_view = ss.view if ss.user else None   # the page this run drew (page_load defers long jobs on a page change)
 
 # Cookies and the theme are written by the browser, after the page is drawn.
 if ss.pop("save_lang", False):     # remembered by this browser only: each engineer keeps their own
