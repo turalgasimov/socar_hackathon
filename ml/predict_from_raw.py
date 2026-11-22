@@ -9,8 +9,11 @@ cache is bypassed -- a demo run must never silently return rows cleaned from
 *our* copy of the data.
 
 Only `high_freq_data.csv`, `choke_events.csv`, `reservoir_pvt.csv` and
-`well_completion.csv` are needed to predict. `well_tests.csv` is optional: if
-present it is scored against, which is what makes a dry run meaningful.
+`well_completion.csv` are needed to predict. `well_tests.csv` is optional. If
+present, the tests in it are scored against, and those after the training
+period refit the model month by month (ml/src/rolling.py; `--frozen` turns that
+off). Each test is scored by a model that has not seen it, without the routing
+correction, because a test is a test-separator rate.
 
 The Streamlit app should call `run()` rather than shelling out to this file.
 """
@@ -29,7 +32,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "ml" / "src"))
 
 import clean  # noqa: E402
+import daily_predict as DP  # noqa: E402
 import features as F  # noqa: E402
+import history  # noqa: E402
+import rolling  # noqa: E402
 from vfm import VFMModel, build_inputs  # noqa: E402
 
 DEFAULT_MODEL = ROOT / "ml" / "models" / "vfm.pkl"
@@ -38,8 +44,14 @@ REQUIRED = ["high_freq_data.csv", "choke_events.csv",
 
 
 def run(data_dir: Path, model_path: Path = DEFAULT_MODEL,
-        verbose: bool = True) -> tuple[pd.DataFrame, dict]:
-    """Clean -> features -> predict. Returns (submission_frame, report)."""
+        verbose: bool = True, history_dir: Path | None = None,
+        refit: bool = True) -> tuple[pd.DataFrame, dict]:
+    """Clean -> features -> predict. Returns (submission_frame, report).
+
+    The training-period history (ml/src/history.py) fills a missing opening choke setting when
+    the upload covers later months, and labels the self-check as held-out or in-sample. With
+    `refit`, uploaded tests after the training period refit the model month by month.
+    """
     data_dir = Path(data_dir)
     missing = [f for f in REQUIRED if not (data_dir / f).exists()]
     if missing:
@@ -48,8 +60,11 @@ def run(data_dir: Path, model_path: Path = DEFAULT_MODEL,
     rep: dict = {"data_dir": str(data_dir)}
     t0 = time.time()
 
-    hf, hf_rep = clean.clean_high_freq(data_dir=data_dir, verbose=verbose)
+    hist = history.load(history_dir)
+    hf, hf_rep = clean.clean_high_freq(data_dir=data_dir, verbose=verbose, hist=hist)
     rep["clean"] = {k: hf_rep[k] for k in ("rows_in", "rows_out", "shut_in_minutes")}
+    rep["choke_initial_from_history"] = hf_rep["choke_initial_from_history"]
+    rep["choke_initial_unknown"] = hf_rep["choke_initial_unknown"]
     rep["sentinels_masked"] = sum(hf_rep["sentinel_to_nan"].values())
     rep["duplicates_dropped"] = hf_rep["duplicate_rows_dropped"]
 
@@ -61,9 +76,17 @@ def run(data_dir: Path, model_path: Path = DEFAULT_MODEL,
     rep["low_coverage_days"] = int(daily.low_coverage.sum())
 
     model = VFMModel.load(model_path)
+    tests = prepare_tests(hf, data_dir, pvt, comp)
+    if refit and tests is not None:
+        model, rep["refit"] = rolling.monthly_refit(model, hist, tests["X"], tests["wt"], tests["ok"], daily.date)
+    else:
+        rep["refit"] = {"refits": [], "tests_after_training": 0, "tests_left_out": [],
+                        "note": "refit switched off" if tests is not None else "no well tests in the upload"}
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         pred = model.predict(build_inputs(daily, when="date"))
+        # shut-in-affected days: time-integrate, as fit_vfm.py does for the scored file
+        pred, rep["shut_in_days_integrated"] = DP.integrate_shut_in_days(pred, daily, model, hf, pvt, comp)
     rep["unseen_wells"] = sorted(set(pred.loc[pred.unseen_well, "well_name"]))
     rep["warnings"] = [str(w.message) for w in caught]
 
@@ -79,9 +102,8 @@ def run(data_dir: Path, model_path: Path = DEFAULT_MODEL,
     rep["seconds"] = round(time.time() - t0, 1)
 
     # optional self-check when labels came with the data
-    wt_file = data_dir / "well_tests.csv"
-    if wt_file.exists():
-        rep["scored_against_tests"] = _score(hf, wt_file, model, data_dir, pvt, comp)
+    if tests is not None:
+        rep["scored_against_tests"] = _score(model, tests, hist)
     return sub, rep
 
 
@@ -99,21 +121,45 @@ def _complete_grid(sub: pd.DataFrame) -> pd.DataFrame:
         ["well_name", "timestamp"], ignore_index=True)
 
 
-def _score(hf, wt_file, model, data_dir, pvt, comp) -> dict:
-    """If the upload carried labels, report how we did on them."""
+def prepare_tests(hf, data_dir, pvt, comp) -> dict | None:
+    """Cleaned labels and model inputs for the well tests in the upload, row for row; or None."""
+    if not (Path(data_dir) / "well_tests.csv").exists():
+        return None
     wt, _ = clean.clean_well_tests(verbose=False, data_dir=data_dir)
+    if not len(wt):
+        return None
     windows = wt[["well_name", "test_start", "test_end"]].rename(
         columns={"test_start": "start", "test_end": "end"})
     f = F.aggregate_windows(hf, windows)
     f = F.add_within_well(f, F.well_baselines(hf))
     f = f.merge(F.static_table(pvt, comp), on="well_name", how="left")
-    # Only score tests whose window actually has sensor data behind it. An
+    # Only use tests whose window actually has sensor data behind it. An
     # upload can carry tests that fall outside the high-frequency period.
     ok = (f.coverage >= F.MIN_COVERAGE).to_numpy()
+    return {"wt": wt, "X": build_inputs(f), "ok": ok}
+
+
+def _score(model, tests: dict, hist=None) -> dict:
+    """If the upload carried labels, report how we did on them.
+
+    Predictions carry no routing correction: a well test is a test-separator rate, and the
+    correction is for normal-production days (with it, this check reads +2.8% high on oil).
+
+    `basis` says whether the scored tests are after the last test the shipped model was trained
+    on (held-out) or among its training tests (in-sample). A held-out test stays held-out under
+    the monthly refit: the model of its month was fitted only on tests that ended before that
+    month. Non-dict values only: the app reads every dict value as a phase.
+    """
+    wt, ok = tests["wt"], tests["ok"]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        p = model.predict(build_inputs(f))
+        p = rolling.unrouted(model).predict(tests["X"])
     out = {"tests_scored": int(ok.sum()), "tests_skipped_no_data": int((~ok).sum())}
+    cut = history.train_end(hist)
+    if cut is not None:
+        after = int((ok & (wt.test_start > cut).to_numpy()).sum())
+        out["tests_after_training"] = after
+        out["basis"] = ("held-out" if after == ok.sum() else "in-sample" if after == 0 else "mixed")
     for phase, col in [("oil", "oil_rate_stbd"), ("water", "water_rate_stbd"),
                        ("gas", "gas_rate_mscfd")]:
         a, q = wt[col].to_numpy()[ok], p[col].to_numpy()[ok]
@@ -133,9 +179,11 @@ def main() -> None:
     ap.add_argument("--data", type=Path, required=True)
     ap.add_argument("--out", type=Path, default=ROOT / "ml" / "outputs" / "predictions_from_raw.csv")
     ap.add_argument("--model", type=Path, default=DEFAULT_MODEL)
+    ap.add_argument("--frozen", action="store_true",
+                    help="do not refit on uploaded tests after the training period")
     a = ap.parse_args()
 
-    sub, rep = run(a.data, a.model)
+    sub, rep = run(a.data, a.model, refit=not a.frozen)
     a.out.parent.mkdir(parents=True, exist_ok=True)
     sub.to_csv(a.out, index=False)
 
@@ -145,14 +193,28 @@ def main() -> None:
     print(f"  duplicates dropped: {rep['duplicates_dropped']:,}")
     print(f"  well-days         : {rep['well_days']:,}  "
           f"({rep['low_coverage_days']} below 80% coverage)")
+    print(f"  shut-in days      : {rep['shut_in_days_integrated']} time-integrated (10-min bins)")
+    print(f"  monthly refit     : {rolling.describe(rep['refit'])}")
+    for x in rep["refit"]["tests_left_out"]:
+        print(f"    left out of the refit: {x}")
     print(f"  unseen wells      : {rep['unseen_wells'] or 'none'}")
+    if rep["choke_initial_from_history"]:
+        print(f"  opening choke from history: {', '.join(rep['choke_initial_from_history'])}")
+    if rep["choke_initial_unknown"]:
+        print(f"  WARNING no choke before first event: {', '.join(rep['choke_initial_unknown'])}")
     print(f"  rows written      : {rep['rows_out']:,} -> {a.out}")
     if "scored_against_tests" in rep:
         sc = rep["scored_against_tests"]
         skipped = sc["tests_skipped_no_data"]
-        print(f"\n  self-check against the {sc['tests_scored']} usable well tests in this upload"
+        print(f"\n  self-check against the {sc['tests_scored']} usable well tests in this upload, no routing correction"
               + (f" ({skipped} skipped, no sensor data behind them)" if skipped else "") + ":")
-        print("  in-sample if the model was fitted on these wells -- not a held-out score")
+        basis = sc.get("basis")
+        if basis == "held-out":
+            print("  held-out: every scored test is after the last test the model was trained on")
+        elif basis == "mixed":
+            print(f"  mixed: {sc['tests_after_training']} held-out tests, the rest in-sample")
+        else:
+            print("  in-sample if the model was fitted on these wells -- not a held-out score")
         for phase in ("oil", "water", "gas"):
             m = sc.get(phase)
             if isinstance(m, dict):

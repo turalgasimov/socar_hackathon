@@ -369,7 +369,9 @@ def page_quality():
     c[1].metric(t("Missing-value codes masked"), f"{q['Missing-value codes (-999.25) masked']:,}")
     c[2].metric(t("Duplicate rows dropped"), f"{q['Duplicate rows dropped']:,}")
     c[3].metric(t("Low-coverage days"), q["Days with low sensor coverage (<80%)"])
-    st.dataframe(pd.DataFrame({t("Check"): [t(k) for k in q], t("Value"): list(q.values())}), hide_index=True, **WIDE)
+    # values are counts or short texts (which wells, which months); one text column keeps the table valid
+    shown = [f"{v:,}" if hasattr(v, "__index__") else str(v) for v in q.values()]
+    st.dataframe(pd.DataFrame({t("Check"): [t(k) for k in q], t("Value"): shown}), hide_index=True, **WIDE)
 
 
 # ---------------------------------------------------------------------------------------- VFM
@@ -388,8 +390,13 @@ def page_rates():
     last = r["rates"][r["rates"].timestamp == r["rates"].timestamp.max()]
     c[3].metric(t("Field oil, {date}").format(date=last.timestamp.iloc[0]), f"{last.oil_rate_stbd.sum():,.0f} stb/d")
     if r["score"]:
+        basis = {"held-out": t("All are after the model's training period: a true forecast check."),
+                 "mixed": t("Some are after the model's training period, the rest were used to train it."),
+                 "in-sample": t("All were used to train the model, so this is not a forecast check."),
+                 }.get(r["score"].get("basis"), "")
         c[4].metric(t("Oil error vs tests"), f"{r['score']['oil']['MAPE_%']}%",
-                    help=t("MAPE over {n} measured tests in this data.").format(n=r["score"]["tests_scored"]))
+                    help=(t("MAPE over {n} measured tests in this data.").format(n=r["score"]["tests_scored"])
+                          + " " + basis).strip())
     st.plotly_chart(charts.rates(r["rates"][r["rates"].well_name == well], tests_for(r, well), dark=dark, t=t), **WIDE)
     c = st.columns([1, 2])
     if r["score"]:

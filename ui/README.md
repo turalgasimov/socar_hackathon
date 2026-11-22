@@ -3,6 +3,18 @@
 Daily oil, water and gas rates (VFM) and well-test analysis (PTA) from raw well sensor data, in the
 browser. The app uses the ML team's code and model unchanged (`ml/src`, `ml/models/vfm.pkl`).
 
+**Uploads of later months.** The evaluation data are the three months after the training period.
+The app handles them with the stored training history (`ml/models/history/`, see
+`ml/src/history.py`) and never needs the Jan-Sep files again:
+
+- a well with no opening row in `choke_events` gets its last known choke setting;
+- PTA producing time counts the oil produced before the upload starts;
+- well tests newer than the training period refit the model at the start of each month, in memory
+  only (`ml/src/rolling.py`); `vfm.pkl` is never written. **Data Quality** shows which months were
+  refitted. `pipeline.analyse(..., refit=False)` switches it off;
+- the accuracy check scores each test with a model that has not seen it and without the routing
+  correction (a test is a test-separator rate).
+
 ## Run it
 
 Once, from the repository root:
@@ -66,6 +78,7 @@ From the repository root:
 ui/.venv/bin/python ui/check_pipeline.py data   # full run on the raw CSVs: rates, PTA vs the submitted file, exports
 ui/.venv/bin/python ui/i18n.py                  # every screen text has an Azerbaijani and a Russian version
 ui/.venv/bin/python ui/store.py                 # sign-in, per-user history and stored files
+ui/.venv/bin/python ml/eda/history_handoff.py   # an upload of later months only: history, monthly refit (~3 min)
 ```
 
 Each prints a line starting with `OK` when it passes.
@@ -74,7 +87,8 @@ Each prints a line starting with `OK` when it passes.
 
 1. **Sign in.** Choose the language on the sign-in screen if needed.
 2. **Load Data:** drop in `high_freq_data`, `choke_events`, `reservoir_pvt` and `well_completion`
-   (CSV or Excel; `well_tests` is optional and adds an accuracy check), then **Run analysis**
+   (CSV or Excel; `well_tests` is optional, adds an accuracy check and updates the model for later
+   months), then **Run analysis**
    (about 30 s). Or click **Sample Data** on Home to run the hackathon field.
 3. The app opens on **Production Rates**, and **Well Tests**, **Generate Graph**, **Export**,
    **Field Data** and **Data Quality** unlock. Every page has the menu on the left; Home is the tile screen.

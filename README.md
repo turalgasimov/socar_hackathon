@@ -61,10 +61,13 @@ agent/           AGENTS.md · CLAUDE.md · PROJECT_STATE.md · NEXT_STEPS.md
 data/            raw CSVs (high_freq_data.csv via Git LFS)
 data/processed/  derived parquet, gitignored — regenerate with the commands above
 docs/            challenge brief, data dictionary, data & physics reports
-ml/src/          config · clean · features · viz
-ml/eda/          run_eda.py · validate_features.py · benchmark_vfm.py
-ml/outputs/      figures and generated reports
-ui/              Streamlit UI (Phase 3)
+ml/src/          config · clean · features · vfm · daily_predict · history · rolling · viz · pta_*
+ml/eda/          run_eda.py · validate_features.py · benchmark_vfm.py · validation and rehearsal scripts
+ml/models/       vfm.pkl · vfm.joblib · history/ (training-period store for uploads of later months)
+ml/outputs/      figures, generated reports, submission files
+notebooks/       VFM_Phase1.ipynb · PTA_Phase2.ipynb
+ui/              Streamlit app (see ui/README.md)
+pitch/           deck, notes and speech
 ```
 
 ## Baselines
@@ -87,6 +90,12 @@ Rebuild and submit with one command:
 ```bash
 python ml/fit_vfm.py        # writes ml/outputs/vfm_submission.csv
 ```
+
+The evaluation data are the next three months of the same wells. The demo path
+(`ml/predict_from_raw.py`, the app) runs on such an upload alone: the stored
+training history supplies the opening choke setting and the PTA producing time,
+and well tests newer than the training period refit the model month by month,
+in memory only. Rehearse with `python ml/eda/history_handoff.py`.
 
 **Before trusting any local score, read the methodological lesson in
 [`agent/PROJECT_STATE.md`](agent/PROJECT_STATE.md).** All 85 labels are

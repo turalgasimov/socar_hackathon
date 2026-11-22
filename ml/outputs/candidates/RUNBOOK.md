@@ -194,6 +194,9 @@ Oil and gas stay bit-identical, so PTA, the app's PTA and the lost-oil check do 
 5. Run `python ml/make_pta.py` (must still say identical) and `python ui/check_pipeline.py data`
    (must pass). **Tural's agent changes nothing:** the app reloads `vfm.pkl`, and its k and lost-oil
    checks read oil only.
+   - Then run `python ml/build_history.py`. It asserts that `ml/models/history/train_tests.csv`
+     still reproduces the new `vfm.pkl` (the monthly refit starts from those rows). The stored
+     daily rates stay those of the λ = 0.80 record, as PTA needs.
 6. Rovshan's agent changes nothing; PTA oil is unchanged.
 
 **Case O — the winner moves oil (V2a, V3a, V3c). Keep the model unchanged; ship the scaled file

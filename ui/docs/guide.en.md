@@ -31,7 +31,7 @@ well (virtual flow metering, **VFM**), and reads every shut-in as a pressure bui
 | `choke_events` | yes | Choke changes: `timestamp`, `well_name`, `choke_opening_pct` (0% = shut in) |
 | `reservoir_pvt` | yes | One row per well: pay thickness, porosity, compressibility, wellbore radius, oil FVF and viscosity, bubble point, datum, drainage area |
 | `well_completion` | yes | One row per well: gauge depth, gas-lift valve, tubing size, manifold, solution GOR, cumulative oil |
-| `well_tests` | no | Measured test rates. Adds an accuracy check against them |
+| `well_tests` | no | Measured test rates. Adds an accuracy check against them, and tests newer than the model's training period update the model month by month |
 
 - A file is recognised by its name: it only has to contain `high`, `choke`, `pvt`, `completion`
   or `test`.
@@ -51,6 +51,12 @@ well (virtual flow metering, **VFM**), and reads every shut-in as a pressure bui
 - It beat machine learning on this data. With only 85 measured rates, physics generalises better.
 - Well tests read about 2.5% high against normal production days (the test separator runs at a
   lower pressure), and the daily rates are corrected for it.
+- New data keeps the model current. When an upload has well tests newer than the model's training
+  period, the model is refitted at the start of each month on every test that ended before that
+  month. A day is never predicted with a test from its own month or later, and the model file itself
+  is not changed. Data Quality shows which months were refitted.
+- An upload that starts after the training period still uses it: the last known choke setting and
+  the oil produced so far come from the stored training history.
 
 **Well tests (PTA).** Shut-ins are found where the choke is at 0%. For each build-up:
 

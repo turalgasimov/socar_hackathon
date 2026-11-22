@@ -85,6 +85,9 @@ TEXT = {
                                                               "Поиск остановок и интерпретация каждой КВД (PTA)"),
     "Summarising sensors for the charts": ("Qrafiklər üçün sensor məlumatları ümumiləşdirilir",
                                            "Подготовка данных датчиков для графиков"),
+    "Refitting the model month by month on the new well tests": (
+        "Model yeni quyu sınaqları ilə ayba-ay yenidən qurulur",
+        "Модель перенастраивается по месяцам на новых замерах скважин"),
     # field data and sensors
     "Well": ("Quyu", "Скважина"),
     "Wells": ("Quyular", "Скважины"),
@@ -107,6 +110,18 @@ TEXT = {
     "Days with low sensor coverage (<80%)": ("Sensor örtüyü aşağı olan günlər (<80%)",
                                              "Дней с низким покрытием датчиков (<80%)"),
     "Low-coverage days": ("Aşağı örtüklü günlər", "Дней с низким покрытием"),
+    "Shut-in days time-integrated (10-min bins)": ("Zamana görə inteqrallanmış bağlanma günləri (10 dəq)",
+                                                   "Дней с остановкой, проинтегрированных по времени (10 мин)"),
+    "Model refitted for months (new tests added)": ("Modelin yenidən qurulduğu aylar (əlavə olunan yeni sınaqlar)",
+                                                    "Месяцы с перенастройкой модели (добавлено новых замеров)"),
+    "New tests left out of the refit": ("Yenidən qurmaya daxil edilməyən yeni sınaqlar",
+                                        "Новые замеры, не вошедшие в перенастройку"),
+    "Well-days of training history used for PTA": ("PTA üçün istifadə olunan öyrətmə dövrü quyu-günləri",
+                                                   "Скважино-суток истории обучения, использованных для PTA"),
+    "Wells given their last known choke setting": ("Son məlum ştuser vəziyyəti verilən quyular",
+                                                   "Скважины, получившие последнее известное положение штуцера"),
+    "Wells with no choke setting before their first event": ("İlk hadisədən əvvəl ştuser vəziyyəti olmayan quyular",
+                                                             "Скважины без положения штуцера до первого события"),
     "Check": ("Yoxlama", "Проверка"),
     "Value": ("Dəyər", "Значение"),
     # rates
@@ -118,6 +133,15 @@ TEXT = {
     "Oil error vs tests": ("Sınaqlara görə neft xətası", "Ошибка по нефти к замерам"),
     "MAPE over {n} measured tests in this data.": ("Bu məlumatdakı {n} ölçülmüş sınaq üzrə MAPE.",
                                                     "MAPE по {n} замерам в этих данных."),
+    "All are after the model's training period: a true forecast check.": (
+        "Hamısı modelin öyrədilmə dövründən sonradır: həqiqi proqnoz yoxlaması.",
+        "Все после периода обучения модели: настоящая проверка прогноза."),
+    "Some are after the model's training period, the rest were used to train it.": (
+        "Bir qismi modelin öyrədilmə dövründən sonradır, qalanları öyrətmədə istifadə olunub.",
+        "Часть после периода обучения модели, остальные использованы для обучения."),
+    "All were used to train the model, so this is not a forecast check.": (
+        "Hamısı modelin öyrədilməsində istifadə olunub, ona görə bu, proqnoz yoxlaması deyil.",
+        "Все использованы для обучения модели, поэтому это не проверка прогноза."),
     "Daily rates, {well}": ("Gündəlik debitlər, {well}", "Суточные дебиты, {well}"),
     "Rates, CSV": ("Debitlər, CSV", "Дебиты, CSV"),
     "Rates, Excel": ("Debitlər, Excel", "Дебиты, Excel"),
@@ -277,7 +301,7 @@ if __name__ == "__main__":
     here = Path(__file__).parent
     used = set()
     for f in ("app.py", "charts.py", "pipeline.py"):
-        src = (here / f).read_text()
+        src = (here / f).read_text(encoding="utf-8")   # Windows would otherwise read it as cp125x
         # t("...") and N_("..."), including implicitly concatenated literals
         for m in re.finditer(r'''\b(?:t|N_)\(\s*((?:"[^"\n]*"\s*|'[^'\n]*'\s*)+)''', src):
             used.add("".join(a or b for a, b in re.findall(r'''"([^"\n]*)"|'([^'\n]*)\'''', m.group(1))))

@@ -127,6 +127,27 @@ def daily_rates(model, hf: pd.DataFrame, pvt: pd.DataFrame, comp: pd.DataFrame,
     return out.sort_values(["well_name", "date"], ignore_index=True)
 
 
+def integrate_shut_in_days(pred: pd.DataFrame, daily: pd.DataFrame, model, hf: pd.DataFrame,
+                           pvt: pd.DataFrame, comp: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+    """Replace daily-mean predictions on shut-in-affected days with the time-integrated rates.
+
+    The same swap ml/fit_vfm.py makes for the scored file, for the paths that run on uploaded
+    data (ml/predict_from_raw.py, ui/pipeline.py). `pred` rows align with `daily` rows; `hf` is
+    the cleaned sensor frame (it needs `is_shut_in`). Returns (pred, number of days swapped).
+    """
+    integ = daily_rates(model, hf, pvt, comp).set_index(["well_name", "date"])
+    key = pd.MultiIndex.from_arrays([daily.well_name.astype(str).to_numpy(),
+                                     pd.to_datetime(daily.date).to_numpy()])
+    pred = pred.copy()
+    n = 0
+    for col in PHASES:
+        repl = integ[col].reindex(key).to_numpy()
+        take = np.isfinite(repl)
+        pred.loc[take, col] = repl[take]
+        n = max(n, int(take.sum()))
+    return pred, n
+
+
 def to_submission(out: pd.DataFrame, template_cols: list[str]) -> pd.DataFrame:
     """Rectangular grid in the template's column order, gaps interpolated."""
     sub = pd.DataFrame({
