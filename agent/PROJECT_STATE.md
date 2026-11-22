@@ -340,6 +340,25 @@ data live, run cleaning → features → predict → PTA, and not fall over.
 
 ## Done
 
+**VFM notebook: six figures (22 Nov).** The notebook had tables and printed
+numbers only. `ml/build_notebook.py` now draws, through `ml/src/viz.py`:
+
+| section | figure | what it shows |
+|---|---|---|
+| 4 | predicted vs measured, and % error, per phase | 55 time-forward tests; within 5% of the measured rate: oil 47, water 39, gas 31 |
+| 4 | time-forward oil MAPE by model | choke law 2.56% against thermal 3.08, Ridge 5.11, persistence 6.00, IPR 8.45 |
+| 5 | downstream pressure range, tests vs days to predict, per well | 17–29 psi higher on normal days; 2 wells with no overlap |
+| 5 | leaderboard score against λ | 20.2110 at 0, 21.0200 at 0.80, 20.9463 at 1.0 |
+| 6 | daily oil with the well tests on top, ten wells | daily rates 0.5–7.0% below the tests; shut-ins drop to zero |
+| 8 | frozen vs monthly refit by month ahead, per phase | oil 3.46% frozen against 2.52% refitted in month 3 |
+
+- Every subtitle is built from the plotted numbers in the same cell.
+- The bar chart recomputes two of its five rows (choke law, persistence) and
+  asserts they equal the table above it; the other three are quoted from
+  `python ml/eda/benchmark_vfm.py --tf-only`.
+- The notebook is 51 cells, 25 code, 0 errors, and its check against
+  `vfm_submission.csv` still passes.
+
 **Deliverables audit against `docs/Deliverables.pdf` (22 Nov): everything is
 present.**
 
@@ -347,7 +366,7 @@ present.**
 |---|---|---|
 | 1 | Result files, Phase 1 and 2 | `vfm_submission.csv` (2,730 × 5, template columns, no NaN, no negatives) + `vfm_daily_predictions.xlsx`; `pta_submission.csv` (6 × 6, template columns) + `pta_results.xlsx` (4 sheets) |
 | 2 | Model in `.pkl` | `ml/models/vfm.pkl` loads: 85 tests, per-well routing factors. It needs `ml/src` on the path (the class is `vfm.VFMModel`); the README now shows the three lines |
-| 3 | Notebook, all cells run | `VFM_Phase1.ipynb`: 45 cells, 19 code, 0 not run, 0 errors. `PTA_Phase2.ipynb`: 25 cells, 12 code, 0 not run, 0 errors |
+| 3 | Notebook, all cells run | `VFM_Phase1.ipynb`: 51 cells, 25 code, 6 figures, 0 not run, 0 errors. `PTA_Phase2.ipynb`: 25 cells, 12 code, 0 not run, 0 errors |
 | 4 | Folder of PTA plots | `ml/outputs/figures/pta/`: 9 PNG + README + 3 reference tables |
 
 - **App requirements, all seven:** upload (Load Data), field measurements (Field
@@ -358,10 +377,9 @@ present.**
 - **The screens are now checked headlessly:** `python ui/check_app.py` (~2 min)
   runs the sample data through the Load page (93 s here) and draws seven result
   pages in English, Azerbaijani and Russian with no exception.
-- **Not requirements, but visible to a judge:**
-  - `VFM_Phase1.ipynb` has text outputs only, no figures (the PTA notebook has
-    figures in 3 cells);
-  - the VFM result file is not byte-identical to the scored one (Open risks).
+- **Not a requirement, but visible to a judge:** the VFM result file is not
+  byte-identical to the scored one (Open risks). It is left as it is on purpose:
+  it equals what the model and the app produce, row for row.
 
 **VFM notebook: section 8, "The three test months" (22 Nov).** The notebook said
 nothing about how the model behaves past the end of training. `ml/build_notebook.py`

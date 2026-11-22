@@ -52,6 +52,19 @@ pd.set_option("display.width", 200)
 import clean, features as F
 from config import DATA, PROC
 from vfm import VFMModel, build_inputs
+
+# figures: the project's shared style (ml/src/viz.py), shown inline
+import matplotlib
+import matplotlib.pyplot as plt
+from IPython.display import display
+import viz
+viz.apply_style()
+
+def show(fig, bottom=0.0):
+    fig.tight_layout(rect=(0, bottom, 1, getattr(fig, "_viz_top", 0.95)))
+    display(fig)
+    plt.close(fig)
+
 print("ready")"""),
 
     MD("""## 1. The data, and what was wrong with it
@@ -183,6 +196,38 @@ scores = pd.DataFrame({p: {"R²": r2(a, q), "MAPE %": mape(a, q), "WAPE %": wape
 print(scores.to_string(formatters={"R²": "{:.4f}".format, "MAPE %": "{:.2f}".format,
                                    "WAPE %": "{:.2f}".format, "bias %": "{:+.2f}".format}))"""),
 
+    CODE("""# top: predicted against measured, log axes; bottom: the same tests as a percentage error
+fig, ax = plt.subplots(2, 3, figsize=(10.5, 6.2), sharex="col", gridspec_kw={"height_ratios": [1.5, 1]})
+unit = {"oil": "stb/d", "water": "stb/d", "gas": "Mscf/d"}
+for k, p in enumerate(unit):
+    a, q = tf[f"real_{p}"].values, tf[f"pred_{p}"].values
+    lo, hi = min(a.min(), q.min()) * 0.85, max(a.max(), q.max()) * 1.18
+    top, bot = ax[0, k], ax[1, k]
+    top.plot([lo, hi], [lo, hi], color=viz.INK_MUTED, lw=1)
+    top.scatter(a, q, s=34, color=viz.BLUE, edgecolor=viz.SURFACE, linewidth=1.2, zorder=3)
+    top.set(xscale="log", yscale="log", xlim=(lo, hi), ylim=(lo, hi),
+            ylabel=f"predicted {p}, {unit[p]}", title=f"{p.capitalize()}: WAPE {wape(a, q):.2f}%")
+    top.text(0.97, 0.05, "line: predicted = measured", transform=top.transAxes, ha="right",
+             fontsize=7.5, color=viz.INK_MUTED)
+    err = (q / a - 1) * 100
+    bot.axhline(0, color=viz.INK_MUTED, lw=1)
+    bot.scatter(a, err, s=34, color=viz.BLUE, edgecolor=viz.SURFACE, linewidth=1.2, zorder=3)
+    lim = max(12, np.abs(err).max() * 1.15)
+    bot.set(xscale="log", ylim=(-lim, lim), xlabel=f"measured {p}, {unit[p]}", ylabel="error, %")
+    ticks = [v for v in (200, 300, 500, 1000, 2000, 3000, 5000) if lo < v < hi]
+    for axis in (top.xaxis, top.yaxis, bot.xaxis):
+        axis.set_major_locator(matplotlib.ticker.FixedLocator(ticks))
+        axis.set_minor_locator(matplotlib.ticker.NullLocator())
+        axis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+g7 = tf[tf.well == "GL-07"]
+ax[0, 0].annotate("GL-07", (g7.real_oil.median(), g7.pred_oil.median()), xytext=(-12, 10),
+                  textcoords="offset points", ha="right", fontsize=8, color=viz.INK_2)
+inside = {p: int((np.abs(tf[f"pred_{p}"] / tf[f"real_{p}"] - 1) <= 0.05).sum()) for p in unit}
+viz.titled(fig, "Each well test, predicted by a model that had not seen it",
+           f"{len(tf)} tests, time-forward. Within 5% of the measured rate: oil {inside['oil']}, "
+           f"water {inside['water']}, gas {inside['gas']} of {len(tf)}.")
+show(fig)"""),
+
     MD("""**These numbers are measured in the test-routed regime.** Every one of the 85
 labels was recorded while the well flowed to the test separator. The routing
 correction in section 5 acts only on normal-production days, so it does not
@@ -210,6 +255,31 @@ indistinguishable from simply copying the well's previous test*
 
 We also tried adding an ML correction on top of the physics residuals: 2.04% →
 2.01%. Nothing left to learn at this sample size."""),
+
+    CODE("""# The five time-forward rows of the table. The first and the fourth are recomputed here; the
+# other three come from `python ml/eda/benchmark_vfm.py --tf-only` (same 55 folds).
+prev = [tr[(tr.well_name == r.well) & (tr.start < r.start)].oil_rate_stbd.iloc[-1] for r in tf.itertuples()]
+bars = pd.Series({
+    "Choke law × water-cut split (shipped)": mape(tf.real_oil.values, tf.pred_oil.values),
+    "Thermal per-well (Joule-Thomson)": 3.08,
+    "Ridge regression, 58 features": 5.11,
+    "Persistence: copy the previous test": mape(tf.real_oil.values, np.array(prev)),
+    "Inflow (IPR) per well": 8.45,
+})
+assert abs(bars.iloc[0] - 2.56) < 0.005 and abs(bars.iloc[3] - 6.00) < 0.005, "the table above is stale"
+
+fig, ax = plt.subplots(figsize=(8.2, 3.0))
+y = np.arange(len(bars))[::-1]
+ax.barh(y, bars.values, height=0.5, color=[viz.BLUE] + ["#c4c3bd"] * (len(bars) - 1))
+for yi, v in zip(y, bars.values):
+    ax.text(v + 0.12, yi, f"{v:.2f}%", va="center", fontsize=8.5, color=viz.INK)
+ax.set(yticks=y, xlim=(0, bars.max() * 1.14), xlabel="time-forward oil MAPE, % (lower is better)")
+ax.set_yticklabels(bars.index, color=viz.INK_2)
+ax.grid(axis="y", visible=False)
+viz.titled(fig, "Physics beats machine learning on 85 labels",
+           "Same 55 time-forward folds for every model. Ridge on 58 features is no better than "
+           "copying the well's previous test.")
+show(fig)"""),
 
     MD("""## 5. The test-separator routing correction
 
@@ -241,6 +311,24 @@ print(f"\\ndownstream pressure runs {sk.shift_psi.min():.0f}-{sk.shift_psi.max()
       f" HIGHER on normal days than in tests, on {len(sk)}/{len(sk)} wells")
 print(f"wells with NO overlap between tested and predicted range: "
       f"{int((~sk.overlap).sum())}")"""),
+
+    CODE("""fig, ax = plt.subplots(figsize=(8.6, 4.3))
+y = np.arange(len(sk))[::-1]
+ax.hlines(y + 0.16, sk.test_lo, sk.test_hi, color=viz.ORANGE, lw=5, capstyle="round",
+          label="well tests (the labels)")
+ax.hlines(y - 0.16, sk.daily_lo, sk.daily_hi, color=viz.BLUE, lw=5, capstyle="round",
+          label="days to predict")
+for yi, (w, r) in zip(y, sk.iterrows()):
+    if not r.overlap:
+        ax.text(r.daily_hi + 1.5, yi - 0.16, "no overlap", va="center", fontsize=8, color=viz.INK_2)
+ax.set(yticks=y, xlabel="pressure downstream of the choke, psia (range over the period)")
+ax.set_yticklabels(sk.index, color=viz.INK_2)
+ax.grid(axis="y", visible=False)
+ax.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=2)
+viz.titled(fig, "The model is asked to predict where it was never tested",
+           f"Normal days run {sk.shift_psi.min():.0f}–{sk.shift_psi.max():.0f} psi higher than test windows "
+           f"on all {len(sk)} wells; on {int((~sk.overlap).sum())} the two ranges do not touch.")
+show(fig)"""),
 
     MD("""The shift is **17–29 psi on all ten wells**, and on **two of them the tested and
 predicted ranges do not overlap at all**. GL-04 is the clearest: its 9 tests sit
@@ -302,6 +390,25 @@ print(ladder.to_string(index=False, na_rep="lost"))
 print(f"\\nshipped ROUTING_LAMBDA = {ROUTING_LAMBDA}")
 print(pd.DataFrame({"raw (physics)": _ROUTING_FACTORS_RAW,
                     "applied (x lambda)": ROUTING_FACTORS}).round(4).to_string())"""),
+
+    CODE("""lad = ladder.dropna(subset=["score"])
+lad = lad[lad["lambda"] <= 1]            # 2.50 is far off to the right; it is named in the subtitle
+score_at = lad.set_index("lambda").score
+fig, ax = plt.subplots(figsize=(7.6, 3.5))
+ax.plot(lad["lambda"], lad.score, color=viz.BLUE, lw=2, marker="o", ms=7, mec=viz.SURFACE, mew=1.5, zorder=3)
+ax.annotate(f"no correction\\n{score_at[0.0]:.4f}", (0, score_at[0.0]), xytext=(16, -2),
+            textcoords="offset points", va="top", fontsize=8.5, color=viz.INK_2)
+ax.annotate(f"λ = {ROUTING_LAMBDA:.2f}, shipped\\n{score_at[ROUTING_LAMBDA]:.4f}",
+            (ROUTING_LAMBDA, score_at[ROUTING_LAMBDA]), xytext=(0, 9), textcoords="offset points",
+            ha="center", fontsize=8.5, color=viz.INK)
+ax.annotate(f"full downhole estimate\\n{score_at[1.0]:.4f}", (1.0, score_at[1.0]), xytext=(0, -12),
+            textcoords="offset points", ha="center", va="top", fontsize=8.5, color=viz.INK_2)
+ax.set(xlabel="λ: share of the downhole routing estimate applied", ylabel="leaderboard score, out of 30",
+       xlim=(-0.06, 1.12), ylim=(19.95, 21.38))
+viz.titled(fig, f"One parameter, tuned on the leaderboard: +{score_at[ROUTING_LAMBDA] - score_at[0.0]:.2f} points",
+           "λ = 0.75 and 0.80 tie at 21.0200; 0.70 and 0.85 both lost to them. "
+           "λ = 2.50 scored 18.3400 (off the chart).")
+show(fig)"""),
 
     MD("""**λ = 0.80 scores 21.0200.** The peak is flat: 0.75 ties it exactly and
 both 0.70 and 0.85 lose, so the optimum is bracketed in (0.70, 0.85) and no
@@ -372,6 +479,25 @@ close — the leaderboard answered it, so this is no longer an open question."""
 cmp["tested"] = tr.groupby("well_name").oil_rate_stbd.mean()
 cmp["diff_%"] = (cmp.predicted_daily / cmp.tested - 1) * 100
 print(cmp.round(1).to_string())"""),
+
+    CODE("""fig, axes = plt.subplots(2, 5, figsize=(11.5, 4.9), sharex=True)
+for a_, (w, g) in zip(axes.ravel(), out.groupby("well_name")):
+    tw = tr[tr.well_name == w]
+    a_.plot(pd.to_datetime(g.date), g.oil_rate_stbd, color=viz.BLUE, lw=1.2, label="predicted daily rate")
+    a_.scatter(pd.to_datetime(tw.start), tw.oil_rate_stbd, s=26, color=viz.ORANGE, edgecolor=viz.SURFACE,
+               linewidth=1.1, zorder=3, label="measured well test")
+    a_.set(title=w, ylim=(0, max(g.oil_rate_stbd.max(), tw.oil_rate_stbd.max()) * 1.12))
+    a_.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:,.0f}"))
+    a_.xaxis.set_major_locator(matplotlib.dates.MonthLocator(bymonth=[1, 4, 7]))
+    a_.xaxis.set_major_formatter(matplotlib.dates.DateFormatter("%b"))
+for a_ in axes[:, 0]:
+    a_.set_ylabel("oil, stb/d")
+handles, names = axes[0, 0].get_legend_handles_labels()
+fig.legend(handles, names, loc="lower center", ncol=2, bbox_to_anchor=(0.5, 0.0))
+viz.titled(fig, "Daily oil rate, every well, January to September 2025",
+           f"Daily rates average {-cmp['diff_%'].max():.1f}–{-cmp['diff_%'].min():.1f}% below the tests: "
+           "a test flows to the lower-pressure separator. Drops to zero are shut-ins.")
+show(fig, bottom=0.06)"""),
 
     MD("""### These are the submitted numbers
 
@@ -459,6 +585,25 @@ print("with a 95% interval from resampling wells:")
 for p in ("oil", "water", "gas"):
     gap, lo, hi = RR.gap_ci(rr, p, "monthly", "frozen")
     print(f"  {p:5s} {gap:+.2f} [{lo:+.2f}, {hi:+.2f}]")"""),
+
+    CODE("""fig, axes = plt.subplots(1, 3, figsize=(10.2, 3.5), sharey=True)
+for a_, p in zip(axes, ["oil", "water", "gas"]):
+    for name, c in [("frozen", viz.ORANGE), ("monthly", viz.BLUE)]:
+        s = pd.Series({lead: wape(g[f"real_{p}"].values, g[f"{name}_{p}"].values) for lead, g in rr.groupby("lead")})
+        a_.plot(s.index, s.values, color=c, lw=2, marker="o", ms=7, mec=viz.SURFACE, mew=1.5, zorder=3,
+                label={"frozen": "frozen model", "monthly": "refitted every month"}[name])
+        up = name == "frozen"          # the frozen model ends at or above the refit in every phase
+        a_.annotate(f"{s.iloc[-1]:.2f}%", (3, s.iloc[-1]), xytext=(0, 8 if up else -8), textcoords="offset points",
+                    ha="center", va="bottom" if up else "top", fontsize=8.5, color=viz.INK)
+    a_.set(title=p.capitalize(), xticks=[1, 2, 3], xlim=(0.8, 3.3), ylim=(0, 7.6),
+           xlabel="months after the end of training")
+axes[0].set_ylabel("WAPE on that month's well tests, %")
+axes[0].legend(loc="lower left")
+f3 = rr[rr.lead == 3]
+viz.titled(fig, "A frozen model drifts on oil and gas; the monthly refit holds",
+           f"Oil WAPE in the third month: {wape(f3.real_oil.values, f3.frozen_oil.values):.2f}% frozen, "
+           f"{wape(f3.real_oil.values, f3.monthly_oil.values):.2f}% refitted. Four cut-offs, about 36 tests per month.")
+show(fig)"""),
 
     MD("""The frozen model's oil WAPE climbs from 2.72% to 3.46% over three months and
 its bias from +0.31% to +0.79%. The refitted model stays between 2.5% and 2.8%.
